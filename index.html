@@ -25,7 +25,6 @@
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -43,7 +42,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
@@ -60,7 +59,7 @@
             const auth = getAuth(app);
             const db = getFirestore(app);
             window.FB_READY = true;
-            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, signInAnonymously, onAuthStateChanged };
+            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, signInAnonymously, onAuthStateChanged };
             window.dispatchEvent(new Event('firebase-ready'));
         } catch (e) {
             console.error("Firebase Init Error", e);
@@ -73,7 +72,6 @@
 
         const MASTER_PASSWORD = "onnurigrace";
         const SHARE_LINK = "https://jongsungjoo.github.io/grace/";
-        const choirAppId = typeof __app_id !== 'undefined' ? __app_id : 'grace-choir-v2';
 
         const INITIAL_MEMBERS = [
             { name: "박용규", part: "staff", status: "active", role: "성가사" },
@@ -113,10 +111,10 @@
             { name: "김정민", part: "bass", status: "active" }, { name: "김진배", part: "bass", status: "active" },
             { name: "노영진", part: "bass", status: "active" }, { name: "박주완", part: "bass", status: "active" },
             { name: "서형주", part: "bass", status: "active" }, { name: "오상태", part: "bass", status: "active" },
-            { name: "윤한숙", part: "bass", status: "active" }, { name: "윤용중", part: "bass", status: "active" },
-            { name: "정운주", part: "bass", status: "active" }, { name: "정지영", part: "bass", status: "active" },
-            { name: "조성천", part: "bass", status: "active" }, { name: "주종성", part: "bass", status: "active" },
-            { name: "한구용", part: "bass", status: "active" }, { name: "황성남", part: "bass", status: "active" }
+            { name: "윤용한", part: "bass", status: "active" }, { name: "윤한숙", part: "bass", status: "active" },
+            { name: "윤용중", part: "bass", status: "active" }, { name: "정운주", part: "bass", status: "active" },
+            { name: "정지영", part: "bass", status: "active" }, { name: "조성천", part: "bass", status: "active" },
+            { name: "주종성", part: "bass", status: "active" }, { name: "한구용", part: "bass", status: "active" }, { name: "황성남", part: "bass", status: "active" }
         ];
 
         const PARTS = [
@@ -125,8 +123,6 @@
             { id: 'tenor', name: '테너', color: '#2196f3' },
             { id: 'bass', name: '베이스', color: '#37474f' }
         ];
-
-        // --- 유틸리티 및 컴포넌트 정의 (App 이전에 선언) ---
 
         const compressImage = (base64Str, maxWidth = 800, maxHeight = 800, quality = 0.5) => {
             return new Promise((resolve) => {
@@ -146,295 +142,25 @@
             });
         };
 
-        const extractYoutubeId = (url) => {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-            const match = url?.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        };
-
-        const NavBtn = ({ id, label, icon, active, onClick }) => (
-            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active === id ? 'bg-blue-50 text-blue-600 font-bold shadow-sm' : 'text-gray-400 hover:bg-gray-50'} text-left`}>
-                <i data-lucide={icon} className="w-5 h-5"></i>{label}
-            </button>
-        );
-
-        const NavIconBtn = ({ id, icon, label, active, onClick }) => (
-            <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1 transition-all ${active === id ? 'text-blue-600 scale-105' : 'text-gray-300'}`}>
-                <i data-lucide={icon} className="w-6 h-6"></i>
-                <span className="text-[10px] font-black tracking-tighter uppercase text-center">{label}</span>
-            </button>
-        );
-
-        const StatCard = ({ label, val, unit }) => (
-            <div className="bg-white p-3 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-50 text-center flex flex-col justify-center">
-                <div className="text-gray-400 text-[8px] md:text-[10px] font-black mb-1 uppercase tracking-widest text-center">{label}</div>
-                <div className="text-lg md:text-4xl font-black text-[#4834d4] truncate text-center">{val}<span className="text-[10px] md:text-sm font-normal text-gray-300 ml-0.5">{unit}</span></div>
-            </div>
-        );
-
-        const FilterTab = ({ active, onClick, label }) => (<button onClick={onClick} className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-tighter transition-all ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'} font-mono`}>{label}</button>);
-
-        const ManageView = ({ members, updateRoster, restoreInitial }) => {
-            const [filterPart, setFilterPart] = useState('all');
-            const activeOnes = useMemo(() => members?.filter(m => m.status === 'active' && (filterPart === 'all' || m.part === filterPart)) || [], [members, filterPart]);
-            const restingOnes = useMemo(() => members?.filter(m => m.status !== 'active' && (filterPart === 'all' || m.part === filterPart)) || [], [members, filterPart]);
-
-            // 스태프 우선 정렬 로직 (박용규 -> 도은경)
-            const sortedActive = useMemo(() => {
-                return [...activeOnes].sort((a, b) => {
-                    if (a.part === 'staff' && b.part === 'staff') {
-                        if (a.name === '박용규') return -1;
-                        if (b.name === '박용규') return 1;
-                    }
-                    return (a.name || '').localeCompare(b.name || '', 'ko');
-                });
-            }, [activeOnes]);
-
-            return (
-                <div className="space-y-6 pb-20 text-left fade-in">
-                    <div className="flex justify-between items-end">
-                        <div className="text-left"><h2 className="text-3xl font-black text-gray-800 tracking-tight">명단관리</h2><p className="text-gray-400 text-sm">대원 현황을 통합 관리합니다.</p></div>
-                        <button onClick={restoreInitial} className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-widest active:scale-95">명단 초기화</button>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <FilterTab active={filterPart === 'all'} onClick={() => setFilterPart('all')} label="전체" />
-                        <FilterTab active={filterPart === 'staff'} onClick={() => setFilterPart('staff')} label="성가사/반주자" />
-                        {PARTS.map(p => ( <FilterTab key={p.id} active={filterPart === p.id} onClick={() => setFilterPart(p.id)} label={p.name} /> ))}
-                    </div>
-                    <div className="space-y-8">
-                        {restingOnes.length > 0 && (
-                            <div className="space-y-3">
-                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2 px-1"><i data-lucide="moon" className="w-3 h-3"></i>휴식 중 대원 ({restingOnes.length}명)</h4>
-                                <div className="bg-white rounded-3xl shadow-sm border-2 border-red-50 overflow-hidden divide-y divide-gray-50">
-                                    {restingOnes.map(m => (
-                                        <div key={m.name} className="flex items-center justify-between p-4 hover:bg-red-50/30 transition-colors">
-                                            <div className="text-left font-mono"><div className="font-bold text-gray-400 text-sm">{m.name}</div><div className="text-[9px] font-black uppercase text-gray-300">{m.role || m.part}</div></div>
-                                            <button onClick={() => updateRoster(members.map(x=>x.name===m.name?{...x,status:'active'}:x))} className="px-4 py-1.5 rounded-full text-[10px] font-black bg-gray-100 text-gray-400">복귀 처리</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        <div className="space-y-3">
-                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">활동 중 대원 ({sortedActive.length}명)</h4>
-                            <div className="bg-white rounded-3xl shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50">
-                                {sortedActive.map(m => (
-                                    <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: m.part === 'staff' ? '#f59e0b' : PARTS.find(p=>p.id===m.part)?.color || '#ccc' }}></div>
-                                            <div className="text-left font-mono"><div className="font-bold text-gray-800 text-sm">{m.name}</div><div className="text-[9px] font-black uppercase text-gray-400">{m.role || m.part}</div></div>
-                                        </div>
-                                        <button onClick={() => updateRoster(members.map(x=>x.name===m.name?{...x,status:'inactive'}:x))} className="px-4 py-1.5 rounded-full text-[10px] font-black bg-green-100 text-green-600">활동 중</button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const MusicView = ({ list, onAuthRequired }) => {
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const [editTarget, setEditTarget] = useState(null);
-            const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], title: '', cover: null, links: { soprano: '', alto: '', tenor: '', bass: '' } });
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                const data = { ...formData };
-                if (data.cover && data.cover.startsWith('data:image')) data.cover = await compressImage(data.cover);
-                const colRef = window.MyFirebase.collection(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'music');
-                if (editTarget) await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'music', editTarget.id), data);
-                else await window.MyFirebase.addDoc(colRef, data);
-                setIsModalOpen(false);
-            };
-
-            return (
-                <div className="space-y-6 pb-10 fade-in text-left">
-                    <div className="flex justify-between items-center px-1">
-                        <h2 className="text-3xl font-black text-gray-800 tracking-tight">성가음원&악보</h2>
-                        <button onClick={() => onAuthRequired(() => { setEditTarget(null); setFormData({date: new Date().toISOString().split('T')[0], title:'', cover:null, links:{soprano:'', alto:'', tenor:'', bass:''}}); setIsModalOpen(true); })} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"><i data-lucide="plus" className="w-6 h-6"></i></button>
-                    </div>
-                    <div className="grid gap-6">
-                        {list.map(item => (
-                            <div key={item.id} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 flex flex-col">
-                                <div className="h-48 bg-gray-100 overflow-hidden relative">
-                                    {item.cover ? <img src={item.cover} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><i data-lucide="music" className="w-12 h-12"></i></div>}
-                                    <div className="absolute top-4 right-4 flex gap-1">
-                                        <button onClick={() => onAuthRequired(() => { setEditTarget(item); setFormData(item); setIsModalOpen(true); })} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-500 shadow-lg"><i data-lucide="pencil" className="w-4 h-4"></i></button>
-                                        <button onClick={() => onAuthRequired(async () => { if(confirm("영구 삭제하시겠습니까?")) await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'music', item.id)); })} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 shadow-lg"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <p className="text-[10px] text-gray-400 font-black uppercase mb-1">{item.date}</p>
-                                    <h3 className="font-black text-gray-800 text-xl mb-4 leading-tight">{item.title}</h3>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {['soprano', 'alto', 'tenor', 'bass'].map(p => (
-                                            <a key={p} href={item.links?.[p] || '#'} target={item.links?.[p] ? "_blank" : "_self"} className={`py-3 rounded-2xl text-xs font-black text-center transition-all ${item.links?.[p] ? 'bg-blue-50 text-blue-600 active:scale-95' : 'bg-gray-50 text-gray-300 pointer-events-none'}`}>
-                                                {p.toUpperCase().slice(0,3)}
-                                            </a>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white rounded-[32px] w-full max-w-md p-8 scale-in text-left">
-                                <h3 className="font-black text-xl mb-6">찬양 정보 추가/수정</h3>
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date:e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-bold" required />
-                                    <input type="text" placeholder="곡 제목" value={formData.title} onChange={e=>setFormData({...formData, title:e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-bold" required />
-                                    <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>setFormData({...formData, cover:ev.target.result}); r.readAsDataURL(f); } }} className="w-full text-sm text-gray-400" />
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {['soprano', 'alto', 'tenor', 'bass'].map(p => (
-                                            <input key={p} type="url" placeholder={`${p} 링크`} value={formData.links[p]} onChange={e=>setFormData({...formData, links:{...formData.links, [p]:e.target.value}})} className="w-full p-3 bg-gray-50 rounded-xl text-xs" />
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2 pt-4">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-gray-100 rounded-2xl font-bold">취소</button>
-                                        <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">저장</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const VideoView = ({ list, onAuthRequired }) => {
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const [editTarget, setEditTarget] = useState(null);
-            const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], title: '', url: '' });
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                const thumb = `https://img.youtube.com/vi/${extractYoutubeId(formData.url)}/mqdefault.jpg`;
-                const data = { ...formData, thumbnail: thumb };
-                const colRef = window.MyFirebase.collection(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'videos');
-                if (editTarget) await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'videos', editTarget.id), data);
-                else await window.MyFirebase.addDoc(colRef, data);
-                setIsModalOpen(false);
-            };
-
-            return (
-                <div className="space-y-6 pb-10 fade-in text-left">
-                    <div className="flex justify-between items-center px-1">
-                        <h2 className="text-3xl font-black text-gray-800 tracking-tight">찬양팀영상</h2>
-                        <button onClick={() => onAuthRequired(()=>setIsModalOpen(true))} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"><i data-lucide="plus" className="w-6 h-6"></i></button>
-                    </div>
-                    <div className="grid gap-6">
-                        {list.map(item => (
-                            <div key={item.id} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 cursor-pointer" onClick={() => window.open(item.url, '_blank')}>
-                                <div className="aspect-video relative bg-gray-100">
-                                    <img src={item.thumbnail} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                                        <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center pl-1 shadow-2xl"><i data-lucide="play" className="w-6 h-6 text-red-600 fill-current"></i></div>
-                                    </div>
-                                </div>
-                                <div className="p-6 flex justify-between items-start">
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] text-gray-400 font-black uppercase mb-1">{item.date}</p>
-                                        <h3 className="font-black text-gray-800 text-xl leading-tight line-clamp-2">{item.title}</h3>
-                                    </div>
-                                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                        <button onClick={() => onAuthRequired(() => { setEditTarget(item); setFormData(item); setIsModalOpen(true); })} className="p-2 text-gray-300 hover:text-blue-500 transition-colors"><i data-lucide="pencil" className="w-4 h-4"></i></button>
-                                        <button onClick={() => onAuthRequired(async () => { if(confirm("영구 삭제하시겠습니까?")) await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'artifacts', choirAppId, 'public', 'data', 'videos', item.id)); })} className="p-2 text-gray-300 hover:text-red-500"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-white rounded-[32px] w-full max-w-md p-8 scale-in text-left">
-                                <h3 className="font-black text-xl mb-6">영상 정보 추가/수정</h3>
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date:e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-bold" required />
-                                    <input type="text" placeholder="곡 제목" value={formData.title} onChange={e=>setFormData({...formData, title:e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-bold" required />
-                                    <input type="url" placeholder="유튜브 링크" value={formData.url} onChange={e=>setFormData({...formData, url:e.target.value})} className="w-full p-4 bg-gray-50 rounded-2xl font-bold" required />
-                                    <div className="flex gap-2 pt-4">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-gray-100 rounded-2xl font-bold">취소</button>
-                                        <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">저장</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const StatsView = ({ history, members, onEdit, onInterestOpen, onGoToAttendance }) => {
-            const chartRef = useRef(null); const chartInstance = useRef(null);
-            const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-            const filteredByYear = useMemo(() => history?.filter(h => h.date?.startsWith(selectedYear)) || [], [history, selectedYear]);
-            const years = useMemo(() => [...new Set(history.map(h => h.date.split('.')[0].trim()))].sort().reverse(), [history]);
-
-            useEffect(() => {
-                if (filteredByYear.length > 0 && chartRef.current) {
-                    if (chartInstance.current) chartInstance.current.destroy();
-                    const sorted = [...filteredByYear].reverse();
-                    chartInstance.current = new Chart(chartRef.current, {
-                        type: 'line',
-                        data: { labels: sorted.map(h => h.date.split('. ')[2] + '일'), datasets: [{ label:'출석', data: sorted.map(h => h.count), borderColor: '#4834d4', backgroundColor: 'rgba(72, 52, 212, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } } } }
-                    });
-                }
-            }, [filteredByYear]);
-
-            return (
-                <div className="space-y-6 pb-10 text-left fade-in">
-                    <div className="flex justify-between items-center px-1">
-                        <div className="flex items-end gap-2"><h2 className="text-3xl font-black text-gray-800 tracking-tight">출석현황판</h2><span className="text-sm font-black text-[#4834d4] mb-1">({members.length}명)</span></div>
-                        <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-white border border-gray-200 text-gray-700 py-2 px-4 rounded-xl text-sm font-bold shadow-sm">{years.length > 0 ? years.map(y => <option key={y} value={y}>{y}년</option>) : <option value={new Date().getFullYear()}>{new Date().getFullYear()}년</option>}</select>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 md:gap-4">
-                        <StatCard label="평균 출석" val={filteredByYear.length > 0 ? (filteredByYear.reduce((a,b)=>a+b.count, 0) / filteredByYear.length).toFixed(1) : 0} unit="명" />
-                        <StatCard label="최다 출석" val={filteredByYear.length > 0 ? Math.max(...filteredByYear.map(h => h.count)) : 0} unit="명" />
-                        <div onClick={onInterestOpen} className="bg-white p-3 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-50 text-center flex flex-col justify-center cursor-pointer hover:bg-orange-50/30 transition-colors group">
-                            <div className="text-orange-500 text-[8px] md:text-[10px] font-black mb-1 uppercase tracking-widest flex items-center justify-center gap-1"><i data-lucide="alert-circle" className="w-2 md:w-3 h-2 md:h-3"></i> 관심 대원</div>
-                            <div className="text-lg md:text-4xl font-black text-orange-600">?</div>
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50">
-                        <h3 className="text-lg font-black text-gray-800 tracking-tight mb-4">{selectedYear}년 추이</h3>
-                        <div className="h-64 relative">{filteredByYear.length > 0 ? <canvas ref={chartRef}></canvas> : <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold">기록 없음</div>}</div>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-lg font-black text-gray-800 tracking-tight">상세 출석 이력</h3>
-                            <button onClick={onGoToAttendance} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full flex items-center gap-1"><i data-lucide="plus" className="w-3 h-3"></i> 출석체크</button>
-                        </div>
-                        <div className="grid gap-3">
-                            {filteredByYear.map(h => (
-                                <div key={h.id} onClick={() => onEdit(h)} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center">
-                                            {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <i data-lucide="calendar" className="w-6 h-6 text-gray-200"></i>}
-                                        </div>
-                                        <div className="min-w-0 flex-1 text-left"><div className="font-bold text-gray-800 text-sm">{h.date}</div><div className="text-[10px] text-gray-400 font-bold uppercase line-clamp-1 font-mono">{h.members?.join(', ')}</div></div>
-                                    </div>
-                                    <div className="flex items-center shrink-0"><span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full whitespace-nowrap">{h.count}명</span></div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false }; }
+            static getDerivedStateFromError(error) { return { hasError: true }; }
+            componentDidCatch(error, errorInfo) { console.error("ErrorBoundary caught an error", error, errorInfo); }
+            render() {
+                if (this.state.hasError) return <div className="flex flex-col items-center justify-center h-screen p-6 text-center text-left"><h1 className="text-xl font-bold text-red-600 mb-2">시스템 오류</h1><button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg text-center">새로고침</button></div>;
+                return this.props.children;
+            }
+        }
 
         const App = () => {
             const [ready, setReady] = useState(false);
+            const [mode, setMode] = useState('online');
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [showAuthOverlay, setShowAuthOverlay] = useState(false);
             const [authAction, setAuthAction] = useState(null);
+
             const [members, setMembers] = useState([]);
             const [history, setHistory] = useState([]);
-            const [musicList, setMusicList] = useState([]);
-            const [videoList, setVideoList] = useState([]);
             const [activeTab, setActiveTab] = useState('stats');
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [modal, setModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null, image: null });
@@ -443,8 +169,14 @@
             const [showInterestModal, setShowInterestModal] = useState(false);
 
             useEffect(() => {
-                const waitFB = setInterval(() => { if (window.FB_READY && window.MyFirebase) { clearInterval(waitFB); startApp(); } }, 100);
-                return () => clearInterval(waitFB);
+                if (ready && window.lucide) window.lucide.createIcons();
+            }, [ready, activeTab, isAuthenticated, showAuthOverlay, editingHistory, attendanceMap, history, showInterestModal]);
+
+            useEffect(() => {
+                const checkAuth = localStorage.getItem('onnuri_auth');
+                if (checkAuth === "true") setIsAuthenticated(true);
+                const waitFirebase = setInterval(() => { if (window.FB_READY && window.MyFirebase) { clearInterval(waitFirebase); startApp(); } }, 100);
+                return () => clearInterval(waitFirebase);
             }, []);
 
             const startApp = async () => {
@@ -463,81 +195,705 @@
                                 list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
                                 setHistory(list);
                             });
-                            onSnapshot(collection(db, 'artifacts', choirAppId, 'public', 'data', 'music'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => new Date(b.date) - new Date(a.date));
-                                setMusicList(list);
-                            });
-                            onSnapshot(collection(db, 'artifacts', choirAppId, 'public', 'data', 'videos'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => new Date(b.date) - new Date(a.date));
-                                setVideoList(list);
-                            });
                         }
                     });
-                } catch (e) { console.error(e); setReady(true); }
+                } catch (e) { setMode('offline'); setReady(true); }
             };
 
-            const onAuthSuccess = () => { setIsAuthenticated(true); localStorage.setItem('onnuri_auth', 'true'); setShowAuthOverlay(false); if (authAction) { authAction(); setAuthAction(null); } };
-            const requestAuth = (action) => { setAuthAction(() => action); setShowAuthOverlay(true); };
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
             const confirm = (title, msg, onConfirm, image = null) => setModal({ isOpen: true, title, msg, onConfirm, image });
 
-            if (!ready) return <div className="h-screen flex items-center justify-center text-blue-600 font-black tracking-widest">Loading...</div>;
+            const requestAuth = (action) => {
+                if (isAuthenticated) {
+                    action();
+                } else {
+                    setAuthAction(() => action);
+                    setShowAuthOverlay(true);
+                }
+            };
+
+            const onAuthSuccess = () => {
+                setIsAuthenticated(true);
+                localStorage.setItem('onnuri_auth', 'true');
+                setShowAuthOverlay(false);
+                showToast("인증 성공");
+                if (authAction) {
+                    authAction();
+                    setAuthAction(null);
+                }
+            };
+
+            const saveAttendance = async (dateStr, selectedNames, imageData) => {
+                const saveLogic = async () => {
+                    const formattedDate = dateStr.replace(/-/g, '. ') + '.';
+                    const existing = history.find(h => h.date === formattedDate);
+                    const executeSave = async () => {
+                        let finalImage = imageData;
+                        if (finalImage && finalImage.startsWith('data:image')) finalImage = await compressImage(finalImage);
+                        else if (!finalImage && existing) finalImage = existing.image || null;
+                        const record = { date: formattedDate, count: selectedNames.length, members: selectedNames, image: finalImage, updatedAt: new Date().toISOString() };
+                        try {
+                            const { db, collection, doc, setDoc, addDoc } = window.MyFirebase;
+                            if (existing) await setDoc(doc(db, 'history', existing.id), record);
+                            else await addDoc(collection(db, 'history'), record);
+                            showToast("저장되었습니다."); setAttendanceMap({});
+                        } catch (err) { showToast("저장 실패(용량 초과)"); }
+                    };
+                    confirm(existing ? "데이터 중복" : "출석 저장", existing ? `이미 ${formattedDate} 기록이 있습니다. 덮어쓰시겠습니까?` : `${formattedDate} 기록을 저장하시겠습니까?`, executeSave, imageData);
+                };
+                requestAuth(saveLogic);
+            };
+
+            const handleLogout = () => { setIsAuthenticated(false); localStorage.removeItem('onnuri_auth'); showToast("로그아웃 되었습니다."); };
+            const handleShare = () => {
+                const dummy = document.createElement("textarea"); dummy.value = SHARE_LINK; document.body.appendChild(dummy); dummy.select(); document.execCommand('copy'); document.body.removeChild(dummy);
+                showToast("공유 링크가 복사되었습니다!");
+            };
+
+            const deleteRecord = async (id) => {
+                 confirm("삭제", "해당 날짜의 모든 데이터가 영구적으로 삭제됩니다. 정말로 삭제하시겠습니까?", async () => { 
+                    if(mode==='online') await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', id)); 
+                    else setHistory(history.filter(h=>h.id!==id)); 
+                    showToast("삭제되었습니다."); 
+                    setEditingHistory(null); 
+                });
+            };
+
+            const updateRecord = async (r) => {
+                 let updatedRecord = { ...r };
+                 if (updatedRecord.image && updatedRecord.image.startsWith('data:image')) updatedRecord.image = await compressImage(updatedRecord.image);
+                 await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', r.id), updatedRecord); 
+                 showToast("수정되었습니다."); 
+                 setEditingHistory(null); 
+            };
+
+            if (!ready) return <div className="h-screen flex flex-col items-center justify-center bg-[#f8faff] text-blue-600 font-bold p-10"><div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4 text-center"></div><p className="animate-pulse">데이터 로드 중...</p></div>;
 
             return (
-                <ErrorBoundaryComp>
-                    <div className="flex h-screen bg-[#f8faff] overflow-hidden flex-col md:flex-row relative fade-in text-left">
-                        <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 shrink-0">
-                            <div className="mb-10 text-left">
-                                <h1 className="text-2xl font-black text-[#4834d4] tracking-tight">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-1 text-gray-400 font-bold uppercase"><span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>ONLINE</div>
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden flex-col md:flex-row relative fade-in text-left">
+                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left">
+                        <div className="mb-10 text-left">
+                            <h1 className="text-2xl font-black text-[#4834d4] tracking-tight text-left">주은혜 찬양사역팀</h1>
+                            <div className="text-[10px] mt-1 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left">
+                                <span className={`w-2 h-2 rounded-full ${mode === 'online' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                                {mode} MODE
                             </div>
-                            <nav className="flex-1 space-y-2">
-                                <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab} onClick={setActiveTab} />
-                                <NavBtn id="music" label="성가음원&악보" icon="music" active={activeTab} onClick={setActiveTab} />
-                                <NavBtn id="video" label="찬양팀영상" icon="youtube" active={activeTab} onClick={setActiveTab} />
-                                <button onClick={() => setActiveTab('manage')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'manage' ? 'bg-blue-50 text-blue-600 font-bold shadow-sm' : 'text-gray-400 hover:bg-gray-50'} text-left`}><i data-lucide="users" className="w-5 h-5"></i>명단관리</button>
-                            </nav>
-                            <div className="mt-auto pt-6 border-t flex flex-col gap-2">
-                                <button onClick={() => { const d = document.createElement("textarea"); d.value = SHARE_LINK; document.body.appendChild(d); d.select(); document.execCommand('copy'); document.body.removeChild(d); showToast("링크가 복사되었습니다!"); }} className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold transition-all text-center">링크 공유</button>
-                                {isAuthenticated && <button onClick={() => { setIsAuthenticated(false); localStorage.removeItem('onnuri_auth'); showToast("로그아웃 되었습니다."); }} className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold transition-all text-center">인증 해제</button>}
-                            </div>
-                        </aside>
+                        </div>
+                        <nav className="flex-1 space-y-2 text-left">
+                            <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab} onClick={setActiveTab} />
+                            <NavBtn id="music" label="성가음원&악보" icon="music" active={activeTab} onClick={setActiveTab} />
+                            <NavBtn id="video" label="찬양팀영상" icon="youtube" active={activeTab} onClick={setActiveTab} />
+                            <button onClick={() => setActiveTab('manage')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'manage' ? 'bg-blue-50 text-blue-600 font-bold shadow-sm' : 'text-gray-400 hover:bg-gray-50'} text-left`}>
+                                <i data-lucide="users" className="w-5 h-5"></i>명단관리
+                            </button>
+                        </nav>
+                        <div className="mt-auto flex flex-col gap-2 text-left">
+                            <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><i data-lucide="share-2" className="w-3.5 h-3.5"></i> 링크 공유</button>
+                            {isAuthenticated && <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><i data-lucide="log-out" className="w-3.5 h-3.5"></i> 인증 해제</button>}
+                        </div>
+                    </aside>
 
-                        <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                            <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0">
-                                <span className="font-black text-lg text-[#4834d4]">주은혜 찬양사역팀</span>
-                                <div className="flex items-center gap-2"><button onClick={() => setActiveTab('manage')} className={`p-2 ${activeTab==='manage'?'text-blue-500':'text-gray-400'}`}><i data-lucide="users" className="w-5 h-5"></i></button></div>
-                            </header>
-                            <div className="flex-1 overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 hide-scrollbar">
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative text-left">
+                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 text-left">
+                            <span className="font-black text-lg text-[#4834d4] text-left">주은혜 찬양사역팀</span>
+                            <div className="flex items-center gap-2 text-left">
+                                <button onClick={() => setActiveTab('manage')} className={`p-2 ${activeTab==='manage'?'text-blue-500':'text-gray-400'}`}><i data-lucide="users" className="w-5 h-5"></i></button>
+                                <button onClick={handleShare} className="p-2 text-blue-500 text-left"><i data-lucide="share-2" className="w-5 h-5"></i></button>
+                                {isAuthenticated && <button onClick={handleLogout} className="p-2 text-red-400 text-left"><i data-lucide="log-out" className="w-5 h-5"></i></button>}
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 hide-scrollbar text-left text-left">
+                            <div className="max-w-5xl mx-auto text-left text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={members} onEdit={setEditingHistory} onInterestOpen={() => setShowInterestModal(true)} onGoToAttendance={() => setActiveTab('attendance')} />}
-                                {activeTab === 'attendance' && <div className={!isAuthenticated ? "flex justify-center py-5 md:py-20 text-center" : ""}>{!isAuthenticated ? <AuthRequest onSuccess={onAuthSuccess} /> : <AttendanceView members={members} saveAttendance={(date,names)=>requestAuth(()=> { const formattedDate = date.replace(/-/g, '. ') + '.'; const record = { date: formattedDate, count: names.length, members: names, createdAt: new Date().toISOString() }; window.MyFirebase.addDoc(window.MyFirebase.collection(window.MyFirebase.db, 'history'), record); showToast("저장되었습니다."); setAttendanceMap({}); })} attendanceMap={attendanceMap} setAttendanceMap={setAttendanceMap} />}</div>}
-                                {activeTab === 'manage' && <div className={!isAuthenticated ? "flex justify-center py-5 md:py-20 text-center" : ""}>{!isAuthenticated ? <AuthRequest onSuccess={onAuthSuccess} /> : <ManageView members={members} updateRoster={l => { setMembers(l); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: l}); showToast("저장됨"); }} restoreInitial={() => confirm("초기화", "명단을 복구하시겠습니까?", () => { setMembers(INITIAL_MEMBERS); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: INITIAL_MEMBERS}); showToast("명단 초기화 완료"); })} />}</div>}
-                                {activeTab === 'music' && <MusicView list={musicList} onAuthRequired={requestAuth} />}
-                                {activeTab === 'video' && <VideoView list={videoList} onAuthRequired={requestAuth} />}
+                                {activeTab === 'attendance' && <div className={!isAuthenticated ? "flex justify-center py-5 md:py-20 text-center" : ""}>{!isAuthenticated ? <AuthRequest onSuccess={onAuthSuccess} /> : <AttendanceView members={members} saveAttendance={saveAttendance} attendanceMap={attendanceMap} setAttendanceMap={setAttendanceMap} />}</div>}
+                                {activeTab === 'manage' && <div className={!isAuthenticated ? "flex justify-center py-5 md:py-20 text-center" : ""}>{!isAuthenticated ? <AuthRequest onSuccess={onAuthSuccess} /> : <ManageView members={members} updateRoster={(l) => { setMembers(l); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: l}); showToast("저장됨"); }} restoreInitial={() => confirm("초기화", "명단을 복구하시겠습니까?", () => { setMembers(INITIAL_MEMBERS); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: INITIAL_MEMBERS}); showToast("명단 초기화 완료"); })} />}</div>}
+                                {activeTab === 'music' && <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-center"><i data-lucide="music" className="w-12 h-12 mb-4 opacity-50"></i><p className="font-bold">성가음원 & 악보 페이지 준비중</p></div>}
+                                {activeTab === 'video' && <div className="flex flex-col items-center justify-center h-64 text-gray-400 text-center"><i data-lucide="youtube" className="w-12 h-12 mb-4 opacity-50"></i><p className="font-bold">찬양팀 영상 페이지 준비중</p></div>}
                             </div>
-                            <nav className="md:hidden fixed bottom-0 w-full h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg">
-                                <NavIconBtn id="stats" icon="bar-chart-2" label="출석현황판" active={activeTab} onClick={setActiveTab} />
-                                <NavIconBtn id="music" icon="music" label="성가음원&악보" active={activeTab} onClick={setActiveTab} />
-                                <NavIconBtn id="video" icon="youtube" label="찬양팀영상" active={activeTab} onClick={setActiveTab} />
-                            </nav>
-                        </main>
+                        </div>
 
-                        {showAuthOverlay && <AuthOverlay masterPassword={MASTER_PASSWORD} onSuccess={onAuthSuccess} onClose={() => { setShowAuthOverlay(false); setAuthAction(null); }} />}
-                        {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={members} onClose={() => setEditingHistory(null)} onSave={async r => { await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', r.id), r); showToast("수정됨"); setEditingHistory(null); }} onDelete={async id => { confirm("삭제 경고", "정말 삭제하시겠습니까? 데이터가 영구 삭제됩니다.", async () => { await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', id)); showToast("삭제됨"); setEditingHistory(null); }); }} isAuthenticated={isAuthenticated} requestAuth={requestAuth} />}
-                        {showInterestModal && <InterestModal members={members} history={history} onClose={() => setShowInterestModal(false)} />}
-                        {modal.isOpen && (
-                            <div className="fixed inset-0 bg-black/60 z-[220] flex items-center justify-center p-5 text-center"><div className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl scale-in border border-gray-100 text-left"><h3 className="text-xl font-black text-gray-800 tracking-tight mb-2 text-center">{modal.title}</h3><p className="text-gray-500 text-sm mb-4 leading-relaxed text-center">{modal.msg}</p><div className="flex gap-3"><button onClick={() => setModal({ ...modal, isOpen: false })} className="flex-1 py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl">취소</button><button onClick={() => { modal.onConfirm(); setModal({ ...modal, isOpen: false }); }} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">확인</button></div></div></div>
-                        )}
-                        {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium z-[400] shadow-2xl animate-bounce text-center">{toast.msg}</div>}
+                        <nav className="md:hidden fixed bottom-0 w-full h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-center">
+                            <NavIconBtn id="stats" icon="bar-chart-2" label="출석현황판" active={activeTab} onClick={setActiveTab} />
+                            <NavIconBtn id="music" icon="music" label="성가음원&악보" active={activeTab} onClick={setActiveTab} />
+                            <NavIconBtn id="video" icon="youtube" label="찬양팀영상" active={activeTab} onClick={setActiveTab} />
+                        </nav>
+                    </main>
+
+                    {showAuthOverlay && <AuthOverlay masterPassword={MASTER_PASSWORD} onSuccess={onAuthSuccess} onClose={() => { setShowAuthOverlay(false); setAuthAction(null); }} />}
+                    
+                    {editingHistory && (
+                        <HistoryDetailModal 
+                            record={editingHistory} allMembers={members} 
+                            onClose={() => setEditingHistory(null)} 
+                            onSave={updateRecord} 
+                            onDelete={deleteRecord}
+                            isAuthenticated={isAuthenticated} 
+                            requestAuth={requestAuth}
+                        />
+                    )}
+                    {showInterestModal && <InterestModal members={members} history={history} onClose={() => setShowInterestModal(false)} />}
+
+                    {modal.isOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[220] flex items-center justify-center p-5 text-center">
+                            <div className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl scale-in text-center border border-gray-100">
+                                <div className="text-center mb-6">
+                                    <h3 className="text-xl font-black text-gray-800 tracking-tight text-center">{modal.title}</h3>
+                                    <p className="text-gray-500 text-sm mt-2 leading-relaxed text-center">{modal.msg}</p>
+                                    {modal.image && (
+                                        <div className="mt-4 rounded-xl overflow-hidden border mb-6 text-center">
+                                            <img src={modal.image} className="w-full h-32 object-cover text-center" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex gap-3 text-center">
+                                    <button onClick={() => setModal({ ...modal, isOpen: false })} className="flex-1 py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl text-center">취소</button>
+                                    <button onClick={() => { modal.onConfirm(); setModal({ ...modal, isOpen: false }); }} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95 transition-transform text-center">확인</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium z-[300] shadow-2xl animate-bounce text-center">{toast.msg}</div>}
+                </div>
+            );
+        };
+
+        const NavBtn = ({ id, label, icon, active, onClick }) => (
+            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active === id ? 'bg-blue-50 text-blue-600 font-bold shadow-sm' : 'text-gray-400 hover:bg-gray-50'} text-left text-left text-left`}>
+                <i data-lucide={icon} className="w-5 h-5 text-left text-left text-left"></i>{label}
+            </button>
+        );
+
+        const NavIconBtn = ({ id, icon, label, active, onClick }) => (
+            <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1 transition-all ${active === id ? 'text-blue-600 scale-105' : 'text-gray-300'} text-center text-center text-center`}>
+                <i data-lucide={icon} className="w-6 h-6 text-center text-center text-center"></i>
+                <span className="text-[10px] font-black tracking-tighter uppercase text-center text-center text-center">{label}</span>
+            </button>
+        );
+
+        const AuthRequest = ({ onSuccess }) => {
+            const [input, setInput] = useState(""); const [error, setError] = useState("");
+            const handleSubmit = (e) => { e.preventDefault(); if (input === MASTER_PASSWORD) onSuccess(); else { setError("비밀번호 불일치"); setInput(""); } };
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
+            return (
+                <div className="bg-white p-8 rounded-[32px] shadow-xl w-full max-w-sm border border-gray-50 scale-in mt-4 mx-auto text-left text-left text-left">
+                    <div className="text-center mb-8 text-left text-left">
+                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4 text-center"><i data-lucide="lock" className="w-8 h-8 text-center"></i></div>
+                        <h1 className="text-xl font-black text-gray-800 tracking-tight text-center">매니저 인증</h1>
+                        <p className="text-gray-400 text-sm mt-1 font-medium text-center">관리자 전용 페이지입니다.</p>
                     </div>
-                </ErrorBoundaryComp>
+                    <form onSubmit={handleSubmit} className="space-y-4 text-left text-left">
+                        <input type="password" value={input} onChange={(e) => { setInput(e.target.value); setError(""); }} placeholder="비밀번호 입력" className={`w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-center font-bold outline-none tracking-widest text-left text-left text-left`} />
+                        {error && <p className="text-red-500 text-xs text-center font-bold text-left">{error}</p>}
+                        <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg transition-transform active:scale-95 text-center text-center">인증하기</button>
+                    </form>
+                </div>
+            );
+        };
+
+        const AuthOverlay = ({ masterPassword, onSuccess, onClose }) => {
+            const [input, setInput] = useState(""); const [error, setError] = useState("");
+            const handleSubmit = (e) => { e.preventDefault(); if (input === MASTER_PASSWORD) onSuccess(); else { setError("비밀번호 불일치"); setInput(""); } };
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
+            return (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[250] flex items-start md:items-center justify-center p-5 pt-20 md:pt-5 overflow-y-auto text-left text-left">
+                    <div className="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-sm border border-gray-50 scale-in mb-20 text-center text-left">
+                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4 text-center"><i data-lucide="lock" className="w-8 h-8 text-center"></i></div>
+                        <h1 className="text-2xl font-black text-gray-800 tracking-tight text-center">매니저 인증</h1>
+                        <p className="text-gray-400 text-sm mt-1 text-center">비밀번호를 입력해 주세요.</p>
+                        <form onSubmit={handleSubmit} className="space-y-4 mt-8 text-left text-left">
+                            <input type="password" value={input} onChange={(e) => { setInput(e.target.value); setError(""); }} placeholder="비밀번호 입력" className={`w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl text-center font-bold outline-none tracking-widest text-left text-left`} autoFocus />
+                            {error && <p className="text-red-500 text-xs text-center font-bold text-left">{error}</p>}
+                            <div className="flex gap-2 text-left text-left">
+                                <button type="button" onClick={onClose} className="flex-1 py-4 text-gray-400 font-bold text-center text-center">취소</button>
+                                <button type="submit" className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-center text-center">입장하기</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const AttendanceView = ({ members, saveAttendance, attendanceMap, setAttendanceMap }) => {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [ocrStatus, setOcrStatus] = useState("idle"); const [ocrProgress, setOcrProgress] = useState(0);
+            const [previewImage, setPreviewImage] = useState(null);
+            const activeMembers = members.filter(m => m.status === 'active');
+
+            useEffect(() => {
+                const allActiveMap = {};
+                activeMembers.forEach(m => allActiveMap[m.name] = true);
+                setAttendanceMap(allActiveMap);
+            }, [members.length]);
+
+            const handleOCR = async (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => setPreviewImage(event.target.result);
+                reader.readAsDataURL(file);
+                setOcrStatus("processing"); setOcrProgress(0);
+                try {
+                    const worker = await Tesseract.createWorker('kor', 1, { logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } });
+                    const { data: { text } } = await worker.recognize(file);
+                    const cleanText = text.replace(/\s+/g, '');
+                    const newMap = { ...attendanceMap };
+                    activeMembers.forEach(m => { if (cleanText.includes(m.name)) newMap[m.name] = true; });
+                    setAttendanceMap(newMap); setOcrStatus("success"); await worker.terminate();
+                } catch (err) { setOcrStatus("idle"); }
+            };
+
+            const toggleAll = (partId) => {
+                const partActive = activeMembers.filter(m => m.part === partId);
+                const allSelected = partActive.every(m => attendanceMap[m.name]);
+                const next = { ...attendanceMap };
+                if (allSelected) partActive.forEach(m => delete next[m.name]);
+                else partActive.forEach(m => next[m.name] = true);
+                setAttendanceMap(next);
+            };
+
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [previewImage, ocrStatus]);
+
+            return (
+                <div className="space-y-6 text-left pb-10 text-left">
+                    <section className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between text-left text-left">
+                        <div className="text-left text-left text-left"><h2 className="text-3xl font-black text-gray-800 tracking-tight text-left text-left">출석체크</h2><p className="text-gray-400 text-sm text-left text-left">활동 대원은 기본적으로 모두 체크되어 있습니다.</p></div>
+                        <div className="flex gap-2 w-full md:w-auto text-left text-left">
+                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="bg-white border-0 shadow-sm rounded-xl px-4 py-2 text-sm font-bold flex-1 focus:ring-2 focus:ring-blue-500 outline-none text-left text-left" />
+                            <button onClick={() => saveAttendance(date, Object.keys(attendanceMap), previewImage)} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg transition-transform active:scale-95 text-center text-center">저장</button>
+                        </div>
+                    </section>
+
+                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 overflow-hidden text-left text-left">
+                        <div className="flex items-center justify-between mb-6 text-left text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2 text-left text-left"><i data-lucide="camera" className="w-5 h-5 text-blue-500 text-left text-left"></i> 사진으로 체크하기</h3></div>
+                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[200px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-center text-left">
+                            {previewImage ? (
+                                <div className="w-full relative fade-in text-center text-left">
+                                    <img src={previewImage} className="w-full max-h-64 object-contain rounded-2xl mx-auto shadow-sm text-center text-left" />
+                                    {ocrStatus === "processing" && (
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center text-left">
+                                            <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto text-center text-left"><div className="bg-blue-600 h-full progress-bar-fill text-left" style={{ width: `${ocrProgress}%` }}></div></div>
+                                            <p className="text-blue-600 font-black text-sm uppercase animate-pulse text-center text-left">인식 중... {ocrProgress}%</p>
+                                        </div>
+                                    )}
+                                    {ocrStatus === "success" && <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded-full shadow-lg scale-in text-center text-left"><i data-lucide="check" className="w-5 h-5 text-center text-left"></i></div>}
+                                </div>
+                            ) : (
+                                <div className="text-center p-8 space-y-3 text-center text-left"><div className="w-16 h-16 bg-blue-50 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2 text-center text-left"><i data-lucide="image-plus" className="w-8 h-8 text-left text-left"></i></div><p className="text-gray-400 text-sm font-medium text-center text-left">참석 명단 사진을 업로드하세요.</p></div>
+                            )}
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer text-center text-left" onChange={handleOCR} />
+                        </div>
+                    </section>
+
+                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 text-left text-left">
+                        <div className="mb-8 last:mb-0 text-left text-left">
+                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest font-mono mb-4 text-left text-left"><span className="w-1.5 h-3.5 rounded-full inline-block mr-1.5 bg-yellow-500 text-left text-left"></span>성가사 & 반주자</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-left text-left">
+                                {activeMembers.filter(m => m.part === 'staff').map(m => (
+                                    <button key={m.name} onClick={() => { const next = { ...attendanceMap }; if (next[m.name]) delete next[m.name]; else next[m.name] = true; setAttendanceMap(next); }} className={`py-3 px-1 rounded-2xl text-[11px] font-bold transition-all border ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'} text-center text-center`}>{m.name}</button>
+                                ))}
+                            </div>
+                        </div>
+                        {PARTS.map(part => {
+                            const partActive = activeMembers.filter(m => m.part === part.id).sort((a,b)=>a.name.localeCompare(b.name, 'ko'));
+                            const presentCount = partActive.filter(m => attendanceMap[m.name]).length;
+                            const isAll = presentCount > 0 && presentCount === partActive.length;
+                            return (
+                                <div key={part.id} className="mb-8 last:mb-0 text-left text-left">
+                                    <div className="flex items-center justify-between mb-4 text-left text-left">
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest font-mono text-left text-left"><span className="w-1.5 h-3.5 rounded-full inline-block mr-1.5 text-left text-left" style={{ backgroundColor: part.color }}></span>{part.name} ({presentCount}/{partActive.length})</h4>
+                                        <button onClick={()=>toggleAll(part.id)} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black transition-all ${isAll ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400'} text-center text-center`}>
+                                            <i data-lucide={isAll ? "check-circle-2" : "circle"} className="w-3 h-3 text-center text-center"></i> {isAll ? "전체 해제" : "전체 선택"}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 text-left text-left">
+                                        {partActive.map(m => (
+                                            <button key={m.name} onClick={() => { const next = { ...attendanceMap }; if (next[m.name]) delete next[m.name]; else next[m.name] = true; setAttendanceMap(next); }} className={`py-3 px-1 rounded-2xl text-[11px] font-bold transition-all border ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'} text-center`}>{m.name}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </section>
+                </div>
+            );
+        };
+
+        const StatsView = ({ history, members, onEdit, onDelete, isAuthenticated, onAuthRequired, onInterestOpen, onGoToAttendance }) => {
+            const chartRef = useRef(null); const chartInstance = useRef(null);
+            const [filterType, setFilterType] = useState('all'); const [selectedId, setSelectedId] = useState(''); 
+            const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+
+            const availableYears = useMemo(() => {
+                const years = new Set(history.map(h => h.date.split('.')[0].trim()));
+                if (years.size === 0) return [new Date().getFullYear().toString()];
+                return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a));
+            }, [history]);
+
+            const filteredByYear = useMemo(() => history.filter(h => h.date.startsWith(selectedYear)), [history, selectedYear]);
+
+            const interestStats = useMemo(() => {
+                const activeOnes = members.filter(m => m.status === 'active');
+                if (history.length < 3) return { attention: 0, manage: 0 };
+                const last3 = history.slice(0, 3).flatMap(h => h.members);
+                const last4 = history.slice(0, 4).flatMap(h => h.members);
+                const manageCount = activeOnes.filter(m => !last4.includes(m.name)).length;
+                const attentionCount = activeOnes.filter(m => !last3.includes(m.name) && last4.includes(m.name)).length;
+                return { attention: attentionCount, manage: manageCount };
+            }, [history, members]);
+            
+            useEffect(() => {
+                if (filteredByYear.length > 0 && chartRef.current) {
+                    if (chartInstance.current) chartInstance.current.destroy();
+                    const sorted = [...filteredByYear].reverse();
+                    let chartData = []; let label = '인원'; let color = '#4834d4';
+                    if (filterType === 'all') chartData = sorted.map(h => h.count);
+                    else if (filterType === 'part' && selectedId) {
+                        chartData = sorted.map(h => h.members.filter(name => members.find(m => m.name === name)?.part === selectedId).length);
+                        const partObj = PARTS.find(p => p.id === selectedId); label = partObj?.name; color = partObj?.color || color;
+                    } else if (filterType === 'member' && selectedId) { chartData = sorted.map(h => h.members.includes(selectedId) ? 1 : 0); label = selectedId; }
+                    chartInstance.current = new Chart(chartRef.current, {
+                        type: filterType === 'member' ? 'bar' : 'line',
+                        data: { labels: sorted.map(h => h.date.split('. ')[2] + '일'), datasets: [{ label, data: chartData, borderColor: color, backgroundColor: filterType === 'member' ? `${color}44` : 'rgba(72, 52, 212, 0.1)', fill: filterType !== 'member', tension: 0.4, pointRadius: 4 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false }, ticks: filterType === 'member' ? { stepSize: 1, callback: (v) => v === 1 ? '출' : v === 0 ? '결' : '' } : { precision: 0 } }, x: { grid: { display: false } } } }
+                    });
+                } else if (chartInstance.current) { chartInstance.current.destroy(); }
+            }, [filteredByYear, filterType, selectedId, members]);
+
+            return (
+                <div className="space-y-6 pb-10 text-left">
+                    <div className="flex justify-between items-center px-1 text-left text-left">
+                        <div className="flex items-center gap-3 text-left text-left">
+                            <h2 className="text-3xl font-black text-gray-800 tracking-tight text-left text-left">출석현황판</h2>
+                            <span className="text-lg font-black text-[#4834d4] tracking-tight text-left text-left">({members.length}명)</span>
+                        </div>
+                        <div className="relative inline-block text-left text-left">
+                            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all text-left text-left">
+                                {availableYears.map(y => <option key={y} value={y}>{y}년</option>)}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 text-left text-left"><i data-lucide="chevron-down" className="w-4 h-4 text-left"></i></div>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-left text-left">
+                        <StatCard label="평균 출석" val={filteredByYear.length > 0 ? (filteredByYear.reduce((a,b)=>a+b.count, 0) / filteredByYear.length).toFixed(1) : 0} unit="명" />
+                        <StatCard label="최다 출석" val={filteredByYear.length > 0 ? Math.max(...filteredByYear.map(h => h.count)) : 0} unit="명" />
+                        <div onClick={onInterestOpen} className="bg-white p-3 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-50 text-center flex flex-col justify-center cursor-pointer hover:bg-orange-50/30 transition-colors group text-center text-center">
+                            <div className="text-orange-500 text-[8px] md:text-[10px] font-black mb-1 uppercase tracking-widest flex items-center justify-center gap-1 text-center text-center text-center"><i data-lucide="alert-circle" className="w-2 md:w-3 h-2 md:h-3 text-center text-center text-center"></i> 관심 대원</div>
+                            <div className="text-lg md:text-4xl font-black text-orange-600 truncate text-center text-center">{interestStats.attention}<span className="text-[10px] md:text-sm font-normal text-orange-300 ml-0.5 text-center text-center">명</span></div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left text-left">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 text-left text-left">
+                            <div className="text-left text-left"><h3 className="text-lg font-black text-gray-800 tracking-tight text-left text-left">{selectedYear}년 추이</h3><p className="text-xs text-gray-400 font-medium tracking-tighter text-left text-left">연도별 데이터 확인</p></div>
+                            <div className="flex flex-wrap items-center gap-1.5 text-left text-left">
+                                <FilterTab active={filterType === 'all'} onClick={() => {setFilterType('all'); setSelectedId('');}} label="전체" />
+                                <FilterTab active={filterType === 'part'} onClick={() => {setFilterType('part'); setSelectedId('soprano');}} label="파트" />
+                                <FilterTab active={filterType === 'member'} onClick={() => {setFilterType('member'); setSelectedId(members[0]?.name || '');}} label="개인" />
+                                {filterType === 'part' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none tracking-tight text-center text-left">{PARTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>)}
+                                {filterType === 'member' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none max-w-[100px] tracking-tight text-center text-left">{members.sort((a,b)=>a.name.localeCompare(b.name, 'ko')).map(m => <option key={m.name} value={m.name}>{m.name}</option>)}</select>)}
+                            </div>
+                        </div>
+                        <div className="h-64 relative font-mono text-center text-left">{filteredByYear.length > 0 ? <canvas ref={chartRef}></canvas> : <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold text-center">No Data</div>}</div>
+                    </div>
+
+                    <div className="space-y-4 text-left text-left">
+                        <div className="flex items-center justify-between px-2 text-left">
+                            <h3 className="text-lg font-black text-gray-800 tracking-tight text-left text-left">상세 출석 이력 ({selectedYear}년)</h3>
+                            <button onClick={onGoToAttendance} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95 transition-transform"><i data-lucide="plus" className="w-3 h-3"></i> 출석체크</button>
+                        </div>
+                        <div className="grid gap-3 text-left text-left">
+                            {filteredByYear.length === 0 ? (<div className="bg-white rounded-3xl p-16 text-center text-gray-400 border border-dashed border-gray-200 text-center">저장된 기록이 없습니다.</div>) : 
+                            filteredByYear.map(h => (
+                                <div key={h.id} onClick={() => onEdit(h)} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group text-left text-left">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0 text-left text-left">
+                                        <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-center text-left">
+                                            {h.image ? <img src={h.image} className="w-full h-full object-cover text-center" /> : <i data-lucide="calendar" className="w-6 h-6 text-gray-200 text-center"></i>}
+                                        </div>
+                                        <div className="min-w-0 flex-1 text-left text-left">
+                                            <div className="font-bold text-gray-800 text-sm text-left text-left">{h.date}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold uppercase line-clamp-1 font-mono text-left text-left">{h.members?.join(', ')}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center shrink-0 text-left text-left">
+                                        <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full mr-3 whitespace-nowrap text-center text-center">{h.count}명</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FilterTab = ({ active, onClick, label }) => (<button onClick={onClick} className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-tighter transition-all ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'} font-mono text-center`}>{label}</button>);
+        const StatCard = ({ label, val, unit }) => (
+            <div className="bg-white p-3 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-50 text-center flex flex-col justify-center text-center text-center">
+                <div className="text-gray-400 text-[8px] md:text-[10px] font-black mb-1 uppercase tracking-widest text-center text-center">{label}</div>
+                <div className="text-lg md:text-4xl font-black text-[#4834d4] truncate text-center text-center">{val}<span className="text-[10px] md:text-sm font-normal text-gray-300 ml-0.5 text-center text-center">{unit}</span></div>
+            </div>
+        );
+
+        const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, isAuthenticated, requestAuth }) => {
+            const [isEditing, setIsEditing] = useState(false);
+            const [selected, setSelected] = useState(new Set(record.members || []));
+            const [image, setImage] = useState(record.image || null);
+            const [ocrStatus, setOcrStatus] = useState("idle"); const [ocrProgress, setOcrProgress] = useState(0);
+            const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+            // 수정 모드 진입 (인증 필요 시 AuthOverlay 호출)
+            const enterEditMode = () => {
+                requestAuth(() => setIsEditing(true));
+            };
+
+            const toggleMember = (name) => { if (!isEditing) return; const n = new Set(selected); if (n.has(name)) n.delete(name); else n.add(name); setSelected(n); };
+            const toggleAll = (partId) => {
+                if (!isEditing) return;
+                const pMembers = allMembers.filter(m => m.part === partId && (m.status === 'active' || selected.has(m.name)));
+                const allSel = pMembers.every(m => selected.has(m.name));
+                const next = new Set(selected); if (allSel) pMembers.forEach(m => next.delete(m.name)); else pMembers.forEach(m => next.add(m.name));
+                setSelected(next);
+            };
+
+            const handleImgChange = async (e) => {
+                const f = e.target.files[0]; if (!f) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    let base64 = await compressImage(ev.target.result); setImage(base64);
+                    setOcrStatus("processing"); setOcrProgress(0);
+                    try {
+                        const worker = await Tesseract.createWorker('kor', 1, { logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } });
+                        const { data: { text } } = await worker.recognize(f);
+                        const cleanText = text.replace(/\s+/g, '');
+                        const n = new Set(selected); allMembers.filter(m => m.status === 'active').forEach(m => { if (cleanText.includes(m.name)) n.add(m.name); });
+                        setSelected(n); setOcrStatus("success"); await worker.terminate();
+                    } catch (err) { setOcrStatus("idle"); }
+                };
+                reader.readAsDataURL(f);
+            };
+
+            const summary = useMemo(() => {
+                const res = PARTS.map(p => ({ ...p, count: allMembers.filter(m => m.part === p.id && selected.has(m.name)).length }));
+                return { parts: res, staff: allMembers.filter(m => m.part === 'staff' && selected.has(m.name)).length };
+            }, [selected, allMembers]);
+
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [isEditing, isViewerOpen]);
+
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 text-left">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[85vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100 text-left">
+                        <header className="p-6 border-b flex justify-between items-start shrink-0 text-left">
+                            <div className="text-left text-left">
+                                <h3 className="text-xl font-black text-gray-800 tracking-tight text-left"> {record.date} 주일 출석 상세</h3>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 font-mono text-left text-left">Record ID: {record.id?.toString().slice(0,8)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!isEditing && (
+                                    <button onClick={enterEditMode} className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"><i data-lucide="pencil" className="w-5 h-5"></i></button>
+                                )}
+                                <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 text-left text-left"><i data-lucide="x" className="w-6 h-6 text-left"></i></button>
+                            </div>
+                        </header>
+                        <div className="px-6 py-4 bg-gray-50/50 border-b flex items-center justify-around shrink-0 gap-2 hide-scrollbar text-center text-center">
+                            <div className="flex flex-col items-center text-center text-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center text-center">출석전체</span><span className="text-base font-black text-blue-600 font-mono text-center text-center">{selected.size}</span></div>
+                            <div className="w-px h-6 bg-gray-200 text-center text-center"></div>
+                            {summary.parts.map(p => (<div key={p.id} className="flex flex-col items-center text-center text-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center text-center" style={{color: p.color}}>{p.name}</span><span className="text-xs font-black text-gray-700 font-mono text-center text-center">{p.count}</span></div>))}
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 hide-scrollbar text-left text-left text-left">
+                            <section className="text-left text-left">
+                                <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left text-left">출석 사진</h4>
+                                <div className="space-y-3 text-left text-left">
+                                    <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center cursor-zoom-in text-center text-center" onClick={() => image && setIsViewerOpen(true)}>
+                                        {image ? (
+                                            <div className="w-full relative text-center text-center">
+                                                <img src={image} className="w-full h-48 object-cover text-center mx-auto shadow-sm text-center" />
+                                                <div className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full text-center text-center"><i data-lucide="maximize-2" className="w-3 h-3 text-center text-center"></i></div>
+                                                {ocrStatus === "processing" && (
+                                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center text-left text-left">
+                                                        <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto text-center text-left"><div className="bg-blue-600 h-full progress-bar-fill text-left text-left" style={{ width: `${ocrProgress}%` }}></div></div>
+                                                        <p className="text-blue-600 font-black text-sm uppercase animate-pulse text-center text-left text-left">인식 중... {ocrProgress}%</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : ( <div className="text-gray-300 text-sm font-bold flex flex-col items-center gap-2 text-center text-center"><i data-lucide="image" className="w-8 h-8 opacity-20 text-center text-center"></i>사진 없음</div> )}
+                                    </div>
+                                    {isEditing && (
+                                        <label className="flex items-center justify-center gap-2 w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer text-center text-center">
+                                            <i data-lucide="refresh-cw" className="w-4 h-4 text-center text-center"></i> 사진 변경 및 이름 인식
+                                            <input type="file" accept="image/*" className="hidden text-center text-center" onChange={handleImgChange} />
+                                        </label>
+                                    )}
+                                </div>
+                            </section>
+                            
+                            <section className="text-left text-left">
+                                <div className="flex justify-between items-center mb-4 text-left text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-left text-left">참석 대원 명단</h4></div>
+                                <div className="mb-6 text-left text-left">
+                                    <h5 className="text-[9px] font-black text-gray-400 mb-2 uppercase flex items-center gap-1.5 font-mono text-left text-left"><span className="w-1 h-3 rounded-full bg-yellow-500 text-left text-left"></span>성가사 & 반주자 ({summary.staff})</h5>
+                                    <div className="grid grid-cols-2 gap-1.5 text-left text-left">
+                                        {allMembers.filter(m => m.part === 'staff' && (m.status === 'active' || selected.has(m.name))).map(m => (
+                                            <button key={m.name} onClick={() => toggleMember(m.name)} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : isEditing ? 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95' : 'bg-gray-50 border-gray-100 text-gray-300'} text-center text-center`}>{m.name}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {PARTS.map(part => {
+                                    const partMembers = allMembers.filter(m => m.part === part.id && (m.status === 'active' || selected.has(m.name))).sort((a,b)=>a.name.localeCompare(b.name, 'ko'));
+                                    const partPresent = partMembers.filter(m => selected.has(m.name)).length;
+                                    const allSel = partPresent > 0 && partPresent === partMembers.length;
+                                    return (
+                                        <div key={part.id} className="mb-6 text-left text-left">
+                                            <div className="flex items-center justify-between mb-2 text-left text-left">
+                                                <h5 className="text-[9px] font-black text-gray-400 mb-0 uppercase flex items-center gap-1.5 font-mono text-left text-left"><span className="w-1 h-3 rounded-full text-left text-left" style={{backgroundColor: part.color}}></span>{part.name} ({partPresent}/{partMembers.length})</h5>
+                                                {isEditing && (
+                                                    <button onClick={()=>toggleAll(part.id)} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black transition-all ${allSel ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400'} text-center text-center`}>
+                                                        <i data-lucide={allSel ? "check-circle-2" : "circle"} className="w-2.5 h-2.5 text-center text-center"></i> {allSel ? "전체 해제" : "전체 선택"}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-1.5 text-left text-left">
+                                                {partMembers.map(m => (
+                                                    <button key={m.name} onClick={() => toggleMember(m.name)} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : isEditing ? 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95' : 'bg-gray-50 border-gray-100 text-gray-300'} text-center text-center`}>{m.name}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </section>
+                        </div>
+                        {isEditing && (
+                            <footer className="p-6 border-t bg-white flex items-center justify-between shrink-0 text-left">
+                                <button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors font-mono text-left text-left">Delete</button>
+                                <div className="flex gap-2 text-left text-left">
+                                    <button onClick={() => setIsEditing(false)} className="px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black text-gray-400 uppercase active:scale-95 text-center text-center">Cancel</button>
+                                    <button onClick={() => onSave({...record, members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-transform text-center text-center">Save Changes</button>
+                                </div>
+                            </footer>
+                        )}
+                    </div>
+
+                    {isViewerOpen && (
+                        <div className="fixed inset-0 bg-black/95 z-[300] flex flex-col items-center justify-center p-4 fade-in text-center text-center">
+                            <div className="absolute top-6 right-6 text-white text-center text-center">
+                                <button onClick={() => setIsViewerOpen(false)} className="p-4 hover:bg-white/10 rounded-full transition-colors text-center text-center"><i data-lucide="x" className="w-8 h-8 text-center text-center"></i></button>
+                            </div>
+                            <img src={image} className="max-w-full max-h-[85vh] object-contain shadow-2xl scale-in text-center mx-auto" onClick={(e) => e.stopPropagation()} />
+                            <p className="mt-6 text-gray-400 text-sm font-bold tracking-widest uppercase text-center text-center">{record.date} 찬양팀 배치도</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const InterestModal = ({ members, history, onClose }) => {
+            const activeOnes = members.filter(m => m.status === 'active');
+            const records3 = history.slice(0, 3).flatMap(h => h.members);
+            const records4 = history.slice(0, 4).flatMap(h => h.members);
+            const manageList = activeOnes.filter(m => !records4.includes(m.name)).sort((a,b)=>a.name.localeCompare(b.name, 'ko'));
+            const attentionList = activeOnes.filter(m => !records3.includes(m.name) && records4.includes(m.name)).sort((a,b)=>a.name.localeCompare(b.name, 'ko'));
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-left">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[70vh] flex flex-col shadow-2xl scale-in border border-gray-100 text-left">
+                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left text-left">
+                            <h3 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2 text-left text-left"><i data-lucide="heart" className="text-red-500 w-6 h-6 text-left text-left"></i> 관심 대원 관리</h3>
+                            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 text-left text-left"><i data-lucide="x" className="w-6 h-6 text-left"></i></button>
+                        </header>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left text-left">
+                            <section className="text-left text-left">
+                                <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-left text-left"><span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse text-left text-left"></span> 관심 필요 대원 (3주 미출석) - {attentionList.length}명</h4>
+                                <div className="grid grid-cols-3 gap-2 text-left text-left">
+                                    {attentionList.map(m => ( <div key={m.name} className="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-center text-center"><p className="text-sm font-bold text-orange-700 text-center text-center">{m.name}</p><p className="text-[9px] font-black text-orange-300 uppercase text-center text-center">{m.role || (m.part === 'staff' ? '성가사/반주자' : m.part)}</p></div> ))}
+                                </div>
+                            </section>
+                            <section className="text-left text-left">
+                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2 text-left text-left"><span className="w-2 h-2 rounded-full bg-red-500 animate-bounce text-left text-left"></span> 관리 필요 대원 (4주+ 미출석) - {manageList.length}명</h4>
+                                <div className="grid grid-cols-3 gap-2 text-left text-left">
+                                    {manageList.map(m => ( <div key={m.name} className="bg-red-50/50 p-3 rounded-2xl border border-red-100 text-center text-center"><p className="text-sm font-bold text-red-700 text-center text-center">{m.name}</p><p className="text-[9px] font-black text-red-300 uppercase text-center text-center">{m.role || (m.part === 'staff' ? '성가사/반주자' : m.part)}</p></div> ))}
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ManageView = ({ members, updateRoster, restoreInitial }) => {
+            const [filterPart, setFilterPart] = useState('all'); const toggleStatus = (name) => { const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m); updateRoster(newList); };
+            const partStats = useMemo(() => { const stats = {}; [...PARTS, {id: 'staff', name: '지휘/반주'}].forEach(p => { const pList = members.filter(m => m.part === p.id); stats[p.id] = { total: pList.length, active: pList.filter(m => m.status === 'active').length }; }); return stats; }, [members]);
+            const inactiveMembers = useMemo(() => { let list = members.filter(m => m.status !== 'active'); if (filterPart !== 'all') list = list.filter(m => m.part === filterPart); return list.sort((a, b) => a.name.localeCompare(b.name, 'ko')); }, [members, filterPart]);
+            return (
+                <div className="space-y-6 pb-20 text-left text-left">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 text-left text-left">
+                        <div className="text-left text-left text-left"><h2 className="text-3xl font-black text-gray-800 tracking-tight text-left text-left">명단관리</h2><p className="text-gray-400 text-sm text-left text-left">대원 현황을 통합 관리합니다.</p></div>
+                        <div className="flex items-center gap-2 text-left text-left">
+                            <button onClick={restoreInitial} className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95 text-center text-center">명단 초기화</button>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-left text-left">
+                        <FilterTab active={filterPart === 'all'} onClick={() => setFilterPart('all')} label="전체" />
+                        <FilterTab active={filterPart === 'staff'} onClick={() => setFilterPart('staff')} label={`성가사 & 반주자 (${partStats['staff'].active}/${partStats['staff'].total})`} />
+                        {PARTS.map(p => ( <FilterTab key={p.id} active={filterPart === p.id} onClick={() => setFilterPart(p.id)} label={`${p.name} (${partStats[p.id].active}/${partStats[p.id].total})`} /> ))}
+                    </div>
+                    <div className="space-y-8 text-left text-left">
+                        {inactiveMembers.length > 0 && (
+                            <div className="space-y-3 text-left text-left">
+                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2 px-1 text-left text-left"><i data-lucide="moon" className="w-3 h-3 text-left text-left"></i>휴식 중 대원 ({inactiveMembers.length}명)</h4>
+                                <div className="bg-white rounded-3xl shadow-sm border-2 border-red-50 overflow-hidden divide-y divide-gray-50 text-left text-left">
+                                    {inactiveMembers.map(m => (
+                                        <div key={m.name} className="flex items-center justify-between p-4 hover:bg-red-50/30 transition-colors text-left text-left">
+                                            <div className="flex items-center gap-3 text-left text-left">
+                                                <div className="w-1.5 h-6 rounded-full shrink-0 text-left text-left" style={{ backgroundColor: '#94a3b8' }}></div>
+                                                <div className="text-left font-mono text-left text-left"><div className="font-bold text-gray-400 text-sm text-left text-left">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300 text-left text-left">{m.role || (m.part === 'staff' ? '성가사/반주자' : PARTS.find(p=>p.id===m.part)?.name)}</div></div>
+                                            </div>
+                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all bg-gray-100 text-gray-400 active:scale-95 text-center text-center">복귀 처리</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {(filterPart === 'all' || filterPart === 'staff') && (
+                            <div className="space-y-3 text-left text-left">
+                                <h4 className="text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2 px-1 text-left text-left"><span className="w-1.5 h-3.5 rounded-full bg-yellow-500 text-left text-left"></span>성가사 & 반주자 ({partStats['staff'].active}/${partStats['staff'].total})</h4>
+                                <div className="bg-white rounded-3xl shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50 text-left text-left">
+                                    {members.filter(m => m.part === 'staff' && m.status === 'active').map(m => (
+                                        <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left text-left">
+                                            <div className="flex items-center gap-3 text-left text-left">
+                                                <div className="w-1.5 h-6 rounded-full bg-yellow-500 text-left text-left"></div>
+                                                <div className="text-left font-mono text-left text-left"><div className="font-bold text-gray-800 text-sm text-left text-left">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300 text-left text-left">{m.role || 'STAFF'}</div></div>
+                                            </div>
+                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all bg-green-100 text-green-600 active:scale-95 text-center text-center">활동 중</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {PARTS.filter(p => filterPart === 'all' || filterPart === p.id).map(part => {
+                            const pActive = members.filter(m => m.part === part.id && m.status === 'active').sort((a,b)=>a.name.localeCompare(b.name, 'ko'));
+                            if (pActive.length === 0) return null;
+                            return (
+                                <div key={part.id} className="space-y-3 text-left text-left">
+                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1 text-left text-left"><span className="w-1.5 h-3.5 rounded-full text-left text-left" style={{ backgroundColor: part.color }}></span>{part.name} 활동 중 ({pActive.length}/{partStats[part.id].total})</h4>
+                                    <div className="bg-white rounded-3xl shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50 text-left text-left">
+                                        {pActive.map(m => (
+                                            <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left text-left">
+                                                <div className="flex items-center gap-3 text-left text-left">
+                                                    <div className="w-1.5 h-6 rounded-full shrink-0 text-left text-left" style={{ backgroundColor: part.color }}></div>
+                                                    <div className="text-left font-mono text-left text-left"><div className="font-bold text-gray-800 text-sm text-left text-left">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300 text-left text-left">{part.name}</div></div>
+                                                </div>
+                                                <button onClick={() => toggleStatus(m.name)} className="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all bg-green-100 text-green-600 active:scale-95 text-center text-center">활동 중</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
