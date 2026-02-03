@@ -160,6 +160,13 @@
             const [attendanceMap, setAttendanceMap] = useState({});
             const [editingHistory, setEditingHistory] = useState(null);
 
+            // 아이콘 렌더링을 보장하는 Effect
+            useEffect(() => {
+                if (ready && window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [ready, activeTab, isAuthenticated, showAuthOverlay, editingHistory]);
+
             useEffect(() => {
                 const checkAuth = localStorage.getItem('onnuri_auth');
                 if (checkAuth === "true") setIsAuthenticated(true);
@@ -457,7 +464,7 @@
                         </div>
                     </section>
 
-                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 text-left">
+                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50">
                         {PARTS.map(part => {
                             const partActiveMembers = activeMembers.filter(m => m.part === part.id)
                                                                   .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -579,9 +586,9 @@
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left text-left text-left">
                             <section className="text-left text-left">
                                 <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left text-left">출석 사진</h4>
-                                <div className="relative group bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center text-center">
+                                <div className="relative group bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center">
                                     {image ? <img src={image} className="w-full h-48 object-cover text-center mx-auto shadow-sm text-center" /> : <div className="text-gray-300 text-sm font-bold flex flex-col items-center gap-2 text-center mx-auto text-center"><i data-lucide="image" className="w-8 h-8 opacity-20 text-center"></i>사진 없음</div>}
-                                    <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-left text-left text-left text-left text-left text-left text-left text-left"><span className="text-white text-[10px] font-black bg-white/20 backdrop-blur px-4 py-2 rounded-full border border-white/30 uppercase text-center">Change Photo</span><input type="file" accept="image/*" className="hidden text-center" onChange={(e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = () => setImage(r.result); r.readAsDataURL(f); } }} /></label>
+                                    <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-left text-left text-left text-left text-left text-left text-left text-left"><span className="text-white text-[10px] font-black bg-white/20 backdrop-blur px-4 py-2 rounded-full border border-white/30 uppercase text-center">Change Photo</span><input type="file" accept="image/*" className="hidden text-center" onChange={handleImg} /></label>
                                 </div>
                             </section>
                             <section className="text-left text-left text-left">
@@ -645,7 +652,7 @@
                 return list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
             }, [members, filterPart]);
 
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [inactiveMembers, filterPart]);
 
             return (
                 <div className="space-y-6 pb-20 text-left">
