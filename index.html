@@ -119,7 +119,7 @@
             { id: 'bass', name: '베이스', color: '#37474f' }
         ];
 
-        // ErrorBoundary 정의 (누락되었던 부분)
+        // ErrorBoundary 정의
         class ErrorBoundary extends React.Component {
             constructor(props) {
                 super(props);
@@ -252,7 +252,7 @@
                         )}
                     </aside>
 
-                    <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative text-left">
                         <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0">
                             <span className="font-black text-lg text-[#4834d4]">주은혜찬양팀</span>
                             {isAuthenticated && <button onClick={handleLogout} className="p-2 text-red-400"><i data-lucide="log-out" className="w-5 h-5"></i></button>}
@@ -261,8 +261,8 @@
                         <div className="flex-1 overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 hide-scrollbar">
                             <div className="max-w-5xl mx-auto">
                                 {activeTab === 'stats' && <StatsView history={history} members={members} onEdit={setEditingHistory} onDelete={(id) => { if(!isAuthenticated) setShowAuthOverlay(true); else confirm("삭제", "기록을 삭제하시겠습니까?", async () => { await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', id)); showToast("삭제됨"); }); }} isAuthenticated={isAuthenticated} onAuthRequired={() => setShowAuthOverlay(true)} />}
-                                {activeTab === 'attendance' && (isAuthenticated ? <AttendanceView members={members} saveAttendance={saveAttendance} attendanceMap={attendanceMap} setAttendanceMap={setAttendanceMap} /> : <div className="flex justify-center py-5"><AuthRequest onSuccess={() => { setIsAuthenticated(true); localStorage.setItem('onnuri_auth', "true"); }} /></div>)}
-                                {activeTab === 'manage' && (isAuthenticated ? <ManageView members={members} updateRoster={(l) => { setMembers(l); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: l}); showToast("저장됨"); }} restoreInitial={() => confirm("초기화", "명단을 복구하시겠습니까?", () => { setMembers(INITIAL_MEMBERS); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: INITIAL_MEMBERS}); })} /> : <div className="flex justify-center py-5"><AuthRequest onSuccess={() => { setIsAuthenticated(true); localStorage.setItem('onnuri_auth', "true"); }} /></div>)}
+                                {activeTab === 'attendance' && (isAuthenticated ? <AttendanceView members={members} saveAttendance={saveAttendance} attendanceMap={attendanceMap} setAttendanceMap={setAttendanceMap} /> : <div className="flex justify-center py-5 md:py-20"><AuthRequest onSuccess={() => { setIsAuthenticated(true); localStorage.setItem(`onnuri_auth`, "true"); }} /></div>)}
+                                {activeTab === 'manage' && (isAuthenticated ? <ManageView members={members} updateRoster={(l) => { setMembers(l); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: l}); showToast("저장됨"); }} restoreInitial={() => confirm("초기화", "명단을 복구하시겠습니까?", () => { setMembers(INITIAL_MEMBERS); window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'roster', 'current'), {list: INITIAL_MEMBERS}); })} /> : <div className="flex justify-center py-5 md:py-20"><AuthRequest onSuccess={() => { setIsAuthenticated(true); localStorage.setItem(`onnuri_auth`, "true"); }} /></div>)}
                             </div>
                         </div>
 
@@ -276,7 +276,7 @@
                     {showAuthOverlay && (
                         <AuthOverlay 
                             masterPassword={MASTER_PASSWORD} 
-                            onSuccess={() => { setIsAuthenticated(true); setShowAuthOverlay(false); localStorage.setItem('onnuri_auth', "true"); showToast("인증 성공"); }}
+                            onSuccess={() => { setIsAuthenticated(true); setShowAuthOverlay(false); localStorage.setItem(`praise_auth_onnuri`, "true"); showToast("인증 성공"); }}
                             onClose={() => setShowAuthOverlay(false)}
                         />
                     )}
@@ -296,8 +296,8 @@
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[160] flex items-center justify-center p-5">
                             <div className="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl scale-in text-center border border-gray-100">
                                 <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4"><i data-lucide="help-circle" className="w-8 h-8"></i></div>
-                                <h3 className="text-xl font-black text-gray-800 tracking-tight">{modal.title}</h3>
-                                <p className="text-gray-500 text-sm mt-2 leading-relaxed">{modal.msg}</p>
+                                <h3 className="text-xl font-black text-gray-800 tracking-tight text-center">{modal.title}</h3>
+                                <p className="text-gray-500 text-sm mt-2 leading-relaxed text-center">{modal.msg}</p>
                                 <div className="flex gap-3 mt-8">
                                     <button onClick={() => setModal({ ...modal, isOpen: false })} className="flex-1 py-4 bg-gray-50 text-gray-400 font-bold rounded-2xl">취소</button>
                                     <button onClick={() => { modal.onConfirm(); setModal({ ...modal, isOpen: false }); }} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95 transition-transform">확인</button>
@@ -333,10 +333,10 @@
             };
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
             return (
-                <div className="bg-white p-8 rounded-[32px] shadow-xl w-full max-w-sm border border-gray-50 scale-in mt-4 text-center">
+                <div className="bg-white p-8 rounded-[32px] shadow-xl w-full max-w-sm border border-gray-50 scale-in mt-4 text-center mx-auto">
                     <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4"><i data-lucide="lock" className="w-8 h-8"></i></div>
                     <h1 className="text-xl font-black text-gray-800 tracking-tight">매니저 인증</h1>
-                    <p className="text-gray-400 text-sm mt-1 font-medium text-center">이 영역은 매니저 전용입니다.</p>
+                    <p className="text-gray-400 text-sm mt-1 font-medium text-center">관리자 전용 페이지입니다.</p>
                     <form onSubmit={handleSubmit} className="space-y-4 mt-8">
                         <input type="password" value={input} onChange={(e) => { setInput(e.target.value); setError(""); }} placeholder="비밀번호 입력" className={`w-full px-5 py-4 bg-gray-50 border-2 ${error ? 'border-red-300' : 'border-transparent'} rounded-2xl text-center font-bold outline-none transition-all tracking-widest`} />
                         {error && <p className="text-red-500 text-xs text-center font-bold">{error}</p>}
@@ -380,6 +380,7 @@
             const [ocrProgress, setOcrProgress] = useState(0);
             const [previewImage, setPreviewImage] = useState(null);
             const activeMembers = members.filter(m => m.status === 'active');
+
             const handleOCR = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -399,24 +400,27 @@
                     await worker.terminate();
                 } catch (err) { console.error(err); setOcrStatus("idle"); }
             };
+
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [previewImage, ocrStatus]);
+
             return (
                 <div className="space-y-6 text-left pb-10">
                     <section className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                        <div><h2 className="text-3xl font-black text-gray-800 tracking-tight">출석체크</h2><p className="text-gray-400 text-sm">활동 대원 {activeMembers.length}명을 확인합니다.</p></div>
+                        <div><h2 className="text-3xl font-black text-gray-800 tracking-tight">출석체크</h2><p className="text-gray-400 text-sm">오늘의 예배 인원을 체크하세요.</p></div>
                         <div className="flex gap-2 w-full md:w-auto">
                             <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="bg-white border-0 shadow-sm rounded-xl px-4 py-2 text-sm font-bold flex-1 outline-none" />
                             <button onClick={() => saveAttendance(date, Object.keys(attendanceMap), previewImage)} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg text-sm shrink-0 active:scale-95 transition-transform">저장</button>
                         </div>
                     </section>
+
                     <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 overflow-hidden">
                         <div className="flex items-center justify-between mb-6 text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="camera" className="w-5 h-5 text-blue-500"></i> 사진으로 체크하기</h3></div>
-                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[200px] flex flex-col items-center justify-center transition-all hover:bg-gray-50">
+                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[200px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-center">
                             {previewImage ? (
-                                <div className="w-full relative fade-in">
-                                    <img src={previewImage} className="w-full max-h-64 object-contain rounded-2xl mx-auto shadow-sm" />
+                                <div className="w-full relative fade-in text-center">
+                                    <img src={previewImage} className="w-full max-h-64 object-contain rounded-2xl mx-auto" />
                                     {ocrStatus === "processing" && (
-                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center">
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl">
                                             <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto"><div className="bg-blue-600 h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
                                             <p className="text-blue-600 font-black text-sm uppercase animate-pulse">인식 중... {ocrProgress}%</p>
                                         </div>
@@ -429,19 +433,33 @@
                             <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleOCR} />
                         </div>
                     </section>
+
                     <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50">
-                        {PARTS.map(part => (
-                            <div key={part.id} className="mb-8 last:mb-0 text-left">
-                                <h4 className="text-xs font-black text-gray-400 mb-4 flex items-center gap-2 uppercase tracking-widest text-left">
-                                    <span className="w-1.5 h-3.5 rounded-full" style={{ backgroundColor: part.color }}></span>{part.name} ({activeMembers.filter(m => m.part === part.id).length})
-                                </h4>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
-                                    {activeMembers.filter(m => m.part === part.id).map(m => (
-                                        <button key={m.name} onClick={() => { const newMap = { ...attendanceMap }; if (newMap[m.name]) delete newMap[m.name]; else newMap[m.name] = true; setAttendanceMap(newMap); }} className={`py-3 px-1 rounded-2xl text-[11px] font-bold transition-all border ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100 active:scale-95'}`}>{m.name}</button>
-                                    ))}
+                        {PARTS.map(part => {
+                            const partActiveMembers = activeMembers.filter(m => m.part === part.id)
+                                                                  .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+                            const presentCount = partActiveMembers.filter(m => attendanceMap[m.name]).length;
+                            
+                            return (
+                                <div key={part.id} className="mb-8 last:mb-0 text-left">
+                                    <h4 className="text-xs font-black text-gray-400 mb-4 flex items-center gap-2 uppercase tracking-widest text-left font-mono">
+                                        <span className="w-1.5 h-3.5 rounded-full" style={{ backgroundColor: part.color }}></span>
+                                        {part.name} ({presentCount}/{partActiveMembers.length})
+                                    </h4>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                                        {partActiveMembers.map(m => (
+                                            <button 
+                                                key={m.name} 
+                                                onClick={() => { const newMap = { ...attendanceMap }; if (newMap[m.name]) delete newMap[m.name]; else newMap[m.name] = true; setAttendanceMap(newMap); }} 
+                                                className={`py-3 px-1 rounded-2xl text-[11px] font-bold transition-all border ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100 active:scale-95'}`}
+                                            >
+                                                {m.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </section>
                 </div>
             );
@@ -452,6 +470,7 @@
             const chartInstance = useRef(null);
             const [filterType, setFilterType] = useState('all'); 
             const [selectedId, setSelectedId] = useState(''); 
+
             useEffect(() => {
                 if (history.length > 0 && chartRef.current) {
                     if (chartInstance.current) chartInstance.current.destroy();
@@ -471,23 +490,24 @@
                     });
                 }
             }, [history, filterType, selectedId, members]);
+
             return (
                 <div className="space-y-6 pb-10 text-left">
                     <h2 className="text-3xl font-black text-gray-800 tracking-tight text-left">출석현황판</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <StatCard label="평균 출석" val={history.length > 0 ? (history.reduce((a,b)=>a+b.count, 0) / history.length).toFixed(1) : 0} unit="명" />
                         <StatCard label="최다 출석" val={history.length > 0 ? Math.max(...history.map(h => h.count)) : 0} unit="명" />
                         <StatCard label="전체 대원" val={members.length} unit="명" />
                     </div>
-                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50">
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left">
                         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                            <div><h3 className="text-lg font-black text-gray-800 tracking-tight">출석 추이</h3><p className="text-xs text-gray-400 font-medium tracking-tighter">데이터 필터링을 통해 현황을 확인하세요.</p></div>
+                            <div><h3 className="text-lg font-black text-gray-800 tracking-tight">출석 추이</h3><p className="text-xs text-gray-400 font-medium tracking-tighter">필터링을 통해 현황을 확인하세요.</p></div>
                             <div className="flex flex-wrap items-center gap-1.5">
                                 <FilterTab active={filterType === 'all'} onClick={() => {setFilterType('all'); setSelectedId('');}} label="전체" />
                                 <FilterTab active={filterType === 'part'} onClick={() => {setFilterType('part'); setSelectedId('soprano');}} label="파트" />
                                 <FilterTab active={filterType === 'member'} onClick={() => {setFilterType('member'); setSelectedId(members[0]?.name || '');}} label="개인" />
-                                {filterType === 'part' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none tracking-tight">{PARTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>)}
-                                {filterType === 'member' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none max-w-[100px] tracking-tight">{members.sort((a,b)=>a.name.localeCompare(b.name)).map(m => <option key={m.name} value={m.name}>{m.name}</option>)}</select>)}
+                                {filterType === 'part' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none">{PARTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>)}
+                                {filterType === 'member' && (<select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="text-[11px] font-black bg-gray-50 border-0 rounded-full px-3 py-1.5 outline-none max-w-[100px]">{members.sort((a,b)=>a.name.localeCompare(b.name, 'ko')).map(m => <option key={m.name} value={m.name}>{m.name}</option>)}</select>)}
                             </div>
                         </div>
                         <div className="h-64 relative font-mono">{history.length > 0 ? <canvas ref={chartRef}></canvas> : <div className="h-full flex items-center justify-center text-gray-300 text-xs font-bold text-center">No Data Recorded</div>}</div>
@@ -499,8 +519,8 @@
                             history.map(h => (
                                 <div key={h.id} onClick={() => onEdit(h)} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group text-left">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-black">{h.count}</div>
-                                        <div className="text-left"><div className="font-bold text-gray-800 text-sm text-left">{h.date}</div><div className="text-[10px] text-gray-400 font-bold uppercase line-clamp-1 max-w-[150px] md:max-w-md text-left font-mono">{h.members?.join(', ')}</div></div>
+                                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-black font-mono">{h.count}</div>
+                                        <div className="text-left"><div className="font-bold text-gray-800 text-sm">{h.date}</div><div className="text-[10px] text-gray-400 font-bold uppercase line-clamp-1 max-w-[150px] md:max-w-md text-left font-mono">{h.members?.join(', ')}</div></div>
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); onDelete(h.id); }} className="p-2 text-gray-200 hover:text-red-500 transition-colors"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
                                 </div>
@@ -512,7 +532,7 @@
         };
 
         const FilterTab = ({ active, onClick, label }) => (<button onClick={onClick} className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-tighter transition-all ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>{label}</button>);
-        const StatCard = ({ label, val, unit }) => (<div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-50 text-left"><div className="text-gray-400 text-[10px] font-black mb-1 uppercase tracking-widest text-left">{label}</div><div className="text-4xl font-black text-[#4834d4] text-left">{val}<span className="text-sm font-normal text-gray-300 ml-1 text-left">{unit}</span></div></div>);
+        const StatCard = ({ label, val, unit }) => (<div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-50"><div className="text-gray-400 text-[10px] font-black mb-1 uppercase tracking-widest">{label}</div><div className="text-4xl font-black text-[#4834d4]">{val}<span className="text-sm font-normal text-gray-300 ml-1">{unit}</span></div></div>);
 
         const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, isAuthenticated, onAuthRequired }) => {
             const [selected, setSelected] = useState(new Set(record.members || []));
@@ -522,43 +542,52 @@
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 text-left">
-                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[85vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[85vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100 text-left">
                         <header className="p-6 border-b flex justify-between items-start shrink-0">
-                            <div><h3 className="text-xl font-black text-gray-800 tracking-tight text-left">{record.date} 상세</h3><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 font-mono text-left">ID: {record.id?.toString().slice(0,8)}</p></div>
+                            <div className="text-left"><h3 className="text-xl font-black text-gray-800 tracking-tight">{record.date} 상세</h3><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 font-mono">Record ID: {record.id?.toString().slice(0,8)}</p></div>
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600"><i data-lucide="x" className="w-6 h-6"></i></button>
                         </header>
                         <div className="px-6 py-4 bg-gray-50/50 border-b flex items-center justify-around shrink-0 gap-2 hide-scrollbar">
-                            <div className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase">전체</span><span className="text-base font-black text-blue-600">{selected.size}</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase">전체</span><span className="text-base font-black text-blue-600 font-mono">{selected.size}</span></div>
                             <div className="w-px h-6 bg-gray-200"></div>
-                            {summary.map(p => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center" style={{color: p.color}}>{p.name.slice(0,1)}</span><span className="text-xs font-black text-gray-700">{p.count}</span></div>))}
+                            {summary.map(p => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center" style={{color: p.color}}>{p.name.slice(0,1)}</span><span className="text-xs font-black text-gray-700 font-mono">{p.count}</span></div>))}
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar">
-                            <section>
-                                <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">출석 사진</h4>
+                            <section className="text-left">
+                                <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left">출석 사진</h4>
                                 <div className="relative group bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center">
                                     {image ? <img src={image} className="w-full h-48 object-cover" /> : <div className="text-gray-300 text-sm font-bold flex flex-col items-center gap-2"><i data-lucide="image" className="w-8 h-8 opacity-20"></i>사진 없음</div>}
                                     <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"><span className="text-white text-[10px] font-black bg-white/20 backdrop-blur px-4 py-2 rounded-full border border-white/30 uppercase">Change Photo</span><input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = () => setImage(r.result); r.readAsDataURL(f); } }} /></label>
                                 </div>
                             </section>
-                            <section>
-                                <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">대원 선택</h4>
-                                {PARTS.map(part => (
-                                    <div key={part.id} className="mb-6 text-left">
-                                        <h5 className="text-[9px] font-black text-gray-400 mb-2 uppercase flex items-center gap-1.5"><span className="w-1 h-3 rounded-full" style={{backgroundColor: part.color}}></span>{part.name}</h5>
-                                        <div className="grid grid-cols-3 gap-1.5">
-                                            {allMembers.filter(m => m.part === part.id && (m.status === 'active' || selected.has(m.name))).map(m => (
-                                                <button key={m.name} onClick={() => toggleMember(m.name)} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
-                                            ))}
+                            <section className="text-left">
+                                <div className="flex justify-between items-center mb-4"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-left">참석 대원 명단</h4></div>
+                                {PARTS.map(part => {
+                                    const partMembers = allMembers.filter(m => m.part === part.id && (m.status === 'active' || selected.has(m.name)))
+                                                                  .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+                                    const partPresent = partMembers.filter(m => selected.has(m.name)).length;
+                                    
+                                    return (
+                                        <div key={part.id} className="mb-6">
+                                            <h5 className="text-[9px] font-black text-gray-400 mb-2 uppercase flex items-center gap-1.5 text-left font-mono">
+                                                <span className="w-1 h-3 rounded-full" style={{backgroundColor: part.color}}></span>
+                                                {part.name} ({partPresent}/{partMembers.length})
+                                            </h5>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {partMembers.map(m => (
+                                                    <button key={m.name} onClick={() => toggleMember(m.name)} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </section>
                         </div>
                         <footer className="p-6 border-t bg-white flex items-center justify-between shrink-0">
                             <button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors">Delete</button>
                             <div className="flex gap-2">
-                                <button onClick={onClose} className="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400 uppercase active:scale-95">Cancel</button>
-                                <button onClick={() => onSave({...record, members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95">Save Changes</button>
+                                <button onClick={onClose} className="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400 uppercase active:scale-95 transition-transform">Cancel</button>
+                                <button onClick={() => onSave({...record, members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-transform">Save Changes</button>
                             </div>
                         </footer>
                     </div>
@@ -571,13 +600,20 @@
                 const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
                 updateRoster(newList);
             };
+            const sortedMembers = useMemo(() => {
+                const partOrder = PARTS.map(p => p.id);
+                return [...members].sort((a, b) => {
+                    if (a.part !== b.part) return partOrder.indexOf(a.part) - partOrder.indexOf(b.part);
+                    return a.name.localeCompare(b.name, 'ko');
+                });
+            }, [members]);
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, []);
             return (
                 <div className="space-y-6 pb-20 text-left">
-                    <div className="flex justify-between items-end"><div><h2 className="text-3xl font-black text-gray-800 tracking-tight text-left">명단관리</h2><p className="text-gray-400 text-sm font-medium">활동 대원 상태를 설정합니다.</p></div><button onClick={restoreInitial} className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95 shrink-0">명단 초기화</button></div>
+                    <div className="flex justify-between items-end"><div><h2 className="text-3xl font-black text-gray-800 tracking-tight">명단관리</h2><p className="text-gray-400 text-sm font-medium">활동 대원 상태를 설정합니다.</p></div><button onClick={restoreInitial} className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95 shrink-0">명단 초기화</button></div>
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50">
-                        {members.map(m => (
-                            <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left"><div className="flex items-center gap-3"><div className="w-1.5 h-6 rounded-full shrink-0" style={{ backgroundColor: PARTS.find(p=>p.id===m.part)?.color }}></div><div className="text-left"><div className="font-bold text-gray-800 text-sm">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300 font-mono">{PARTS.find(p=>p.id===m.part)?.name}</div></div></div><button onClick={() => toggleStatus(m.name)} className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all ${m.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'} active:scale-95`}>{m.status === 'active' ? '활동 중' : '휴식 중'}</button></div>
+                        {sortedMembers.map(m => (
+                            <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left"><div className="flex items-center gap-3"><div className="w-1.5 h-6 rounded-full shrink-0" style={{ backgroundColor: PARTS.find(p=>p.id===m.part)?.color }}></div><div className="text-left font-mono"><div className="font-bold text-gray-800 text-sm">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300">{PARTS.find(p=>p.id===m.part)?.name}</div></div></div><button onClick={() => toggleStatus(m.name)} className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest transition-all ${m.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'} active:scale-95`}>{m.status === 'active' ? '활동 중' : '휴식 중'}</button></div>
                         ))}
                     </div>
                 </div>
