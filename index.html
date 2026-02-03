@@ -122,8 +122,10 @@
             { id: 'bass', name: '베이스', color: '#37474f' }
         ];
 
+        // 고성능 이미지 압축 (Firestore 용량 한계 방지)
         const compressImage = (base64Str, maxWidth = 600, maxHeight = 600, quality = 0.5) => {
             return new Promise((resolve) => {
+                if (!base64Str) return resolve(null);
                 const img = new Image();
                 img.src = base64Str;
                 img.onload = () => {
@@ -143,7 +145,7 @@
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
             render() {
-                if (this.state.hasError) return <div className="flex flex-col items-center justify-center h-screen p-6 text-center"><h1 className="text-xl font-bold text-red-600 mb-2">오류가 발생했습니다.</h1><button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg">새로고침</button></div>;
+                if (this.state.hasError) return <div className="flex flex-col items-center justify-center h-screen p-6 text-center"><h1 className="text-xl font-bold text-red-600 mb-2">앱 실행 오류</h1><button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg">새로고침</button></div>;
                 return this.props.children;
             }
         }
@@ -210,7 +212,7 @@
                         if (existing) await setDoc(doc(db, 'history', existing.id), record);
                         else await addDoc(collection(db, 'history'), record);
                         showToast("저장되었습니다."); setAttendanceMap({});
-                    } catch (err) { showToast("저장 실패(용량 초과 가능성)"); }
+                    } catch (err) { showToast("저장 실패(용량 초과)"); }
                 };
                 confirm(existing ? "중복 데이터 확인" : "출석 저장", existing ? `이미 ${formattedDate} 기록이 있습니다. 덮어쓰시겠습니까?` : `${formattedDate} 기록을 저장하시겠습니까?`, executeSave);
             };
@@ -262,7 +264,7 @@
                             </div>
                         </div>
 
-                        <nav className="md:hidden fixed bottom-0 w-full h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg">
+                        <nav className="md:hidden fixed bottom-0 w-full h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-center">
                             <NavIconBtn id="stats" icon="bar-chart-2" label="현황판" active={activeTab} onClick={setActiveTab} />
                             <NavIconBtn id="attendance" icon="check-square" label="출석체크" active={activeTab} onClick={setActiveTab} />
                             <NavIconBtn id="manage" icon="users" label="명단관리" active={activeTab} onClick={setActiveTab} />
@@ -280,9 +282,11 @@
                                 else { 
                                     let updatedRecord = { ...r };
                                     if (updatedRecord.image && updatedRecord.image.startsWith('data:image')) updatedRecord.image = await compressImage(updatedRecord.image);
-                                    if(mode==='online') await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', r.id), updatedRecord); 
-                                    else setHistory(history.map(h=>h.id===r.id?updatedRecord:h)); 
-                                    showToast("기록이 수정되었습니다."); setEditingHistory(null); 
+                                    try {
+                                        if(mode==='online') await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', r.id), updatedRecord); 
+                                        else setHistory(history.map(h=>h.id===r.id?updatedRecord:h)); 
+                                        showToast("기록이 수정되었습니다."); setEditingHistory(null); 
+                                    } catch (e) { showToast("저장 실패(용량 초과)"); }
                                 } 
                             }} 
                             onDelete={(id) => { if(!isAuthenticated) setShowAuthOverlay(true); else confirm("삭제", "정말 삭제하시겠습니까?", async () => { if(mode==='online') await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', id)); else setHistory(history.filter(h=>h.id!==id)); showToast("삭제됨"); setEditingHistory(null); }); }}
@@ -459,14 +463,12 @@
             const [filterType, setFilterType] = useState('all'); const [selectedId, setSelectedId] = useState(''); 
             const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
-            // 데이터에 존재하는 연도들 추출
             const availableYears = useMemo(() => {
                 const years = new Set(history.map(h => h.date.split('.')[0].trim()));
                 if (years.size === 0) return [new Date().getFullYear().toString()];
                 return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a));
             }, [history]);
 
-            // 선택된 연도에 따른 필터링된 역사 데이터
             const filteredByYear = useMemo(() => {
                 return history.filter(h => h.date.startsWith(selectedYear));
             }, [history, selectedYear]);
@@ -486,27 +488,18 @@
                         data: { labels: sorted.map(h => h.date.split('. ')[2] + '일'), datasets: [{ label, data: chartData, borderColor: color, backgroundColor: filterType === 'member' ? `${color}44` : 'rgba(72, 52, 212, 0.1)', fill: filterType !== 'member', tension: 0.4, pointRadius: 4 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false }, ticks: filterType === 'member' ? { stepSize: 1, callback: (v) => v === 1 ? '출' : v === 0 ? '결' : '' } : { precision: 0 } }, x: { grid: { display: false } } } }
                     });
-                } else if (chartInstance.current) {
-                    chartInstance.current.destroy();
-                }
+                } else if (chartInstance.current) { chartInstance.current.destroy(); }
             }, [filteredByYear, filterType, selectedId, members]);
 
             return (
                 <div className="space-y-6 pb-10 text-left">
                     <div className="flex justify-between items-center px-1">
                         <h2 className="text-3xl font-black text-gray-800 tracking-tight">출석현황판</h2>
-                        {/* 연도 선택 드랍다운 */}
                         <div className="relative inline-block">
-                            <select 
-                                value={selectedYear} 
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all"
-                            >
+                            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-xl text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all">
                                 {availableYears.map(y => <option key={y} value={y}>{y}년</option>)}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                                <i data-lucide="chevron-down" className="w-4 h-4"></i>
-                            </div>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><i data-lucide="chevron-down" className="w-4 h-4"></i></div>
                         </div>
                     </div>
                     
@@ -517,7 +510,7 @@
                     </div>
 
                     <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 text-left">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                             <div><h3 className="text-lg font-black text-gray-800 tracking-tight">{selectedYear}년 추이</h3><p className="text-xs text-gray-400 font-medium tracking-tighter">연도별 데이터를 분리해서 확인하세요.</p></div>
                             <div className="flex flex-wrap items-center gap-1.5">
                                 <FilterTab active={filterType === 'all'} onClick={() => {setFilterType('all'); setSelectedId('');}} label="전체" />
@@ -605,18 +598,18 @@
                             <div><h3 className="text-xl font-black text-gray-800 tracking-tight">{record.date} 상세</h3><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 font-mono">Record ID: {record.id?.toString().slice(0,8)}</p></div>
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600"><i data-lucide="x" className="w-6 h-6"></i></button>
                         </header>
-                        <div className="px-6 py-4 bg-gray-50/50 border-b flex items-center justify-around shrink-0 gap-2 hide-scrollbar">
+                        <div className="px-6 py-4 bg-gray-50/50 border-b flex items-center justify-around shrink-0 gap-2 hide-scrollbar text-center">
                             <div className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase">전체</span><span className="text-base font-black text-blue-600 font-mono">{selected.size}</span></div>
                             <div className="w-px h-6 bg-gray-200"></div>
-                            {summary.map(p => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center" style={{color: p.color}}>{p.name.slice(0,1)}</span><span className="text-xs font-black text-gray-700 font-mono">{p.count}</span></div>))}
+                            {summary.map(p => (<div key={p.id} className="flex flex-col items-center text-center"><span className="text-[9px] font-black text-gray-400 uppercase text-center" style={{color: p.color}}>{p.name.slice(0,1)}</span><span className="text-xs font-black text-gray-700 font-mono">{p.count}</span></div>))}
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar">
                             <section>
                                 <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">출석 사진</h4>
-                                <div className="relative group bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center">
+                                <div className="relative group bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center text-center">
                                     {image ? (
                                         <div className="w-full relative text-center">
-                                            <img src={image} className="w-full h-48 object-cover mx-auto shadow-sm" />
+                                            <img src={image} className="w-full h-48 object-cover text-center mx-auto shadow-sm" />
                                             {ocrStatus === "processing" && (
                                                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center">
                                                     <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto"><div className="bg-blue-600 h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
@@ -687,7 +680,7 @@
                         {inactiveMembers.length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2 px-1"><i data-lucide="moon" className="w-3 h-3"></i>휴식 중 대원 ({inactiveMembers.length}명)</h4>
-                                <div className="bg-white rounded-3xl shadow-sm border-2 border-red-50 overflow-hidden divide-y divide-gray-50">
+                                <div className="bg-white rounded-3xl shadow-sm border-2 border-red-50 overflow-hidden divide-y divide-gray-50 text-left">
                                     {inactiveMembers.map(m => (
                                         <div key={m.name} className="flex items-center justify-between p-4 hover:bg-red-50/30 transition-colors">
                                             <div className="flex items-center gap-3 text-left">
@@ -704,11 +697,11 @@
                             const activeInPart = members.filter(m => m.part === part.id && m.status === 'active').sort((a, b) => a.name.localeCompare(b.name, 'ko'));
                             if (activeInPart.length === 0) return null;
                             return (
-                                <div key={part.id} className="space-y-3">
+                                <div key={part.id} className="space-y-3 text-left">
                                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1"><span className="w-1 h-3.5 rounded-full" style={{ backgroundColor: part.color }}></span>{part.name} 활동 중 ({activeInPart.length}/{partStats[part.id].total})</h4>
                                     <div className="bg-white rounded-3xl shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50">
                                         {activeInPart.map(m => (
-                                            <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                                            <div key={m.name} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left">
                                                 <div className="flex items-center gap-3 text-left">
                                                     <div className="w-1.5 h-6 rounded-full shrink-0" style={{ backgroundColor: part.color }}></div>
                                                     <div className="text-left font-mono"><div className="font-bold text-gray-800 text-sm">{m.name}</div><div className="text-[9px] font-black uppercase tracking-widest text-gray-300">{part.name}</div></div>
