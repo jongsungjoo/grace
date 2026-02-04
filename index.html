@@ -642,7 +642,7 @@
                     <div className="flex justify-between items-center">
                         <div className="text-left"><h2 className="text-3xl font-black text-gray-800">성가음원&악보</h2><p className="text-xs text-gray-400 font-bold">연습용 음원 링크</p></div>
                         {/* [수정] 닫기 버튼 클릭 시 폼 초기화 로직 추가 */}
-                        <button onClick={() => { if(showAdd) resetForm(); else setShowAdd(true); }} className="bg-blue-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-blue-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
                     
                     <div className="relative">
@@ -736,7 +736,7 @@
                 <div className="space-y-6 fade-in text-left">
                     <div className="flex justify-between items-center">
                         <div><h2 className="text-3xl font-black text-gray-800">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold">유튜브 영상 아카이브</p></div>
-                        <button onClick={() => setShowAdd(!showAdd)} className="bg-red-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-red-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
 
                     <div className="relative">
