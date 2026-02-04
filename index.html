@@ -75,7 +75,6 @@
             { id: 'bass', name: '베이스', color: '#37474f' }
         ];
 
-        // [에러 해결] Lucide 아이콘을 React에서 안전하게 렌더링하기 위한 컴포넌트
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
             const ref = useRef(null);
             useEffect(() => {
@@ -249,8 +248,8 @@
                         <div className="flex-1 overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 hide-scrollbar">
                             <div className="max-w-4xl mx-auto">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
-                                {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
-                                {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
+                                {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
+                                {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'manage' && <ManageView members={sortedMembers} requestAuth={requestAuth} showToast={showToast} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} />}
                             </div>
@@ -481,31 +480,18 @@
 
             const handleOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
-                
                 setOcrStatus("processing");
                 setOcrProgress(0);
-                
                 try {
                     const compressed = await compressImage(file);
                     setPreviewImage(compressed);
-
                     const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
-                        logger: m => { 
-                            if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); 
-                        }
+                        logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); }
                     });
-
                     const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
                     const newMap = { ...attendanceMap };
                     let foundCount = 0;
-                    
-                    activeMembers.forEach(m => { 
-                        if (cleanText.includes(m.name)) {
-                            newMap[m.name] = true; 
-                            foundCount++;
-                        }
-                    });
-
+                    activeMembers.forEach(m => { if (cleanText.includes(m.name)) { newMap[m.name] = true; foundCount++; } });
                     setAttendanceMap(newMap);
                     setOcrStatus("success");
                     showToast(`${foundCount}명의 대원이 인식되었습니다.`);
@@ -513,9 +499,7 @@
                     console.error("OCR Error Detail:", err); 
                     setOcrStatus("idle"); 
                     showToast("이미지 인식 중 오류가 발생했습니다. 직접 선택해 주세요.");
-                } finally {
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                }
+                } finally { if (fileInputRef.current) fileInputRef.current.value = ""; }
             };
 
             const togglePart = (partId) => {
@@ -599,26 +583,50 @@
             );
         };
 
-        const MusicView = ({ songs, requestAuth, askConfirm, showToast }) => {
+        const MusicView = ({ songs, requestAuth, askConfirm, showToast, isAdmin }) => {
             const [showAdd, setShowAdd] = useState(false);
+            const [searchTerm, setSearchTerm] = useState('');
             const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } });
 
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
                 let finalImage = form.image;
-                if (form.file) {
-                    finalImage = await compressImage(form.file, 400, 400);
-                }
+                if (form.file) { finalImage = await compressImage(form.file, 400, 400); }
                 const data = { ...form, image: finalImage, updatedAt: new Date().toISOString() };
                 delete data.file;
-
-                if (form.id) { await setDoc(doc(db, 'music', form.id), data); showToast("수정되었습니다."); }
-                else { await addDoc(collection(db, 'music'), data); showToast("저장되었습니다."); }
+                
+                // [수정] form.id 여부 확인 후 업데이트 또는 추가 로직 실행
+                if (form.id) { 
+                    await setDoc(doc(db, 'music', form.id), data); 
+                    showToast("수정되었습니다."); 
+                }
+                else { 
+                    await addDoc(collection(db, 'music'), data); 
+                    showToast("저장되었습니다."); 
+                }
                 resetForm();
             });
 
             const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } }); setShowAdd(false); };
-            const handleEdit = (song) => requestAuth(() => { setForm(song); setShowAdd(true); });
+            
+            // [수정] handleEdit에서 ID를 명시적으로 할당하여 누락 방지
+            const handleEdit = (song) => requestAuth(() => { 
+                setForm({
+                    id: song.id,
+                    title: song.title || '',
+                    date: song.date || '',
+                    image: song.image || '',
+                    links: {
+                        s: song.links?.s || '',
+                        a: song.links?.a || '',
+                        t: song.links?.t || '',
+                        b: song.links?.b || '',
+                        sheet: song.links?.sheet || ''
+                    }
+                });
+                setShowAdd(true); 
+            });
+
             const handleDelete = (id) => requestAuth(() => {
                 askConfirm("성가 삭제", "이 데이터를 삭제하시겠습니까?", async () => {
                     const { db, doc, deleteDoc } = window.MyFirebase;
@@ -627,12 +635,27 @@
                 });
             });
 
+            const filteredSongs = songs.filter(s => s.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+
             return (
                 <div className="space-y-6 fade-in">
                     <div className="flex justify-between items-center">
                         <div className="text-left"><h2 className="text-3xl font-black text-gray-800">성가음원&악보</h2><p className="text-xs text-gray-400 font-bold">연습용 음원 링크</p></div>
-                        <button onClick={() => setShowAdd(!showAdd)} className="bg-blue-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
+                        {/* [수정] 닫기 버튼 클릭 시 폼 초기화 로직 추가 */}
+                        <button onClick={() => { if(showAdd) resetForm(); else setShowAdd(true); }} className="bg-blue-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
+                    
+                    <div className="relative">
+                        <input 
+                            type="text" 
+                            placeholder="성가 제목 검색 (예: 나의 죄를 씻기는)" 
+                            className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"><LucideIcon name="search" className="w-5 h-5" /></div>
+                    </div>
+
                     {showAdd && (
                         <div className="bg-white p-6 rounded-[32px] border-2 border-blue-50 scale-in space-y-4 shadow-xl relative text-left">
                             <h3 className="font-black text-gray-800 text-lg mb-2">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
@@ -645,10 +668,10 @@
                                 <input type="date" className="flex-1 bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
-                                <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
-                                <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
-                                <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
+                                <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links?.s || ''} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
+                                <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links?.a || ''} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
+                                <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links?.t || ''} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
+                                <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links?.b || ''} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
                             </div>
                             <div className="flex gap-2 pt-2">
                                 <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95">취소</button>
@@ -657,13 +680,13 @@
                         </div>
                     )}
                     <div className="grid gap-6">
-                        {songs.map(song => (
+                        {filteredSongs.length > 0 ? filteredSongs.map(song => (
                             <div key={song.id} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 flex flex-col md:flex-row group transition-all hover:shadow-md text-left">
-                                <div className="w-full md:w-48 h-48 bg-gray-100 shrink-0 relative">
+                                <div className="w-full md:w-48 h-48 bg-gray-100 shrink-0 relative cursor-pointer">
                                     {song.image ? <img src={song.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><LucideIcon name="music" className="w-12 h-12" /></div>}
-                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => handleEdit(song)} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDelete(song.id)} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
+                                    <div className={`absolute top-2 right-2 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                                 <div className="flex-1 p-6 flex flex-col justify-between">
@@ -676,14 +699,17 @@
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="text-center py-20 text-gray-300 font-bold">검색 결과가 없습니다.</div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        const VideoView = ({ videos, requestAuth, askConfirm, showToast }) => {
+        const VideoView = ({ videos, requestAuth, askConfirm, showToast, isAdmin }) => {
             const [showAdd, setShowAdd] = useState(false);
+            const [searchTerm, setSearchTerm] = useState('');
             const [form, setForm] = useState({ title: '', date: '', url: '' });
 
             const handleSave = () => requestAuth(async () => {
@@ -704,12 +730,26 @@
                 });
             });
 
+            const filteredVideos = videos.filter(v => v.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+
             return (
                 <div className="space-y-6 fade-in text-left">
                     <div className="flex justify-between items-center">
                         <div><h2 className="text-3xl font-black text-gray-800">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold">유튜브 영상 아카이브</p></div>
                         <button onClick={() => setShowAdd(!showAdd)} className="bg-red-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
+
+                    <div className="relative">
+                        <input 
+                            type="text" 
+                            placeholder="영상 제목 검색 (예: 할레 할레 할레)" 
+                            className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"><LucideIcon name="search" className="w-5 h-5" /></div>
+                    </div>
+
                     {showAdd && (
                         <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl relative text-left">
                             <h3 className="font-black text-gray-800 text-lg mb-2">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
@@ -723,7 +763,7 @@
                         </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {videos.map(vid => {
+                        {filteredVideos.length > 0 ? filteredVideos.map(vid => {
                             const yid = getYoutubeId(vid.url);
                             return (
                                 <div key={vid.id} className="bg-white rounded-[28px] overflow-hidden shadow-sm border border-gray-50 group transition-all hover:shadow-md text-left">
@@ -732,7 +772,7 @@
                                         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                             <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white"><LucideIcon name="play" className="w-6 h-6 ml-1" /></div>
                                         </div>
-                                        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                        <div className={`absolute top-3 right-3 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
                                             <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
                                         </div>
@@ -740,7 +780,9 @@
                                     <div className="p-5"><div className="text-[10px] font-black text-red-500 mb-1">{vid.date}</div><h4 className="font-black text-gray-800 line-clamp-2 leading-tight">{vid.title}</h4></div>
                                 </div>
                             );
-                        })}
+                        }) : (
+                            <div className="col-span-full text-center py-20 text-gray-300 font-bold">검색 결과가 없습니다.</div>
+                        )}
                     </div>
                 </div>
             );
@@ -752,12 +794,10 @@
                 const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
                 const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
             });
-
             const restingMembers = members.filter(m => m.status === 'inactive');
             const activeMembers = members.filter(m => m.status === 'active');
             const groupedByPart = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
             activeMembers.forEach(m => { if (groupedByPart[m.part]) groupedByPart[m.part].push(m); else groupedByPart.staff.push(m); });
-
             const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
             const filteredResting = partFilter === 'all' ? restingMembers : restingMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
 
@@ -813,26 +853,23 @@
             const [isEditable, setIsEditable] = useState(false);
             const [ocrStatus, setOcrStatus] = useState("idle");
             const [ocrProgress, setOcrProgress] = useState(0);
-            
+            const [isFullScreen, setIsFullScreen] = useState(false);
+
             const activeMembers = allMembers.filter(m => m.status === 'active' || selected.has(m.name));
 
             const handleImageOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
                 setOcrStatus("processing");
                 setOcrProgress(0);
-                
                 try {
                     const compressed = await compressImage(file);
                     setImage(compressed);
-
                     const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
                         logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } 
                     });
-
                     const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
                     const next = new Set(selected);
                     allMembers.forEach(m => { if (cleanText.includes(m.name)) next.add(m.name); });
-                    
                     setSelected(next);
                     setOcrStatus("success");
                     showToast("명단 인식이 완료되었습니다.");
@@ -858,7 +895,7 @@
                                 <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">출석 사진</h4>
                                 <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center">
                                     {image ? (
-                                        <div className="w-full relative">
+                                        <div className="w-full relative group cursor-zoom-in" onClick={() => setIsFullScreen(true)}>
                                             <img src={image} className="w-full h-40 object-cover" />
                                             {ocrStatus === "processing" && (
                                                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
@@ -868,9 +905,7 @@
                                             )}
                                         </div>
                                     ) : <LucideIcon name="image" className="w-8 h-8 opacity-20 text-gray-300" />}
-                                    {isEditable && (
-                                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageOCR} disabled={ocrStatus === 'processing'} />
-                                    )}
+                                    {isEditable && <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageOCR} disabled={ocrStatus === 'processing'} />}
                                 </div>
                             </section>
                             <section>
@@ -899,6 +934,23 @@
                             </div>
                         </footer>}
                     </div>
+
+                    {/* Full Screen Image Viewer */}
+                    {isFullScreen && image && (
+                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 fade-in" onClick={() => setIsFullScreen(false)}>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }}
+                                className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-black/20 backdrop-blur-sm transition-all active:scale-90 z-[310]"
+                            >
+                                <LucideIcon name="x" className="w-8 h-8" />
+                            </button>
+                            <img 
+                                src={image} 
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl scale-in"
+                                onClick={(e) => e.stopPropagation()} 
+                            />
+                        </div>
+                    )}
                 </div>
             );
         };
