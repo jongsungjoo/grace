@@ -108,7 +108,8 @@
             const [videos, setVideos] = useState([]);
             const [showInterestModal, setShowInterestModal] = useState(false);
             const [editingHistory, setEditingHistory] = useState(null);
-            
+            const [isAdmin, setIsAdmin] = useState(false);
+
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null });
@@ -154,7 +155,15 @@
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
-            const requestAuth = (callback) => setAuthModal({ isOpen: true, onConfirm: callback });
+            
+            const requestAuth = (callback) => {
+                if (isAdmin) {
+                    callback();
+                } else {
+                    setAuthModal({ isOpen: true, onConfirm: callback });
+                }
+            };
+
             const askConfirm = (title, msg, onConfirm) => setConfirmModal({ isOpen: true, title, msg, onConfirm });
             
             const handleShare = () => {
@@ -181,12 +190,13 @@
             if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff]"><div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#f8faff] overflow-hidden">
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left">
                     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0">
-                        <div className="mb-10 text-left">
+                        <div className="mb-10">
                             <h1 className="text-2xl font-black text-[#4834d4] tracking-tight">주은혜 찬양사역팀</h1>
                             <div className="text-[10px] mt-1 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span> ONLINE MODE
+                                <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
+                                {isAdmin ? 'ADMIN SESSION ACTIVE' : 'ONLINE MODE'}
                             </div>
                         </div>
                         <nav className="flex-1 space-y-2">
@@ -198,7 +208,9 @@
                         </nav>
                         <div className="mt-auto space-y-2">
                             <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all"><i data-lucide="share-2" className="w-3.5 h-3.5"></i> 링크 공유</button>
-                            <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all"><i data-lucide="log-out" className="w-3.5 h-3.5"></i> 세션 종료</button>
+                            <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all">
+                                <i data-lucide="log-out" className="w-3.5 h-3.5"></i> {isAdmin ? '관리 세션 종료' : '새로고침'}
+                            </button>
                         </div>
                     </aside>
 
@@ -240,7 +252,15 @@
                             showToast("삭제되었습니다."); setEditingHistory(null);
                         });
                     }} showToast={showToast} />}
-                    {authModal.isOpen && <AuthModal onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={(p) => { if(p === MASTER_PASSWORD) { setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); } else { alert("비밀번호가 틀립니다."); } }} />}
+                    {authModal.isOpen && <AuthModal onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={(p) => { 
+                        if(p === MASTER_PASSWORD) { 
+                            setIsAdmin(true);
+                            setAuthModal({ ...authModal, isOpen: false }); 
+                            authModal.onConfirm(); 
+                        } else { 
+                            alert("비밀번호가 틀립니다."); 
+                        } 
+                    }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
                     {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center">{toast.msg}</div>}
                 </div>
@@ -249,18 +269,17 @@
 
         const NavBtn = ({ id, label, icon, active, onClick }) => (
             <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-400 hover:bg-gray-50'}`}>
-                <i data-lucide={icon} className="w-5 h-5"></i>{label}
+                <i data-lucide={icon} className="w-5 h-5 text-left"></i>{label}
             </button>
         );
 
         const NavIconBtn = ({ id, icon, label, active, onClick }) => (
             <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1.5 transition-all ${active ? 'text-blue-600 scale-105' : 'text-gray-300'}`}>
-                <i data-lucide={icon} className="w-6 h-6"></i>
-                <span className="text-[10px] font-black tracking-tighter uppercase">{label}</span>
+                <i data-lucide={icon} className="w-6 h-6 text-left text-left"></i>
+                <span className="text-[10px] font-black tracking-tighter uppercase text-left">{label}</span>
             </button>
         );
 
-        /* --- 출석현황판 --- */
         const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onDetail, requestAuth, askConfirm, showToast }) => {
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -290,46 +309,46 @@
             return (
                 <div className="space-y-6 fade-in text-left">
                     <div className="mb-2">
-                        <h2 className="text-3xl font-black text-gray-800">출석현황판</h2>
-                        <p className="text-sm text-gray-400 font-bold">활동 대원 {activeMembers.length}명 기준</p>
+                        <h2 className="text-3xl font-black text-gray-800 text-left">출석현황판</h2>
+                        <p className="text-sm text-gray-400 font-bold text-left">활동 대원 {activeMembers.length}명 기준</p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 md:gap-4">
+                    <div className="grid grid-cols-3 gap-3 md:gap-4 text-left">
                         <StatCard label="평균 출석" val={stats.avg} unit="명" color="text-[#4834d4]" />
                         <StatCard label="최다 출석" val={stats.max} unit="명" color="text-green-600" />
-                        <div onClick={onOpenInterest} className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-orange-50 transition-colors group">
-                            <div className="text-orange-500 text-[9px] md:text-[10px] font-black mb-1 uppercase tracking-widest flex items-center gap-1"><i data-lucide="alert-circle" className="w-3 h-3"></i> 관심 대원</div>
-                            <div className="text-xl md:text-4xl font-black text-orange-600">{stats.attention}<span className="text-[10px] md:text-sm font-normal text-orange-300 ml-0.5">명</span></div>
+                        <div onClick={onOpenInterest} className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-orange-50 transition-colors group text-left">
+                            <div className="text-orange-500 text-[9px] md:text-[10px] font-black mb-1 uppercase tracking-widest flex items-center gap-1 text-left"><i data-lucide="alert-circle" className="w-3 h-3 text-left"></i> 관심 대원</div>
+                            <div className="text-xl md:text-4xl font-black text-orange-600 text-left">{stats.attention}<span className="text-[10px] md:text-sm font-normal text-orange-300 ml-0.5 text-left">명</span></div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 h-64 relative">
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 h-64 relative text-left">
                         <canvas ref={chartRef}></canvas>
                     </div>
 
-                    <div className="space-y-4 mt-8">
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="font-black text-gray-800 flex items-center gap-2"><i data-lucide="history" className="w-5 h-5 text-blue-500"></i> 상세 출석 이력</h3>
-                            <button onClick={onAddAttendance} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-1 transition-transform active:scale-95">
-                                <i data-lucide="plus" className="w-3.5 h-3.5"></i> 출석체크
+                    <div className="space-y-4 mt-8 text-left text-left">
+                        <div className="flex items-center justify-between px-1 text-left">
+                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-left"><i data-lucide="history" className="w-5 h-5 text-blue-500 text-left"></i> 상세 출석 이력</h3>
+                            <button onClick={onAddAttendance} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-1 transition-transform active:scale-95 text-left">
+                                <i data-lucide="plus" className="w-3.5 h-3.5 text-left text-left"></i> 출석체크
                             </button>
                         </div>
-                        <div className="grid gap-3">
-                            {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
+                        <div className="grid gap-3 text-left">
+                            {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold text-left">기록이 없습니다.</div> : 
                             history.map(h => (
                                 <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow text-left">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                                            {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <i data-lucide="calendar" className="w-6 h-6 text-gray-200"></i>}
+                                    <div className="flex items-center gap-4 flex-1 min-w-0 text-left">
+                                        <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center shrink-0 text-left">
+                                            {h.image ? <img src={h.image} className="w-full h-full object-cover text-left" /> : <i data-lucide="calendar" className="w-6 h-6 text-gray-200 text-left"></i>}
                                         </div>
-                                        <div className="min-w-0">
-                                            <div className="font-bold text-gray-800">{h.date}</div>
-                                            <div className="text-[10px] text-gray-400 font-bold line-clamp-1">{h.members?.join(', ')}</div>
+                                        <div className="min-w-0 text-left">
+                                            <div className="font-bold text-gray-800 text-left">{h.date}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold line-clamp-1 text-left">{h.members?.join(', ')}</div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 shrink-0 ml-2">
-                                        <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">{h.count}명</span>
-                                        <i data-lucide="chevron-right" className="w-4 h-4 text-gray-300"></i>
+                                    <div className="flex items-center gap-3 shrink-0 ml-2 text-left">
+                                        <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full text-left">{h.count}명</span>
+                                        <i data-lucide="chevron-right" className="w-4 h-4 text-gray-300 text-left"></i>
                                     </div>
                                 </div>
                             ))}
@@ -341,8 +360,8 @@
 
         const StatCard = ({ label, val, unit, color }) => (
             <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center text-left">
-                <div className="text-gray-400 text-[9px] md:text-[10px] font-black mb-1 uppercase tracking-widest">{label}</div>
-                <div className={`text-xl md:text-4xl font-black ${color}`}>{val}<span className="text-[10px] md:text-sm font-normal text-gray-200 ml-0.5">{unit}</span></div>
+                <div className="text-gray-400 text-[9px] md:text-[10px] font-black mb-1 uppercase tracking-widest text-left">{label}</div>
+                <div className={`text-xl md:text-4xl font-black ${color} text-left`}>{val}<span className="text-[10px] md:text-sm font-normal text-gray-200 ml-0.5 text-left">{unit}</span></div>
             </div>
         );
 
@@ -352,12 +371,8 @@
             const [previewImage, setPreviewImage] = useState(null);
             const [ocrStatus, setOcrStatus] = useState("idle");
             const [ocrProgress, setOcrProgress] = useState(0);
-            
             const activeMembers = members.filter(m => m.status === 'active');
-
-            useEffect(() => {
-                setAttendanceMap({});
-            }, [members]);
+            useEffect(() => { setAttendanceMap({}); }, [members]);
 
             const handleOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
@@ -367,7 +382,6 @@
                     setPreviewImage(compressed);
                 };
                 reader.readAsDataURL(file);
-
                 setOcrStatus("processing"); setOcrProgress(0);
                 try {
                     const worker = await Tesseract.createWorker('kor', 1, { logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } });
@@ -402,49 +416,47 @@
             return (
                 <div className="space-y-6 fade-in pb-10 text-left">
                     <div className="flex items-center justify-between">
-                        <button onClick={onCancel} className="text-gray-400 font-bold flex items-center gap-1 transition-transform active:scale-90"><i data-lucide="chevron-left"></i> 뒤로</button>
-                        <h2 className="text-xl font-black text-gray-800">새 출석 기록</h2>
-                        <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-xl font-black shadow-lg">저장</button>
+                        <button onClick={onCancel} className="text-gray-400 font-bold flex items-center gap-1 transition-transform active:scale-90 text-left"><i data-lucide="chevron-left"></i> 뒤로</button>
+                        <h2 className="text-xl font-black text-gray-800 text-left">새 출석 기록</h2>
+                        <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-xl font-black shadow-lg text-left">저장</button>
                     </div>
-
                     <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 overflow-hidden text-left">
-                        <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-gray-800 flex items-center gap-2"><i data-lucide="camera" className="w-5 h-5 text-blue-500"></i> 사진 인식</h3></div>
-                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[160px] flex flex-col items-center justify-center transition-all hover:bg-gray-50">
+                        <div className="flex items-center justify-between mb-4 text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2 text-left"><i data-lucide="camera" className="w-5 h-5 text-blue-500 text-left"></i> 사진 인식</h3></div>
+                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[160px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-left">
                             {previewImage ? (
-                                <div className="w-full relative">
-                                    <img src={previewImage} className="w-full max-h-48 object-contain rounded-2xl mx-auto" />
+                                <div className="w-full relative text-left">
+                                    <img src={previewImage} className="w-full max-h-48 object-contain rounded-2xl mx-auto text-left" />
                                     {ocrStatus === "processing" && (
-                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center">
-                                            <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs"><div className="bg-blue-600 h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
-                                            <p className="text-blue-600 font-black text-xs uppercase animate-pulse">명단 인식 중... {ocrProgress}%</p>
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-left">
+                                            <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs text-left"><div className="bg-blue-600 h-full progress-bar-fill text-left" style={{ width: `${ocrProgress}%` }}></div></div>
+                                            <p className="text-blue-600 font-black text-xs uppercase animate-pulse text-left text-left text-left">명단 인식 중... {ocrProgress}%</p>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center p-4"><i data-lucide="image-plus" className="w-8 h-8 text-gray-300 mx-auto mb-2"></i><p className="text-gray-400 text-xs font-bold">참석 명단 사진을 올리세요</p></div>
+                                <div className="text-center p-4 text-left"><i data-lucide="image-plus" className="w-8 h-8 text-gray-300 mx-auto mb-2 text-left"></i><p className="text-gray-400 text-xs font-bold text-left text-left">참석 명단 사진을 올리세요</p></div>
                             )}
-                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleOCR} />
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer text-left" onChange={handleOCR} />
                         </div>
                     </section>
-
-                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left">
-                        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold mb-6 focus:ring-2 focus:ring-blue-500 outline-none" />
-                        <div className="space-y-8">
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left text-left">
+                        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold mb-6 focus:ring-2 focus:ring-blue-500 outline-none text-left" />
+                        <div className="space-y-8 text-left">
                             {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                 const list = activeMembers.filter(m => m.part === partId);
                                 if (list.length === 0) return null;
                                 return (
-                                    <div key={partId}>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2">
-                                                <span className="w-1 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#4834d4' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
+                                    <div key={partId} className="text-left">
+                                        <div className="flex items-center justify-between mb-3 text-left">
+                                            <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2 text-left">
+                                                <span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#4834d4' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
                                                 {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
                                             </h4>
-                                            <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50">전체</button>
+                                            <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 text-left">전체</button>
                                         </div>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-left">
                                             {list.map(m => (
-                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }} className={`py-3 rounded-2xl text-[11px] font-bold border transition-all ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
+                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }} className={`py-3 rounded-2xl text-[11px] font-bold border transition-all text-left ${attendanceMap[m.name] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95 text-left'}`}>{m.name}</button>
                                             ))}
                                         </div>
                                     </div>
@@ -456,7 +468,6 @@
             );
         };
 
-        /* --- 성가음원&악보 --- */
         const MusicView = ({ songs, requestAuth, askConfirm, showToast }) => {
             const [showAdd, setShowAdd] = useState(false);
             const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } });
@@ -470,17 +481,8 @@
                 resetForm();
             });
 
-            const resetForm = () => {
-                setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } });
-                setShowAdd(false);
-            };
-
-            const handleEdit = (song) => requestAuth(() => {
-                setForm(song);
-                setShowAdd(true);
-            });
-
-            // 관리자 전용 삭제 기능
+            const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } }); setShowAdd(false); };
+            const handleEdit = (song) => requestAuth(() => { setForm(song); setShowAdd(true); });
             const handleDelete = (id) => requestAuth(() => {
                 askConfirm("성가 삭제", "이 데이터를 삭제하시겠습니까?", async () => {
                     const { db, doc, deleteDoc } = window.MyFirebase;
@@ -495,57 +497,52 @@
             };
 
             return (
-                <div className="space-y-6 fade-in text-left">
+                <div className="space-y-6 fade-in text-left text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left text-left"><h2 className="text-3xl font-black text-gray-800 text-left">성가음원&악보</h2><p className="text-xs text-gray-400 font-bold text-left">연습용 음원 링크</p></div>
                         <button onClick={handlePlusClick} className="bg-blue-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left"><i data-lucide={showAdd ? "x" : "plus"}></i></button>
                     </div>
-                    
                     {showAdd && (
                         <div className="bg-white p-6 rounded-[32px] border-2 border-blue-50 scale-in space-y-4 shadow-xl text-left relative">
-                            <button onClick={resetForm} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"><i data-lucide="x" className="w-6 h-6"></i></button>
-                            <h3 className="font-black text-gray-800 text-lg mb-2">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
+                            <button onClick={resetForm} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"><i data-lucide="x" className="w-6 h-6 text-left text-left"></i></button>
+                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
                             <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                            
                             <div className="flex gap-2 text-left">
-                                <label className="flex-1 bg-gray-100 p-4 rounded-2xl text-center cursor-pointer text-sm font-bold text-gray-500 hover:bg-gray-200 transition-colors overflow-hidden whitespace-nowrap">
+                                <label className="flex-1 bg-gray-100 p-4 rounded-2xl text-center cursor-pointer text-sm font-bold text-gray-500 hover:bg-gray-200 transition-colors overflow-hidden whitespace-nowrap text-left">
                                     {form.image ? "이미지 선택됨" : "대표 이미지 선택"}
                                     <input type="file" hidden accept="image/*" onChange={e => { const reader = new FileReader(); reader.onload = (ev) => setForm({...form, image: ev.target.result}); reader.readAsDataURL(e.target.files[0]); }} />
                                 </label>
                                 <input type="date" className="flex-1 bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
                             </div>
-
                             <div className="grid grid-cols-2 gap-2 text-left">
                                 <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
                                 <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
                                 <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
                                 <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
                             </div>
-
                             <div className="flex gap-2 pt-2 text-left">
-                                <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center">취소</button>
-                                <button onClick={handleSave} className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center shadow-lg">{form.id ? "수정 완료" : "저장 완료"}</button>
+                                <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center text-left">취소</button>
+                                <button onClick={handleSave} className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center shadow-lg text-left">{form.id ? "수정 완료" : "저장 완료"}</button>
                             </div>
                         </div>
                     )}
-                    
                     <div className="grid gap-6 text-left">
                         {songs.map(song => (
-                            <div key={song.id} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 flex flex-col md:flex-row group transition-all hover:shadow-md text-left">
-                                <div className="w-full md:w-48 h-48 bg-gray-100 shrink-0 relative">
-                                    {song.image ? <img src={song.image} className="w-full h-full object-cover text-left" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><i data-lucide="music" className="w-12 h-12"></i></div>}
-                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div key={song.id} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 flex flex-col md:flex-row group transition-all hover:shadow-md text-left text-left">
+                                <div className="w-full md:w-48 h-48 bg-gray-100 shrink-0 relative text-left">
+                                    {song.image ? <img src={song.image} className="w-full h-full object-cover text-left" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left"><i data-lucide="music" className="w-12 h-12 text-left"></i></div>}
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-left">
                                         <button onClick={() => handleEdit(song)} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md transition-transform active:scale-90 text-left"><i data-lucide="edit-2" className="w-4 h-4 text-left"></i></button>
                                         <button onClick={() => handleDelete(song.id)} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md transition-transform active:scale-90 text-left"><i data-lucide="trash-2" className="w-4 h-4 text-left"></i></button>
                                     </div>
                                 </div>
-                                <div className="flex-1 p-6 flex flex-col justify-between">
-                                    <div className="text-left text-left"><h3 className="text-xl font-black text-gray-800 line-clamp-1 text-left">{song.title}</h3><p className="text-xs text-blue-500 font-bold text-left">{song.date}</p></div>
+                                <div className="flex-1 p-6 flex flex-col justify-between text-left">
+                                    <div className="text-left text-left text-left"><h3 className="text-xl font-black text-gray-800 line-clamp-1 text-left">{song.title}</h3><p className="text-xs text-blue-500 font-bold text-left">{song.date}</p></div>
                                     <div className="grid grid-cols-4 gap-2 mt-4 text-left">
-                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#e91e63] hover:bg-pink-50 transition-colors text-left">S</button>
-                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#ff9800] hover:bg-orange-50 transition-colors text-left">A</button>
-                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#2196f3] hover:bg-blue-50 transition-colors text-left">T</button>
-                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#37474f] hover:bg-gray-100 transition-colors text-left">B</button>
+                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#e91e63] hover:bg-pink-50 transition-colors text-left text-left">S</button>
+                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#ff9800] hover:bg-orange-50 transition-colors text-left text-left">A</button>
+                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#2196f3] hover:bg-blue-50 transition-colors text-left text-left">T</button>
+                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className="py-3 rounded-2xl text-xs font-black border-2 border-gray-100 text-[#37474f] hover:bg-gray-100 transition-colors text-left text-left">B</button>
                                     </div>
                                 </div>
                             </div>
@@ -555,7 +552,6 @@
             );
         };
 
-        /* --- 찬양팀영상 --- */
         const VideoView = ({ videos, requestAuth, askConfirm, showToast }) => {
             const [showAdd, setShowAdd] = useState(false);
             const [form, setForm] = useState({ title: '', date: '', url: '' });
@@ -568,17 +564,8 @@
                 resetForm();
             });
 
-            const resetForm = () => {
-                setForm({ title: '', date: '', url: '' });
-                setShowAdd(false);
-            };
-
-            const handleEdit = (vid) => requestAuth(() => {
-                setForm(vid);
-                setShowAdd(true);
-            });
-
-            // 관리자 전용 삭제 기능
+            const resetForm = () => { setForm({ title: '', date: '', url: '' }); setShowAdd(false); };
+            const handleEdit = (vid) => requestAuth(() => { setForm(vid); setShowAdd(true); });
             const handleDelete = (id) => requestAuth(() => {
                 askConfirm("영상 삭제", "정말 삭제하시겠습니까?", async () => {
                     const { db, doc, deleteDoc } = window.MyFirebase;
@@ -593,44 +580,40 @@
             };
 
             return (
-                <div className="space-y-6 fade-in text-left">
-                    <div className="flex justify-between items-center text-left">
-                        <div className="text-left text-left text-left"><h2 className="text-3xl font-black text-gray-800 text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left">주은혜 찬양사역팀 유튜브 영상</p></div>
-                        <button onClick={handlePlusClick} className="bg-red-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left"><i data-lucide={showAdd ? "x" : "plus"}></i></button>
+                <div className="space-y-6 fade-in text-left text-left text-left text-left">
+                    <div className="flex justify-between items-center text-left text-left">
+                        <div className="text-left text-left text-left text-left"><h2 className="text-3xl font-black text-gray-800 text-left text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left text-left">주은혜 찬양사역팀 유튜브 영상</p></div>
+                        <button onClick={handlePlusClick} className="bg-red-600 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left text-left"><i data-lucide={showAdd ? "x" : "plus"}></i></button>
                     </div>
-
                     {showAdd && (
-                        <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl text-left relative">
-                            <button onClick={resetForm} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"><i data-lucide="x" className="w-6 h-6"></i></button>
-                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
-                            
+                        <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl text-left relative text-left">
+                            <button onClick={resetForm} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"><i data-lucide="x" className="w-6 h-6 text-left text-left"></i></button>
+                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left text-left">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
                             <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
                             <input type="date" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
                             <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
-                            
                             <div className="flex gap-2 pt-2 text-left">
-                                <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center">취소</button>
-                                <button onClick={handleSave} className="flex-[2] bg-red-600 text-white py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center shadow-lg">{form.id ? "수정 완료" : "저장 완료"}</button>
+                                <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center text-left">취소</button>
+                                <button onClick={handleSave} className="flex-[2] bg-red-600 text-white py-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center shadow-lg text-left">{form.id ? "수정 완료" : "저장 완료"}</button>
                             </div>
                         </div>
                     )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-left">
                         {videos.map(vid => {
                             const yid = getYoutubeId(vid.url);
                             return (
-                                <div key={vid.id} className="bg-white rounded-[28px] overflow-hidden shadow-sm border border-gray-50 group transition-all hover:shadow-md text-left">
-                                    <div className="aspect-video bg-gray-100 relative cursor-pointer text-left" onClick={() => window.open(vid.url, '_blank')}>
-                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/maxresdefault.jpg`} className="w-full h-full object-cover text-left" onError={(e) => e.target.src = `https://img.youtube.com/vi/${yid}/0.jpg`} /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left"><i data-lucide="play" className="w-12 h-12"></i></div>}
-                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center text-left">
-                                            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white text-left text-left"><i data-lucide="play" className="fill-white w-6 h-6 ml-1"></i></div>
+                                <div key={vid.id} className="bg-white rounded-[28px] overflow-hidden shadow-sm border border-gray-50 group transition-all hover:shadow-md text-left text-left text-left">
+                                    <div className="aspect-video bg-gray-100 relative cursor-pointer text-left text-left" onClick={() => window.open(vid.url, '_blank')}>
+                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/maxresdefault.jpg`} className="w-full h-full object-cover text-left text-left" onError={(e) => e.target.src = `https://img.youtube.com/vi/${yid}/0.jpg`} /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left text-left"><i data-lucide="play" className="w-12 h-12"></i></div>}
+                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center text-left text-left">
+                                            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white text-left text-left text-left text-left"><i data-lucide="play" className="fill-white w-6 h-6 ml-1 text-left text-left"></i></div>
                                         </div>
-                                        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all text-left">
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md transition-transform active:scale-90 text-left"><i data-lucide="edit-2" className="w-4 h-4 text-left"></i></button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md transition-transform active:scale-90 text-left"><i data-lucide="trash-2" className="w-4 h-4 text-left"></i></button>
+                                        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all text-left text-left">
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-white/90 p-2 rounded-full text-blue-500 shadow-md transition-transform active:scale-90 text-left text-left"><i data-lucide="edit-2" className="w-4 h-4 text-left"></i></button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-white/90 p-2 rounded-full text-red-500 shadow-md transition-transform active:scale-90 text-left text-left"><i data-lucide="trash-2" className="w-4 h-4 text-left"></i></button>
                                         </div>
                                     </div>
-                                    <div className="p-5 text-left text-left"><div className="text-[10px] font-black text-red-500 mb-1 text-left">{vid.date}</div><h4 className="font-black text-gray-800 line-clamp-2 leading-tight text-left">{vid.title}</h4></div>
+                                    <div className="p-5 text-left text-left text-left text-left"><div className="text-[10px] font-black text-red-500 mb-1 text-left text-left text-left">{vid.date}</div><h4 className="font-black text-gray-800 line-clamp-2 leading-tight text-left text-left text-left">{vid.title}</h4></div>
                                 </div>
                             );
                         })}
@@ -639,38 +622,53 @@
             );
         };
 
-        /* --- 명단관리 --- */
         const ManageView = ({ members, requestAuth, showToast }) => {
             const [partFilter, setPartFilter] = useState('all');
             const toggleStatus = (name) => requestAuth(async () => {
                 const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
                 const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
             });
+
+            // 1. 상태별 분리 (activities: 활동 중 대원만 포함)
             const restingMembers = useMemo(() => members.filter(m => m.status === 'inactive'), [members]);
             const activeMembers = useMemo(() => members.filter(m => m.status === 'active'), [members]);
+
+            // 2. 파트별 그룹화 (activeMembers만 대상으로 함)
             const groupedByPart = useMemo(() => {
                 const group = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
                 activeMembers.forEach(m => { if (group[m.part]) group[m.part].push(m); else group.staff.push(m); });
                 return group;
             }, [activeMembers]);
+
             const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
+
+            // 3. 현재 필터링된 휴식 대원 계산
+            const filteredResting = useMemo(() => {
+                if (partFilter === 'all') return restingMembers;
+                return restingMembers.filter(m => {
+                    if (partFilter === 'staff') return m.part === 'staff' || !PARTS.some(p => p.id === m.part);
+                    return m.part === partFilter;
+                });
+            }, [restingMembers, partFilter]);
+
             return (
-                <div className="space-y-6 fade-in text-left">
-                    <div className="text-left"><h2 className="text-3xl font-black text-gray-800">명단관리</h2><p className="text-sm text-gray-400 font-bold">활동 및 휴식 대원 관리 (Admin 전용)</p></div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                <div className="space-y-6 fade-in text-left text-left">
+                    <div className="text-left text-left"><h2 className="text-3xl font-black text-gray-800 text-left text-left">명단관리</h2><p className="text-sm text-gray-400 font-bold text-left text-left">활동 및 휴식 대원 관리 (Admin 전용)</p></div>
+                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar text-left text-left">
                         {filterOptions.map(opt => (
                             <button key={opt.id} onClick={() => setPartFilter(opt.id)} className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border ${partFilter === opt.id ? 'bg-[#4834d4] border-[#4834d4] text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}>{opt.name}</button>
                         ))}
                     </div>
-                    <div className="space-y-10 mt-6 text-left">
-                        {(partFilter === 'all' && restingMembers.length > 0) && (
+                    <div className="space-y-10 mt-6 text-left text-left">
+                        {/* 1. 휴식 중인 대원 섹션 (중복 제거됨) */}
+                        {filteredResting.length > 0 && (
                             <div className="space-y-4 text-left">
                                 <div className="flex items-center gap-2 px-1 text-left">
                                     <div className="w-1.5 h-4 rounded-full bg-gray-300 text-left"></div>
-                                    <h3 className="font-black text-gray-500 tracking-tight text-left">휴식 중인 대원 <span className="text-gray-300 text-sm ml-1 font-bold">{restingMembers.length}</span></h3>
+                                    <h3 className="font-black text-gray-500 tracking-tight text-left">휴식 중인 대원 <span className="text-gray-300 text-sm ml-1 font-bold">{filteredResting.length}</span></h3>
                                 </div>
                                 <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 divide-y divide-gray-50 opacity-60 text-left">
-                                    {restingMembers.map(m => (
+                                    {filteredResting.map(m => (
                                         <div key={m.name} className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
                                             <div className="flex items-center gap-4 text-left">
                                                 <div className="w-1 h-8 rounded-full bg-gray-200 text-left"></div>
@@ -679,12 +677,13 @@
                                                     <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-left">{m.part === 'staff' ? 'Staff' : (PARTS.find(p=>p.id===m.part)?.name || m.part)}</div>
                                                 </div>
                                             </div>
-                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600 text-left">활동 복귀</button>
+                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600 text-left text-left">활동 복귀</button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+                        {/* 2. 파트별 활동 대원 명단 섹션 (활동 대원만 표시) */}
                         {filterOptions.filter(o => o.id !== 'all').map(opt => {
                             const partId = opt.id;
                             if (partFilter !== 'all' && partFilter !== partId) return null;
@@ -693,21 +692,21 @@
                             const partInfo = filterOptions.find(o => o.id === partId);
                             return (
                                 <div key={partId} className="space-y-4 text-left">
-                                    <div className="flex items-center gap-2 px-1 text-left">
+                                    <div className="flex items-center gap-2 px-1 text-left text-left">
                                         <div className="w-1.5 h-4 rounded-full text-left" style={{ backgroundColor: partInfo.color || '#4834d4' }}></div>
                                         <h3 className="font-black text-gray-800 tracking-tight text-left">{partInfo.name} <span className="text-gray-300 text-sm ml-1 font-bold">{list.length}</span></h3>
                                     </div>
-                                    <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 divide-y divide-gray-50 text-left">
+                                    <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 divide-y divide-gray-50 text-left text-left">
                                         {list.map(m => (
                                             <div key={m.name} className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center gap-4 text-left">
-                                                    <div className="w-1 h-8 rounded-full text-left text-left" style={{ backgroundColor: m.name === '박용규' ? '#4834d4' : (partInfo.color || '#4834d4') }}></div>
-                                                    <div className="text-left text-left">
+                                                <div className="flex items-center gap-4 text-left text-left text-left">
+                                                    <div className="w-1 h-8 rounded-full text-left text-left text-left" style={{ backgroundColor: m.name === '박용규' ? '#4834d4' : (partInfo.color || '#4834d4') }}></div>
+                                                    <div className="text-left text-left text-left">
                                                         <div className="font-bold text-gray-800 text-left">{m.name}</div>
-                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">{m.role || (m.part === 'staff' ? 'Staff' : partInfo.name)}</div>
+                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-left text-left">{m.role || (m.part === 'staff' ? 'Staff' : partInfo.name)}</div>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 bg-green-50 text-green-600 hover:bg-gray-50 hover:text-gray-400 text-left">휴식 전환</button>
+                                                <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black transition-all active:scale-95 bg-green-50 text-green-600 hover:bg-gray-50 hover:text-gray-400 text-left text-left">휴식 전환</button>
                                             </div>
                                         ))}
                                     </div>
@@ -719,7 +718,6 @@
             );
         };
 
-        /* --- 상세 이력 모달 --- */
         const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, requestAuth, showToast }) => {
             const [selected, setSelected] = useState(new Set(record.members || []));
             const [image, setImage] = useState(record.image || null);
@@ -758,47 +756,47 @@
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-left">
                     <div className="bg-white rounded-[32px] w-full max-w-lg h-[90vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100 text-left">
-                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left">
-                            <div className="flex flex-col flex-1 min-w-0 mr-4 text-left">
-                                <div className="flex items-center gap-3 text-left">
+                        <header className="p-6 border-b flex justify-between items-center shrink-0">
+                            <div className="flex flex-col flex-1 min-w-0 mr-4">
+                                <div className="flex items-center gap-3">
                                     <h3 className="text-xl font-black text-gray-800 truncate text-left text-left">{isEditable ? "편집" : "조회"}</h3>
                                     <input type="date" value={date} onChange={e=>setDate(e.target.value)} disabled={!isEditable} className={`bg-gray-50 border-0 px-3 py-1.5 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-opacity text-left text-left ${!isEditable ? 'opacity-70 pointer-events-none' : 'opacity-100'}`} />
                                 </div>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 text-left">{isEditable ? "Editing Mode" : "View Mode"}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{isEditable ? "Editing Mode" : "View Mode"}</p>
                             </div>
-                            <div className="flex gap-2 shrink-0 text-left">
-                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors text-left"><i data-lucide="edit-3" className="w-5 h-5 text-left"></i></button>}
-                                <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 transition-colors text-left"><i data-lucide="x" className="w-6 h-6 text-left text-left text-left"></i></button>
+                            <div className="flex gap-2 shrink-0">
+                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors text-left"><i data-lucide="edit-3" className="w-5 h-5"></i></button>}
+                                <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 transition-colors text-left"><i data-lucide="x" className="w-6 h-6 text-left text-left text-left text-left"></i></button>
                             </div>
                         </header>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left">
-                            <section className="text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left">출석 사진</h4>
-                                <div className="space-y-3 text-left">
-                                    <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center cursor-zoom-in text-left text-left" onClick={() => image && setIsViewerOpen(true)}>
-                                        {image ? (<div className="w-full relative text-left text-left"><img src={image} className="w-full h-40 object-cover text-left" /><div className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full text-left"><i data-lucide="maximize-2" className="w-3 h-3 text-left"></i></div>
-                                                {ocrStatus === "processing" && (<div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-left"><div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto text-left"><div className="bg-blue-600 h-full progress-bar-fill text-left" style={{ width: `${ocrProgress}%` }}></div></div><p className="text-blue-600 font-black text-xs uppercase animate-pulse text-left">명단 인식 중... {ocrProgress}%</p></div>)}
-                                            </div>) : ( <div className="text-gray-300 text-sm font-bold flex flex-col items-center gap-2 text-left text-left"><i data-lucide="image" className="w-8 h-8 opacity-20 text-left"></i>사진 없음</div> )}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left text-left text-left">
+                            <section className="text-left text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left">출석 사진</h4>
+                                <div className="space-y-3">
+                                    <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center cursor-zoom-in text-left text-left text-left" onClick={() => image && setIsViewerOpen(true)}>
+                                        {image ? (<div className="w-full relative text-left text-left text-left"><img src={image} className="w-full h-40 object-cover text-left" /><div className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full text-left text-left text-left text-left"><i data-lucide="maximize-2" className="w-3 h-3 text-left"></i></div>
+                                                {ocrStatus === "processing" && (<div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-left"><div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto text-left"><div className="bg-blue-600 h-full progress-bar-fill text-left" style={{ width: `${ocrProgress}%` }}></div></div><p className="text-blue-600 font-black text-xs uppercase animate-pulse text-left text-left text-left text-left text-left">명단 인식 중... {ocrProgress}%</p></div>)}
+                                            </div>) : ( <div className="text-gray-300 text-sm font-bold flex flex-col items-center gap-2 text-left text-left text-left"><i data-lucide="image" className="w-8 h-8 opacity-20 text-left"></i>사진 없음</div> )}
                                     </div>
-                                    {isEditable && <label className="flex items-center justify-center gap-2 w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer text-left"><i data-lucide="refresh-cw" className="w-4 h-4 text-left"></i> 사진 변경 및 명단 인식<input type="file" accept="image/*" className="hidden text-left" onChange={handleImgChange} /></label>}
+                                    {isEditable && <label className="flex items-center justify-center gap-2 w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer text-left text-left"><i data-lucide="refresh-cw" className="w-4 h-4 text-left"></i> 사진 변경 및 명단 인식<input type="file" accept="image/*" className="hidden text-left" onChange={handleImgChange} /></label>}
                                 </div>
                             </section>
-                            <section className="text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 text-left">참석 대원 명단 ({selected.size}명)</h4>
+                            <section className="text-left text-left text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 text-left text-left">참석 대원 명단 ({selected.size}명)</h4>
                                 {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                     const list = activeMembers.filter(m => m.part === partId);
                                     if (list.length === 0) return null;
                                     return (
-                                        <div key={partId} className="mb-6 text-left"><div className="flex items-center justify-between mb-2 text-left text-left"><h5 className="text-[9px] font-black text-gray-400 uppercase flex items-center gap-1.5 text-left"><span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#4834d4' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h5>
-                                                {isEditable && <button onClick={() => togglePart(partId)} className="text-[9px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 text-left">전체</button>}
+                                        <div key={partId} className="mb-6"><div className="flex items-center justify-between mb-2 text-left text-left text-left text-left"><h5 className="text-[9px] font-black text-gray-400 uppercase flex items-center gap-1.5 text-left"><span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#4834d4' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h5>
+                                                {isEditable && <button onClick={() => togglePart(partId)} className="text-[9px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 text-left text-left text-left">전체</button>}
                                             </div>
-                                            <div className="grid grid-cols-3 gap-1.5 text-left text-left">{list.map(m => (<button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-left ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'} ${!isEditable ? 'cursor-default pointer-events-none' : 'active:scale-95 text-left'}`}>{m.name}</button>))}</div>
+                                            <div className="grid grid-cols-3 gap-1.5 text-left text-left text-left text-left text-left">{list.map(m => (<button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-left ${selected.has(m.name) ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'} ${!isEditable ? 'cursor-default pointer-events-none' : 'active:scale-95 text-left'}`}>{m.name}</button>))}</div>
                                         </div>
                                     );
                                 })}
                             </section>
                         </div>
-                        {isEditable && <footer className="p-6 border-t bg-white flex items-center justify-between shrink-0 text-left"><button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors text-left text-left">Delete Record</button><div className="flex gap-2 text-left"><button onClick={() => setIsEditable(false)} className="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400 active:scale-95 text-left">Cancel</button><button onClick={() => onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-transform text-center text-left">Save Changes</button></div></footer>}
+                        {isEditable && <footer className="p-6 border-t bg-white flex items-center justify-between shrink-0 text-left"><button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase tracking-widest hover:text-red-600 transition-colors text-left text-left text-left text-left">Delete Record</button><div className="flex gap-2 text-left"><button onClick={() => setIsEditable(false)} className="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400 active:scale-95 text-left">Cancel</button><button onClick={() => onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-transform text-center text-left text-left">Save Changes</button></div></footer>}
                     </div>
-                    {isViewerOpen && <div className="fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4 fade-in text-left text-left" onClick={() => setIsViewerOpen(false)}><img src={image} className="max-w-full max-h-full object-contain shadow-2xl scale-in text-left text-left" /><button className="absolute top-6 right-6 text-white p-4 text-left text-left"><i data-lucide="x" className="w-8 h-8 text-left text-left"></i></button></div>}
+                    {isViewerOpen && <div className="fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4 fade-in text-left text-left" onClick={() => setIsViewerOpen(false)}><img src={image} className="max-w-full max-h-full object-contain shadow-2xl scale-in text-left text-left text-left text-left" /><button className="absolute top-6 right-6 text-white p-4 text-left text-left"><i data-lucide="x" className="w-8 h-8 text-left text-left text-left"></i></button></div>}
                 </div>
             );
         };
@@ -812,11 +810,11 @@
             const attentionList = activeOnes.filter(m => !records3.includes(m.name) && records4.includes(m.name));
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-left">
-                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[70vh] flex flex-col shadow-2xl scale-in border border-gray-100 text-left">
-                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left text-left"><h3 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2 text-left text-left"><i data-lucide="heart" className="text-red-500 w-6 h-6 text-left text-left text-left text-left"></i> 관심 대원 관리</h3><button onClick={onClose} className="p-2 text-gray-400 transition-colors hover:text-gray-600 text-left text-left"><i data-lucide="x" className="w-6 h-6 text-left text-left"></i></button></header>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left text-left text-left">
-                            <section className="text-left text-left text-left"><h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 text-left text-left text-left">관심 필요 (3주 미출석) - {attentionList.length}명</h4><div className="grid grid-cols-3 gap-2 text-left text-left">{attentionList.map(m => ( <div key={m.name} className="bg-orange-50 p-3 rounded-2xl border border-orange-100 text-center text-left text-left text-left"><p className="text-sm font-bold text-orange-700 text-left text-left text-left">{m.name}</p></div> ))}</div></section>
-                            <section className="text-left text-left text-left"><h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-4 text-left text-left text-left">관리 필요 (4주+ 미출석) - {manageList.length}명</h4><div className="grid grid-cols-3 gap-2 text-left text-left text-left">{manageList.map(m => ( <div key={m.name} className="bg-red-50 p-3 rounded-2xl border border-red-100 text-center text-left text-left text-left text-left"><p className="text-sm font-bold text-red-700 text-left text-left text-left text-left">{m.name}</p></div> ))}</div></section>
+                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[70vh] flex flex-col shadow-2xl scale-in border border-gray-100">
+                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left text-left text-left"><h3 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2 text-left text-left text-left"><i data-lucide="heart" className="text-red-500 w-6 h-6 text-left text-left text-left"></i> 관심 대원 관리</h3><button onClick={onClose} className="p-2 text-gray-400 transition-colors hover:text-gray-600 text-left text-left"><i data-lucide="x" className="w-6 h-6 text-left text-left"></i></button></header>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left text-left text-left text-left text-left">
+                            <section className="text-left text-left text-left text-left text-left"><h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 text-left text-left text-left text-left">관심 필요 (3주 미출석) - {attentionList.length}명</h4><div className="grid grid-cols-3 gap-2 text-left text-left text-left text-left">{attentionList.map(m => ( <div key={m.name} className="bg-orange-50 p-3 rounded-2xl border border-orange-100 text-center text-left text-left text-left text-left text-left"><p className="text-sm font-bold text-orange-700 text-left text-left text-left text-left text-left">{m.name}</p></div> ))}</div></section>
+                            <section className="text-left text-left text-left text-left text-left"><h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-4 text-left text-left text-left text-left text-left">관리 필요 (4주+ 미출석) - {manageList.length}명</h4><div className="grid grid-cols-3 gap-2 text-left text-left text-left text-left text-left">{manageList.map(m => ( <div key={m.name} className="bg-red-50 p-3 rounded-2xl border border-red-100 text-center text-left text-left text-left text-left text-left text-left"><p className="text-sm font-bold text-red-700 text-left text-left text-left text-left text-left text-left">{m.name}</p></div> ))}</div></section>
                         </div>
                     </div>
                 </div>
@@ -826,23 +824,23 @@
         const AuthModal = ({ onClose, onConfirm }) => {
             const [input, setInput] = useState("");
             return (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-left text-left">
-                    <div className="bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl text-left text-left">
-                        <h3 className="text-xl font-black text-gray-800 mb-2 text-center text-left">매니저 인증</h3>
-                        <p className="text-sm text-gray-400 mb-6 text-center text-left text-left">보안을 위해 비밀번호가 필요합니다.</p>
-                        <input type="password" autoFocus className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-center tracking-widest mb-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-left text-left" placeholder="Password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && onConfirm(input)} />
-                        <div className="flex gap-2 text-center text-left text-left text-left"><button onClick={onClose} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform text-left text-center">취소</button><button onClick={() => onConfirm(input)} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-left text-center">확인</button></div>
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-left text-left text-left text-left">
+                    <div className="bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl text-left text-left text-left text-left text-left">
+                        <h3 className="text-xl font-black text-gray-800 mb-2 text-center text-left text-left text-left">매니저 인증</h3>
+                        <p className="text-sm text-gray-400 mb-6 text-center text-left text-left text-left text-left text-left">보안을 위해 비밀번호가 필요합니다.</p>
+                        <input type="password" autoFocus className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-center tracking-widest mb-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-left text-left text-left text-left" placeholder="Password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && onConfirm(input)} />
+                        <div className="flex gap-2 text-center text-left text-left text-left text-left text-left"><button onClick={onClose} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform text-left text-center text-left text-left">취소</button><button onClick={() => onConfirm(input)} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-left text-center text-left text-left">확인</button></div>
                     </div>
                 </div>
             );
         };
 
         const ConfirmModal = ({ modal, onClose }) => (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-left text-left text-left">
-                <div className="bg-white p-8 rounded-[32px] w-full max-w-sm scale-in text-center shadow-2xl text-left text-left text-left text-left">
-                    <h3 className="text-xl font-black text-gray-800 mb-2 text-center text-left text-left">{modal.title}</h3>
-                    <p className="text-sm text-gray-400 mb-8 leading-relaxed text-center text-left text-left text-left">{modal.msg}</p>
-                    <div className="flex gap-3 text-center text-left text-left text-left"><button onClick={onClose} className="flex-1 py-4 bg-gray-100 rounded-2xl font-bold text-gray-400 active:scale-95 transition-transform text-left text-center">취소</button><button onClick={() => { modal.onConfirm(); onClose(); }} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-left text-center text-left text-left">확인</button></div>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-left text-left text-left text-left text-left">
+                <div className="bg-white p-8 rounded-[32px] w-full max-w-sm scale-in text-center shadow-2xl text-left text-left text-left text-left text-left text-left">
+                    <h3 className="text-xl font-black text-gray-800 mb-2 text-center text-left text-left text-left text-left">{modal.title}</h3>
+                    <p className="text-sm text-gray-400 mb-8 leading-relaxed text-center text-left text-left text-left text-left text-left">{modal.msg}</p>
+                    <div className="flex gap-3 text-center text-left text-left text-left text-left text-left text-left"><button onClick={onClose} className="flex-1 py-4 bg-gray-100 rounded-2xl font-bold text-gray-400 active:scale-95 transition-transform text-left text-center text-left text-left">취소</button><button onClick={() => { modal.onConfirm(); onClose(); }} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-left text-center text-left text-left text-left text-left">확인</button></div>
                 </div>
             </div>
         );
