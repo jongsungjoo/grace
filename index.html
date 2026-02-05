@@ -17,7 +17,21 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         :root { --primary: #4834d4; --bg: #f8faff; }
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #333; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
+        
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; /* 바디 스크롤 방지하여 내부 컨테이너 스크롤 유도 */
+        }
+
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: var(--bg); 
+            color: #333; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .scale-in { animation: scaleIn 0.2s ease-out; }
@@ -25,22 +39,30 @@
         
         /* 모바일 스크롤 강화 */
         .scroll-container {
+            flex: 1;
+            overflow-y: scroll; /* auto 대신 scroll 권장 */
             -webkit-overflow-scrolling: touch;
-            overflow-y: auto;
             overscroll-behavior-y: contain;
-            flex: 1 1 0%;
-            min-h-0; /* 중요: flex 자식의 최소 높이 제한 해제 */
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .aspect-video { aspect-ratio: 16 / 9; }
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
+
+        /* 터치 반응성 개선 */
+        button, a {
+            touch-action: manipulation;
+        }
     </style>
 </head>
 <body>
-    <div id="root">
+    <div id="root" class="h-full flex flex-col">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #4834d4;">
             <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4834d4; border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <p style="margin-top: 20px; font-weight: bold;">시스템 로드 중...</p>
@@ -218,7 +240,7 @@
             if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff]"><div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left">
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full">
                     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0">
                         <div className="mb-10">
                             <h1 onClick={() => setActiveTab('stats')} className="text-2xl font-black text-[#4834d4] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
@@ -244,8 +266,8 @@
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff]">
+                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
                             <span onClick={() => setActiveTab('stats')} className="font-black text-lg text-[#4834d4] cursor-pointer">주은혜 찬양사역팀</span>
                             <div className="flex items-center gap-2">
                                 <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5" /></button>
@@ -256,8 +278,8 @@
                             </div>
                         </header>
 
-                        {/* [수정] flex-1 min-h-0 구조를 통해 모바일에서도 정확한 높이 계산이 가능하도록 함 */}
-                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0">
+                        {/* 스크롤 가능한 메인 영역 */}
+                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden">
                             <div className="max-w-4xl mx-auto w-full">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
@@ -267,7 +289,7 @@
                             </div>
                         </div>
 
-                        <nav className="md:hidden fixed bottom-0 w-full h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg">
+                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg">
                             <NavIconBtn id="stats" icon="bar-chart-2" label="현황판" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={handleTabChange} />
@@ -453,13 +475,11 @@
                             history.map(h => (
                                 <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow w-full">
                                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        {/* 썸네일 크기 확대: w-16 h-16 */}
                                         <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
                                             {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <LucideIcon name="calendar" className="w-8 h-8 text-gray-200" />}
                                         </div>
                                         <div className="min-w-0">
                                             <div className="font-black text-gray-800 text-base">{h.date}</div>
-                                            {/* 팀원 명단 목록에서 제거하여 깔끔하게 변경 */}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0 ml-2">
@@ -675,8 +695,8 @@
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full">
                         {filteredSongs.length > 0 ? filteredSongs.map(song => (
-                            <div key={song.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex h-28 sm:h-32 group transition-all hover:shadow-md text-left w-full">
-                                <div className="w-28 sm:w-36 h-full bg-gray-100 shrink-0 relative">
+                            <div key={song.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex min-h-[7.5rem] group transition-all hover:shadow-md text-left w-full">
+                                <div className="w-28 sm:w-36 shrink-0 relative bg-gray-100">
                                     {song.image ? <img src={song.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><LucideIcon name="music" className="w-8 h-8" /></div>}
                                     <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/90 p-1.5 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="edit-2" className="w-3.5 h-3.5" /></button>
@@ -684,15 +704,16 @@
                                     </div>
                                 </div>
                                 <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
-                                    <div>
+                                    <div className="mb-2">
                                         <h3 className="text-sm sm:text-base font-black text-gray-800 truncate leading-tight">{song.title}</h3>
                                         <p className="text-[10px] sm:text-xs text-blue-500 font-bold mt-0.5">{song.date}</p>
                                     </div>
-                                    <div className="flex gap-1.5 mt-2 overflow-x-auto hide-scrollbar">
-                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl text-sm font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
-                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl text-sm font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
-                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl text-sm font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
-                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center rounded-xl text-sm font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
+                                    {/* 버튼 크기 및 랩핑 방지 조정 */}
+                                    <div className="flex gap-1.5 mt-auto overflow-x-auto hide-scrollbar py-0.5">
+                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
+                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
+                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
+                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
                                     </div>
                                 </div>
                             </div>
