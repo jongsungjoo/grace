@@ -28,6 +28,8 @@
             -webkit-overflow-scrolling: touch;
             overflow-y: auto;
             overscroll-behavior-y: contain;
+            flex: 1 1 0%;
+            min-h-0; /* 중요: flex 자식의 최소 높이 제한 해제 */
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -242,7 +244,7 @@
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
                         <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0">
                             <span onClick={() => setActiveTab('stats')} className="font-black text-lg text-[#4834d4] cursor-pointer">주은혜 찬양사역팀</span>
                             <div className="flex items-center gap-2">
@@ -254,8 +256,8 @@
                             </div>
                         </header>
 
-                        {/* 스크롤 문제를 위해 scroll-container 클래스 적용 및 속성 최적화 */}
-                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar">
+                        {/* [수정] flex-1 min-h-0 구조를 통해 모바일에서도 정확한 높이 계산이 가능하도록 함 */}
+                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0">
                             <div className="max-w-4xl mx-auto w-full">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
