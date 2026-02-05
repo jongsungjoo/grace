@@ -22,7 +22,7 @@
             height: 100%; 
             margin: 0; 
             padding: 0; 
-            overflow: hidden; /* 바디 스크롤 방지하여 내부 컨테이너 스크롤 유도 */
+            overflow: hidden;
         }
 
         body { 
@@ -37,10 +37,9 @@
         .scale-in { animation: scaleIn 0.2s ease-out; }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        /* 모바일 스크롤 강화 */
         .scroll-container {
             flex: 1;
-            overflow-y: scroll; /* auto 대신 scroll 권장 */
+            overflow-y: scroll;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-y: contain;
             min-height: 0;
@@ -55,7 +54,6 @@
         .aspect-video { aspect-ratio: 16 / 9; }
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
 
-        /* 터치 반응성 개선 */
         button, a {
             touch-action: manipulation;
         }
@@ -278,7 +276,6 @@
                             </div>
                         </header>
 
-                        {/* 스크롤 가능한 메인 영역 */}
                         <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden">
                             <div className="max-w-4xl mx-auto w-full">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
@@ -337,7 +334,7 @@
         );
 
         const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onDetail, requestAuth, askConfirm, showToast }) => {
-            const [subTab, setSubTab] = useState('total'); 
+            const [subTab, setSubTab] = useState('part'); 
             const [selectedMember, setSelectedMember] = useState('');
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -472,22 +469,39 @@
                         </div>
                         <div className="grid gap-3">
                             {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
-                            history.map(h => (
-                                <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow w-full">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
-                                            {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <LucideIcon name="calendar" className="w-8 h-8 text-gray-200" />}
+                            history.map(h => {
+                                // [수정] 지휘/반주(staff) 인원도 포함하여 계산
+                                const countsByPart = h.members.reduce((acc, name) => {
+                                    const part = memberPartMap[name];
+                                    if (part && acc[part] !== undefined) acc[part]++;
+                                    return acc;
+                                }, { staff: 0, soprano: 0, alto: 0, tenor: 0, bass: 0 });
+
+                                return (
+                                    <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow w-full">
+                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
+                                                {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <LucideIcon name="calendar" className="w-8 h-8 text-gray-200" />}
+                                            </div>
+                                            <div className="min-w-0 flex flex-col gap-1">
+                                                <div className="font-black text-gray-800 text-base">{h.date}</div>
+                                                {/* [수정] 지휘/반주(보라색) 포함 5개 파트 배지 표시 */}
+                                                <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                                                    <span className="text-[#4834d4] bg-blue-50 px-1.5 py-0.5 rounded-md">Staff {countsByPart.staff}</span>
+                                                    <span className="text-[#e91e63] bg-pink-50 px-1.5 py-0.5 rounded-md">S {countsByPart.soprano}</span>
+                                                    <span className="text-[#ff9800] bg-orange-50 px-1.5 py-0.5 rounded-md">A {countsByPart.alto}</span>
+                                                    <span className="text-[#2196f3] bg-blue-50 px-1.5 py-0.5 rounded-md">T {countsByPart.tenor}</span>
+                                                    <span className="text-[#37474f] bg-gray-100 px-1.5 py-0.5 rounded-md">B {countsByPart.bass}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0">
-                                            <div className="font-black text-gray-800 text-base">{h.date}</div>
+                                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                                            <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-2 rounded-2xl">{h.count}명</span>
+                                            <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-300" />
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 shrink-0 ml-2">
-                                        <span className="text-sm font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-2xl">{h.count}명</span>
-                                        <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-300" />
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -704,16 +718,16 @@
                                     </div>
                                 </div>
                                 <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
-                                    <div className="mb-2">
+                                    <div className="mb-1">
                                         <h3 className="text-sm sm:text-base font-black text-gray-800 truncate leading-tight">{song.title}</h3>
                                         <p className="text-[10px] sm:text-xs text-blue-500 font-bold mt-0.5">{song.date}</p>
                                     </div>
-                                    {/* 버튼 크기 및 랩핑 방지 조정 */}
+                                    {/* [수정] 버튼 크기 축소: w-9 h-9 */}
                                     <div className="flex gap-1.5 mt-auto overflow-x-auto hide-scrollbar py-0.5">
-                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
-                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
-                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
-                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl text-xs font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
+                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
+                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
+                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
+                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
                                     </div>
                                 </div>
                             </div>
