@@ -193,7 +193,7 @@
                             });
                             onSnapshot(collection(db, 'videos'), (s) => {
                                 const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a,b) => b.updatedAt?.localeCompare(a.updatedAt));
+                                list.sort((a,b) => b.date?.localeCompare(a.date));
                                 setVideos(list);
                             });
                             setReady(true);
@@ -279,7 +279,7 @@
                         <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden">
                             <div className="max-w-4xl mx-auto w-full">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
-                                {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
+                                {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} memberPartMap={members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {})} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'manage' && <ManageView members={sortedMembers} requestAuth={requestAuth} showToast={showToast} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} />}
@@ -340,6 +340,10 @@
             const chartInstance = useRef(null);
             const activeMembers = members.filter(m => m.status === 'active');
 
+            const memberPartMap = useMemo(() => {
+                return members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {});
+            }, [members]);
+
             const stats = useMemo(() => {
                 if (history.length === 0) return { avg: 0, max: 0, attention: 0 };
                 const avg = (history.reduce((a,b) => a + b.count, 0) / history.length).toFixed(1);
@@ -348,10 +352,6 @@
                 const attention = activeMembers.filter(m => !last3.includes(m.name)).length;
                 return { avg, max, attention };
             }, [history, activeMembers]);
-
-            const memberPartMap = useMemo(() => {
-                return members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {});
-            }, [members]);
 
             useEffect(() => {
                 if (history.length > 0 && chartRef.current && (subTab === 'total' || subTab === 'part')) {
@@ -470,7 +470,6 @@
                         <div className="grid gap-3">
                             {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
                             history.map(h => {
-                                // 파트별 인원 계산
                                 const countsByPart = h.members.reduce((acc, name) => {
                                     const part = memberPartMap[name];
                                     if (part && acc[part] !== undefined) acc[part]++;
@@ -485,7 +484,6 @@
                                             </div>
                                             <div className="min-w-0 flex flex-col gap-1">
                                                 <div className="font-black text-gray-800 text-base">{h.date}</div>
-                                                {/* [수정] Staff 배지를 제거하고 4부 파트만 표시 */}
                                                 <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
                                                     <span className="text-[#e91e63] bg-pink-50 px-1.5 py-0.5 rounded-md">S {countsByPart.soprano}</span>
                                                     <span className="text-[#ff9800] bg-orange-50 px-1.5 py-0.5 rounded-md">A {countsByPart.alto}</span>
@@ -718,10 +716,10 @@
                                 </div>
                                 <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
                                     <div className="mb-1">
-                                        <h3 className="text-sm sm:text-base font-black text-gray-800 truncate leading-tight">{song.title}</h3>
-                                        <p className="text-[10px] sm:text-xs text-blue-500 font-bold mt-0.5">{song.date}</p>
+                                        {/* [수정] 폰트 크기 상향 조정 (제목: text-base sm:text-lg, 날짜: text-xs sm:text-sm) */}
+                                        <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight">{song.title}</h3>
+                                        <p className="text-xs sm:text-sm text-blue-500 font-bold mt-0.5">{song.date}</p>
                                     </div>
-                                    {/* [수정] 파트 버튼 크기 최적화 */}
                                     <div className="flex gap-1.5 mt-auto overflow-x-auto hide-scrollbar py-0.5">
                                         <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
                                         <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
@@ -811,8 +809,9 @@
                                         </div>
                                     </div>
                                     <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0 pr-10 sm:pr-12">
-                                        <div className="text-[10px] font-black text-red-500 mb-0.5">{vid.date}</div>
-                                        <h4 className="text-sm sm:text-base font-black text-gray-800 line-clamp-2 leading-tight">{vid.title}</h4>
+                                        {/* [수정] 폰트 크기 상향 조정 (제목: text-base sm:text-lg, 날짜: text-xs sm:text-sm) */}
+                                        <div className="text-xs sm:text-sm font-black text-red-500 mb-0.5">{vid.date}</div>
+                                        <h4 className="text-base sm:text-lg font-black text-gray-800 line-clamp-2 leading-tight">{vid.title}</h4>
                                     </div>
                                     
                                     <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
