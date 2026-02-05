@@ -17,12 +17,21 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         :root { --primary: #4834d4; --bg: #f8faff; }
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #333; -webkit-tap-highlight-color: transparent; margin: 0; overflow: hidden; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #333; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; height: 100vh; height: -webkit-fill-available; overflow: hidden; }
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .scale-in { animation: scaleIn 0.2s ease-out; }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* 모바일 스크롤 강화 */
+        .scroll-container {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+        }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .aspect-video { aspect-ratio: 16 / 9; }
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
@@ -245,7 +254,8 @@
                             </div>
                         </header>
 
-                        <div className="flex-1 overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 hide-scrollbar">
+                        {/* 스크롤 문제를 위해 scroll-container 클래스 적용 및 속성 최적화 */}
+                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar">
                             <div className="max-w-4xl mx-auto">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
