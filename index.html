@@ -716,7 +716,6 @@
                                 </div>
                                 <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
                                     <div className="mb-1">
-                                        {/* [수정] 폰트 크기 상향 조정 (제목: text-base sm:text-lg, 날짜: text-xs sm:text-sm) */}
                                         <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight">{song.title}</h3>
                                         <p className="text-xs sm:text-sm text-blue-500 font-bold mt-0.5">{song.date}</p>
                                     </div>
@@ -809,9 +808,8 @@
                                         </div>
                                     </div>
                                     <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0 pr-10 sm:pr-12">
-                                        {/* [수정] 폰트 크기 상향 조정 (제목: text-base sm:text-lg, 날짜: text-xs sm:text-sm) */}
-                                        <div className="text-xs sm:text-sm font-black text-red-500 mb-0.5">{vid.date}</div>
                                         <h4 className="text-base sm:text-lg font-black text-gray-800 line-clamp-2 leading-tight">{vid.title}</h4>
+                                        <div className="text-xs sm:text-sm font-bold text-red-500 mt-0.5">{vid.date}</div>
                                     </div>
                                     
                                     <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
