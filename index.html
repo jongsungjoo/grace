@@ -71,7 +71,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -89,7 +89,7 @@
             const auth = getAuth(app);
             const db = getFirestore(app);
             window.FB_READY = true;
-            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, signInAnonymously, onAuthStateChanged };
+            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, signInAnonymously, onAuthStateChanged, signInWithCustomToken };
             window.dispatchEvent(new Event('firebase-ready'));
         } catch (e) { console.error(e); }
     </script>
@@ -159,6 +159,7 @@
             const [showInterestModal, setShowInterestModal] = useState(false);
             const [editingHistory, setEditingHistory] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
+            const [user, setUser] = useState(null);
 
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
@@ -175,22 +176,43 @@
             }, []);
 
             const initApp = async () => {
-                const { auth, db, doc, collection, onSnapshot, signInAnonymously, onAuthStateChanged } = window.MyFirebase;
+                const { auth, db, doc, collection, onSnapshot, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.MyFirebase;
                 try {
-                    await signInAnonymously(auth);
+                    // [수정] 토큰 미스매치 오류 해결을 위해 try-catch로 감싸고 실패 시 익명 로그인으로 폴백
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } catch (tokenErr) {
+                            console.warn("Custom token failed, falling back to anonymous:", tokenErr.message);
+                            await signInAnonymously(auth);
+                        }
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
                     onAuthStateChanged(auth, (u) => {
+                        setUser(u);
                         if (u) {
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-grace';
+                            
+                            // 명단 로드
                             onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
+                            
+                            // 역사 로드
                             onSnapshot(collection(db, 'history'), (s) => {
                                 const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
                                 list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
                                 setHistory(list);
                             });
+
+                            // 성가 로드
                             onSnapshot(collection(db, 'music'), (s) => {
                                 const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
                                 list.sort((a,b) => b.updatedAt?.localeCompare(a.updatedAt));
                                 setSongs(list);
                             });
+
+                            // 비디오 로드
                             onSnapshot(collection(db, 'videos'), (s) => {
                                 const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
                                 list.sort((a,b) => b.date?.localeCompare(a.date));
@@ -199,7 +221,11 @@
                             setReady(true);
                         }
                     });
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    console.error("Init App failed:", e); 
+                    // 최후의 수단으로 다시 시도
+                    try { await signInAnonymously(auth); } catch(i){}
+                }
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
@@ -707,7 +733,7 @@
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full">
                         {filteredSongs.length > 0 ? filteredSongs.map(song => (
                             <div key={song.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex min-h-[7.5rem] group transition-all hover:shadow-md text-left w-full">
-                                <div className="w-28 sm:w-36 shrink-0 relative bg-gray-100">
+                                <div className="w-36 sm:w-44 shrink-0 relative bg-gray-100">
                                     {song.image ? <img src={song.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><LucideIcon name="music" className="w-8 h-8" /></div>}
                                     <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/90 p-1.5 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform"><LucideIcon name="edit-2" className="w-3.5 h-3.5" /></button>
