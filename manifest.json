@@ -3,19 +3,19 @@
   "name": "주은혜 찬양사역팀 매니저",
   "icons": [
     {
-      "src": "https://jongsungjoo.github.io/grace/icon.png?v=1",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://jongsungjoo.github.io/grace/icon.png?v=1",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
   ],
-  "start_url": "https://jongsungjoo.github.io/grace/",
+  "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#193278",
   "background_color": "#ffffff"
