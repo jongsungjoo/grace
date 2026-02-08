@@ -4,27 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- 카카오톡/SNS 공유용 Open Graph 태그 (icon.jpg 사용) -->
+    <!-- 아이폰(iOS) PWA 및 홈 화면 추가 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="주은혜매니저">
+    <link rel="apple-touch-icon" href="https://jongsungjoo.github.io/grace/icon.jpg">
+
+    <!-- 안드로이드/크롬 홈 화면 추가 및 테마 설정 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#193278">
+    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://jongsungjoo.github.io/grace/icon.jpg">
+    <link rel="icon" type="image/jpeg" sizes="512x512" href="https://jongsungjoo.github.io/grace/icon.jpg">
+
+    <!-- 카카오톡/SNS 공유용 Open Graph 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="주은혜 찬양사역팀">
     <meta property="og:description" content="인천 온누리교회 주은혜 찬양사역팀 매니저 Pro">
     <meta property="og:image" content="https://jongsungjoo.github.io/grace/icon.jpg">
     <meta property="og:url" content="https://jongsungjoo.github.io/grace/">
-
-    <!-- 바탕화면 아이콘 및 크롬 PWA 설정 -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#193278">
-
-    <!-- 아이콘 설정 (sizes 명시로 크롬 호환성 확보) -->
-    <link rel="apple-touch-icon" sizes="192x192" href="https://jongsungjoo.github.io/grace/icon.jpg">
-    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://jongsungjoo.github.io/grace/icon.jpg">
-    <link rel="icon" type="image/jpeg" sizes="512x512" href="https://jongsungjoo.github.io/grace/icon.jpg">
-    <link rel="shortcut icon" href="https://jongsungjoo.github.io/grace/icon.jpg">
-
-    <!-- 동적 매니페스트 연결을 위한 ID -->
-    <link rel="manifest" id="dynamic-manifest">
 
     <title>주은혜 찬양사역팀 매니저 Pro</title>
     
@@ -69,6 +66,13 @@
             outline: none;
             max-width: 140px;
         }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .error-shake { animation: shake 0.2s ease-in-out 2; }
     </style>
 </head>
 <body>
@@ -79,33 +83,24 @@
         </div>
     </div>
 
+    <!-- 동적 매니페스트 생성 (크롬 대응) -->
+    <link rel="manifest" id="dynamic-manifest">
     <script>
-        // 크롬 브라우저의 홈 화면 추가 시 아이콘 인식을 위한 동적 매니페스트 생성
         (function() {
             const manifest = {
                 "name": "주은혜 찬양사역팀",
-                "short_name": "주은혜",
+                "short_name": "주은혜매니저",
                 "start_url": window.location.href,
                 "display": "standalone",
                 "background_color": "#f8faff",
                 "theme_color": "#193278",
                 "icons": [
-                    {
-                        "src": "https://jongsungjoo.github.io/grace/icon.jpg",
-                        "sizes": "192x192",
-                        "type": "image/jpeg"
-                    },
-                    {
-                        "src": "https://jongsungjoo.github.io/grace/icon.jpg",
-                        "sizes": "512x512",
-                        "type": "image/jpeg"
-                    }
+                    { "src": "https://jongsungjoo.github.io/grace/icon.jpg", "sizes": "192x192", "type": "image/jpeg" },
+                    { "src": "https://jongsungjoo.github.io/grace/icon.jpg", "sizes": "512x512", "type": "image/jpeg" }
                 ]
             };
-            const stringManifest = JSON.stringify(manifest);
-            const blob = new Blob([stringManifest], {type: 'application/json'});
-            const manifestURL = URL.createObjectURL(blob);
-            document.querySelector('#dynamic-manifest').setAttribute('href', manifestURL);
+            const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob));
         })();
     </script>
 
@@ -146,10 +141,9 @@
             { id: 'bass', name: '베이스', color: '#37474f' }
         ];
 
-        // UI 내부용 로고: logo.png
         const LOGO_URL = "https://jongsungjoo.github.io/grace/logo.png"; 
 
-        // --- 유틸리티 및 헬퍼 함수 ---
+        // --- 1. 유틸리티 함수 ---
 
         const getYoutubeId = (url) => {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -158,30 +152,28 @@
         };
 
         const compressImage = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
-            return new Promise((resolve, reject) => {
-                if (!file) return reject("No file provided");
+            return new Promise((resolve) => {
+                if (!file) return resolve(null);
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (event) => {
                     const img = new Image();
                     img.src = event.target.result;
-                    img.onerror = () => resolve(event.target.result); 
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } }
-                        else { if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; } }
-                        canvas.width = width || 100;
-                        canvas.height = height || 100;
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; } }
+                        else { if (h > maxHeight) { w *= maxHeight / h; h = maxHeight; } }
+                        canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, w, h);
                         resolve(canvas.toDataURL('image/jpeg', quality));
                     };
                 };
-                reader.onerror = (e) => reject(e);
             });
         };
+
+        // --- 2. 기초 UI 컴포넌트 ---
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
             const ref = useRef(null);
@@ -233,19 +225,44 @@
             </button>
         );
 
-        // --- 공통 모달 컴포넌트 ---
+        // --- 3. 모달 컴포넌트 ---
 
         const AuthModal = ({ onClose, onConfirm }) => {
             const [input, setInput] = useState("");
+            const [error, setError] = useState(false);
+
+            const handleAttempt = () => {
+                if (input === MASTER_PASSWORD) {
+                    onConfirm();
+                } else {
+                    setError(true);
+                    setInput("");
+                    setTimeout(() => setError(false), 2000);
+                }
+            };
+
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-left">
                     <div className="bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl">
-                        <h3 className="text-xl font-black text-gray-800 mb-2">매니저 인증</h3>
-                        <p className="text-sm text-gray-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                        <input type="password" autoFocus className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-center tracking-widest mb-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && onConfirm(input)} />
-                        <div className="flex gap-2">
+                        <h3 className="text-xl font-black text-gray-800 mb-2 text-center text-[#193278]">매니저 인증</h3>
+                        <p className="text-sm text-gray-400 mb-6 text-center">보안을 위해 비밀번호가 필요합니다.</p>
+                        
+                        <div className="relative mb-4">
+                            <input 
+                                type="password" 
+                                autoFocus 
+                                className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none transition-all ${error ? 'border-red-500 error-shake bg-red-50' : 'border-transparent focus:border-[#193278]'}`}
+                                placeholder="••••••••" 
+                                value={input} 
+                                onChange={e=>setInput(e.target.value)} 
+                                onKeyDown={e=>e.key==='Enter' && handleAttempt()} 
+                            />
+                            {error && <p className="absolute -bottom-6 left-0 right-0 text-[10px] font-bold text-red-500 text-center animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                        </div>
+
+                        <div className="flex gap-2 mt-8">
                             <button onClick={onClose} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
-                            <button onClick={() => onConfirm(input)} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
+                            <button onClick={handleAttempt} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
                         </div>
                     </div>
                 </div>
@@ -268,25 +285,25 @@
         const InterestModal = ({ members, history, onClose }) => {
             const activeOnes = members.filter(m => m.status === 'active');
             const lastRecords = history.slice(0, 4);
-            const records3 = lastRecords.slice(0, 3).flatMap(h => h.members);
-            const records4 = lastRecords.flatMap(h => h.members);
-            const manageList = activeOnes.filter(m => !records4.includes(m.name));
-            const attentionList = activeOnes.filter(m => !records3.includes(m.name) && records4.includes(m.name));
+            const r3 = lastRecords.slice(0, 3).flatMap(h => h.members);
+            const r4 = lastRecords.flatMap(h => h.members);
+            const attentionList = activeOnes.filter(m => !r3.includes(m.name) && r4.includes(m.name));
+            const manageList = activeOnes.filter(m => !r4.includes(m.name));
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-left">
-                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[70vh] flex flex-col shadow-2xl scale-in border border-gray-100 text-left">
-                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left">
-                            <h3 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2 text-left"><LucideIcon name="heart" className="text-red-500 w-6 h-6 text-left" /> 관심 팀원 관리</h3>
-                            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors text-left"><LucideIcon name="x" className="w-6 h-6 text-left" /></button>
+                    <div className="bg-white rounded-[32px] w-full max-w-lg h-[70vh] flex flex-col shadow-2xl scale-in border border-gray-100 text-left overflow-hidden">
+                        <header className="p-6 border-b flex justify-between items-center shrink-0">
+                            <h3 className="text-xl font-black text-gray-800 flex items-center gap-2 text-left"><LucideIcon name="heart" className="text-red-500 w-6 h-6 text-left" /> 관심 팀원 관리</h3>
+                            <button onClick={onClose} className="p-2 text-gray-400"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </header>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar text-left">
-                            <section className="text-left">
-                                <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 text-left">관심 필요 (3주 미출석) - {attentionList.length}명</h4>
-                                <div className="grid grid-cols-3 gap-2 text-left">{attentionList.map(m => ( <div key={m.name} className="bg-orange-50 p-3 rounded-2xl border border-orange-100 text-center transition-shadow hover:shadow-sm text-left"><p className="text-sm font-bold text-orange-700 text-left">{m.name}</p></div> ))}</div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 hide-scrollbar">
+                            <section>
+                                <h4 className="text-xs font-black text-orange-500 mb-4 text-left uppercase">관심 필요 (3주 미출석) - {attentionList.length}명</h4>
+                                <div className="grid grid-cols-3 gap-2">{attentionList.map(m => ( <div key={m.name} className="bg-orange-50 p-3 rounded-2xl border border-orange-100 text-center text-sm font-bold text-orange-700">{m.name}</div> ))}</div>
                             </section>
-                            <section className="text-left">
-                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-4 text-left">관리 필요 (4주+ 미출석) - {manageList.length}명</h4>
-                                <div className="grid grid-cols-3 gap-2 text-left">{manageList.map(m => ( <div key={m.name} className="bg-red-50 p-3 rounded-2xl border border-red-100 text-center transition-shadow hover:shadow-sm text-left"><p className="text-sm font-bold text-red-700 text-left">{m.name}</p></div> ))}</div>
+                            <section>
+                                <h4 className="text-xs font-black text-red-500 mb-4 text-left uppercase">관리 필요 (4주+ 미출석) - {manageList.length}명</h4>
+                                <div className="grid grid-cols-3 gap-2">{manageList.map(m => ( <div key={m.name} className="bg-red-50 p-3 rounded-2xl border border-red-100 text-center text-sm font-bold text-red-700">{m.name}</div> ))}</div>
                             </section>
                         </div>
                     </div>
@@ -303,7 +320,6 @@
             const [ocrStatus, setOcrStatus] = useState("idle");
             const [ocrProgress, setOcrProgress] = useState(0);
             const [isFullScreen, setIsFullScreen] = useState(false);
-            
             const activeMembers = allMembers.filter(m => m.status === 'active' || selected.has(m.name));
 
             const handleImageOCR = async (e) => {
@@ -312,22 +328,17 @@
                 try {
                     const compressed = await compressImage(file);
                     setImage(compressed);
-                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
-                        logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } 
-                    });
-                    const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
+                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', { logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } });
                     const next = new Set(selected);
-                    allMembers.forEach(m => { if (cleanText.includes(m.name)) next.add(m.name); });
-                    setSelected(next); setOcrStatus("success"); showToast("팀원 인식이 완료되었습니다.");
-                } catch (err) {
-                    setOcrStatus("idle"); showToast("인식 오류 발생");
-                }
+                    allMembers.forEach(m => { if (text.replace(/[^가-힣a-zA-Z]/g, '').includes(m.name)) next.add(m.name); });
+                    setSelected(next); setOcrStatus("success"); showToast("인식 완료");
+                } catch (err) { setOcrStatus("idle"); showToast("오류 발생"); }
             };
 
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-left">
                     <div className="bg-white rounded-[32px] w-full max-w-lg h-[90vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100 text-left">
-                        <header className="p-6 border-b flex justify-between items-center shrink-0 text-left">
+                        <header className="p-6 border-b flex justify-between items-center shrink-0">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 overflow-hidden text-left">
                                 <h3 className="text-xl font-black text-gray-800 shrink-0">{isEditable ? "기록 편집" : "기록 조회"}</h3>
                                 {isEditable ? (
@@ -336,41 +347,41 @@
                                     <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-lg truncate">{record.date}</span>
                                 )}
                             </div>
-                            <div className="flex gap-2 shrink-0">
-                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2.5 bg-blue-50 text-[#193278] rounded-xl transition-colors active:scale-90"><LucideIcon name="edit-3" className="w-5 h-5" /></button>}
-                                <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
+                            <div className="flex gap-2">
+                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2.5 bg-blue-50 text-[#193278] rounded-xl active:scale-90"><LucideIcon name="edit-3" className="w-5 h-5" /></button>}
+                                <button onClick={onClose} className="p-2 text-gray-300"><LucideIcon name="x" className="w-6 h-6" /></button>
                             </div>
                         </header>
                         <div className="flex-1 overflow-y-auto p-6 hide-scrollbar text-left">
-                            <div className="space-y-8">
+                            <div className="space-y-8 text-left">
                                 <section className="text-left">
-                                    <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3 text-left">출석 사진</h4>
-                                    <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center">
+                                    <h4 className="text-[10px] font-black text-gray-300 uppercase mb-3">출석 사진</h4>
+                                    <div className="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center text-left">
                                         {image ? (
-                                            <div className="w-full relative group cursor-zoom-in" onClick={() => setIsFullScreen(true)}>
+                                            <div className="w-full relative cursor-zoom-in" onClick={() => setIsFullScreen(true)}>
                                                 <img src={image} className="w-full h-40 object-cover" />
                                                 {ocrStatus === "processing" && (
                                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center text-left">
-                                                        <div className="w-full bg-gray-100 h-1.5 rounded-full mb-2 max-w-[150px]"><div className="bg-[#193278] h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
+                                                        <div className="w-full bg-gray-100 h-1.5 rounded-full mb-2 max-w-[150px] overflow-hidden"><div className="bg-[#193278] h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
                                                         <p className="text-[#193278] font-bold text-[10px] animate-pulse">인식 중 {ocrProgress}%</p>
                                                     </div>
                                                 )}
                                             </div>
-                                        ) : <LucideIcon name="image" className="w-8 h-8 opacity-20 text-gray-300 text-left" />}
+                                        ) : <LucideIcon name="image" className="w-8 h-8 opacity-20 text-gray-300" />}
                                         {isEditable && <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageOCR} disabled={ocrStatus === 'processing'} />}
                                     </div>
                                 </section>
-                                <section className="text-left">
-                                    <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 text-left">참석 팀원 명단 ({selected.size}명)</h4>
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-300 uppercase mb-4 text-left">참석 팀원 명단 ({selected.size}명)</h4>
                                     {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                         const list = activeMembers.filter(m => m.part === partId);
                                         if (list.length === 0) return null;
                                         return (
                                             <div key={partId} className="mb-6 text-left">
-                                                <h5 className="text-[9px] font-black text-gray-400 uppercase flex items-center gap-1.5 mb-2 text-left"><span className="w-1 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h5>
-                                                <div className="grid grid-cols-3 gap-1.5 text-left">
+                                                <h5 className="text-[9px] font-black text-gray-400 uppercase flex items-center gap-1.5 mb-2"><span className="w-1 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h5>
+                                                <div className="grid grid-cols-3 gap-1.5">
                                                     {list.map(m => (
-                                                        <button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-[#193278] border-[#193278] text-white' : 'bg-gray-50 border-gray-100 text-gray-400'} ${!isEditable ? '' : 'active:scale-95'}`}>{m.name}</button>
+                                                        <button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); n.has(m.name) ? n.delete(m.name) : n.add(m.name); setSelected(n); }} className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${selected.has(m.name) ? 'bg-[#193278] border-[#193278] text-white' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>{m.name}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -379,23 +390,19 @@
                                 </section>
                             </div>
                         </div>
-                        {isEditable && <footer className="p-6 border-t bg-white flex items-center justify-between shrink-0 text-left">
-                            <button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase transition-colors hover:text-red-600">Delete</button>
-                            <div className="flex gap-2 text-right">
-                                <button onClick={() => setIsEditable(false)} className="px-5 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400 active:scale-95 transition-transform">Cancel</button>
-                                <button onClick={() => onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-[#193278] text-white rounded-2xl text-[10px] font-black uppercase shadow-lg active:scale-95 transition-transform">Save</button>
+                        {isEditable && <footer className="p-6 border-t bg-white flex items-center justify-between">
+                            <button onClick={() => onDelete(record.id)} className="text-red-400 font-black text-[10px] uppercase">Delete</button>
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsEditable(false)} className="px-5 py-3 border border-gray-200 rounded-2xl text-[10px] font-black text-gray-400">Cancel</button>
+                                <button onClick={() => onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image})} className="px-6 py-3 bg-[#193278] text-white rounded-2xl text-[10px] font-black shadow-lg">Save</button>
                             </div>
                         </footer>}
                     </div>
-                    {isFullScreen && image && (
-                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 fade-in text-left" onClick={() => setIsFullScreen(false)}>
-                            <button onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }} className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-black/20 backdrop-blur-sm transition-all active:scale-90 z-[310] text-left"><LucideIcon name="x" className="w-8 h-8 text-left" /></button>
-                            <img src={image} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl scale-in text-left" onClick={(e) => e.stopPropagation()} />
-                        </div>
-                    )}
                 </div>
             );
         };
+
+        // --- 4. 기능별 화면 컴포넌트 ---
 
         const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onDetail, requestAuth, askConfirm, showToast }) => {
             const [subTab, setSubTab] = useState('part'); 
@@ -403,10 +410,7 @@
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
             const activeMembers = members.filter(m => m.status === 'active');
-
-            const memberPartMap = useMemo(() => {
-                return members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {});
-            }, [members]);
+            const memberPartMap = useMemo(() => members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {}), [members]);
 
             const stats = useMemo(() => {
                 if (history.length === 0) return { avg: 0, max: 0, attention: 0 };
@@ -422,41 +426,11 @@
                     if (chartInstance.current) chartInstance.current.destroy();
                     const sorted = [...history].reverse().slice(-10);
                     const labels = sorted.map(h => h.date.split('. ')[2] + '일');
-
-                    let datasets = [];
-                    if (subTab === 'total') {
-                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count), borderColor: '#193278', backgroundColor: 'rgba(25, 50, 120, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }];
-                    } else if (subTab === 'part') {
-                        datasets = PARTS.map(p => ({
-                            label: p.name,
-                            data: sorted.map(h => h.members.filter(name => memberPartMap[name] === p.id).length),
-                            borderColor: p.color,
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            pointRadius: 3
-                        }));
-                    }
-
-                    chartInstance.current = new Chart(chartRef.current, {
-                        type: 'line',
-                        data: { labels, datasets },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false, 
-                            plugins: { legend: { display: subTab === 'part', position: 'top', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } } }, 
-                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { display: false } }, x: { grid: { display: false } } } 
-                        }
-                    });
+                    let datasets = subTab === 'total' ? [{ label: '총 인원', data: sorted.map(h => h.count), borderColor: '#193278', backgroundColor: 'rgba(25, 50, 120, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] 
+                                                 : PARTS.map(p => ({ label: p.name, data: sorted.map(h => h.members.filter(name => memberPartMap[name] === p.id).length), borderColor: p.color, tension: 0.3, pointRadius: 3 }));
+                    chartInstance.current = new Chart(chartRef.current, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: subTab === 'part' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
                 }
             }, [history, subTab, memberPartMap]);
-
-            const individualHistory = useMemo(() => {
-                if (!selectedMember || history.length === 0) return [];
-                return history.slice(0, 10).map(h => ({
-                    date: h.date,
-                    isPresent: h.members.includes(selectedMember)
-                }));
-            }, [selectedMember, history]);
 
             return (
                 <div className="space-y-6 fade-in text-left">
@@ -464,106 +438,55 @@
                         <h2 className="text-3xl font-black text-gray-800">출석현황판</h2>
                         <p className="text-sm text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {members.length}명)</span></p>
                     </div>
-
                     <div className="grid grid-cols-3 gap-3 md:gap-4">
                         <StatCard label="평균 출석" val={stats.avg} unit="명" color="text-[#193278]" />
                         <StatCard label="최다 출석" val={stats.max} unit="명" color="text-green-600" />
                         <div onClick={onOpenInterest} className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-orange-50 transition-colors group">
-                            <div className="text-orange-500 text-[9px] md:text-[10px] font-black mb-1 uppercase tracking-widest flex items-center gap-1"><LucideIcon name="alert-circle" className="w-3 h-3" /> 관심 팀원</div>
+                            <div className="text-orange-500 text-[9px] md:text-[10px] font-black mb-1 uppercase flex items-center gap-1"><LucideIcon name="alert-circle" className="w-3 h-3" /> 관심 팀원</div>
                             <div className="text-xl md:text-4xl font-black text-orange-600">{stats.attention}<span className="text-[10px] md:text-sm font-normal text-orange-300 ml-0.5">명</span></div>
                         </div>
                     </div>
-
                     <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 relative flex flex-col min-h-[350px]">
                         <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl w-fit mb-4 self-center md:self-start">
-                            <button onClick={() => setSubTab('total')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'total' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>전체</button>
-                            <button onClick={() => setSubTab('part')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'part' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>파트별</button>
-                            <button onClick={() => setSubTab('individual')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'individual' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>개인별</button>
+                            {['total', 'part', 'individual'].map(t => <button key={t} onClick={() => setSubTab(t)} className={`px-4 py-1.5 rounded-xl text-[11px] font-black ${subTab === t ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>{t === 'total' ? '전체' : t === 'part' ? '파트별' : '개인별'}</button>)}
                         </div>
-
-                        {subTab !== 'individual' ? (
-                            <div className="flex-1 min-h-[250px]"><canvas ref={chartRef}></canvas></div>
-                        ) : (
-                            <div className="flex-1 flex flex-col items-center py-4 space-y-6 animate-fadeIn">
-                                <select 
-                                    className="w-full max-w-xs bg-gray-50 border-0 p-3 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={selectedMember}
-                                    onChange={(e) => setSelectedMember(e.target.value)}
-                                >
+                        {subTab !== 'individual' ? <div className="flex-1 min-h-[250px]"><canvas ref={chartRef}></canvas></div> : (
+                            <div className="flex-1 py-4 space-y-6 animate-fadeIn">
+                                <select className="w-full max-w-xs bg-gray-50 border-0 p-3 rounded-2xl font-bold outline-none" value={selectedMember} onChange={e => setSelectedMember(e.target.value)}>
                                     <option value="">팀원 선택</option>
                                     {activeMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
                                 </select>
-                                
                                 {selectedMember ? (
-                                    <div className="w-full space-y-4 text-left">
+                                    <div className="w-full space-y-4">
                                         <div className="flex items-center justify-between px-2">
-                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">최근 10회 출석 이력</span>
-                                            <span className="text-xs font-bold text-[#193278] bg-blue-50 px-2 py-1 rounded-lg">출석률 {Math.round((individualHistory.filter(i=>i.isPresent).length / Math.max(1, individualHistory.length)) * 100)}%</span>
+                                            <span className="text-xs font-black text-gray-400 uppercase">최근 10회 이력</span>
+                                            <span className="text-xs font-bold text-[#193278] bg-blue-50 px-2 py-1 rounded-lg">출석률 {Math.round((history.filter(h=>h.members.includes(selectedMember)).length / Math.max(1, history.length)) * 100)}%</span>
                                         </div>
-                                        <div className="flex flex-col gap-2 text-left">
-                                            {individualHistory.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-2xl group transition-all hover:bg-white border border-transparent hover:border-gray-100 text-left">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 text-[#193278]' : 'bg-red-100 text-red-400'}`}>
-                                                        <LucideIcon name={item.isPresent ? "check" : "x"} className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex-1 flex justify-between items-center text-left">
-                                                        <span className="font-bold text-gray-700 text-sm">{item.date}</span>
-                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.isPresent ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>{item.isPresent ? "ATTENDED" : "ABSENT"}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {history.slice(0, 10).map((h, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-2xl">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${h.members.includes(selectedMember) ? 'bg-blue-100 text-[#193278]' : 'bg-red-100 text-red-400'}`}><LucideIcon name={h.members.includes(selectedMember) ? "check" : "x"} className="w-4 h-4" /></div>
+                                                <div className="flex-1 flex justify-between items-center"><span className="font-bold text-gray-700 text-sm">{h.date}</span><span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${h.members.includes(selectedMember) ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>{h.members.includes(selectedMember) ? "ATTENDED" : "ABSENT"}</span></div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-gray-300 py-10 text-left">
-                                        <LucideIcon name="user-search" className="w-12 h-12 mb-2 opacity-20" />
-                                        <p className="text-sm font-bold">팀원을 선택하여 타임라인을 확인하세요</p>
-                                    </div>
-                                )}
+                                ) : <div className="flex-1 flex flex-col items-center justify-center text-gray-300 py-10"><LucideIcon name="user-search" className="w-12 h-12 mb-2 opacity-20" /><p className="text-sm font-bold">팀원을 선택하세요</p></div>}
                             </div>
                         )}
                     </div>
-
                     <div className="space-y-4 mt-8">
-                        <div className="flex items-center justify-between px-1 text-left">
-                            <h3 className="font-black text-gray-800 flex items-center gap-2 text-left"><LucideIcon name="history" className="w-5 h-5 text-blue-500" /> 상세 출석 이력</h3>
-                            <button onClick={onAddAttendance} className="bg-[#193278] text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-1 transition-transform active:scale-95 text-left">
-                                <LucideIcon name="plus" className="w-3.5 h-3.5" /> 출석체크
-                            </button>
-                        </div>
-                        <div className="grid gap-3 text-left">
-                            {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
-                            history.map(h => {
-                                const countsByPart = h.members.reduce((acc, name) => {
-                                    const part = memberPartMap[name];
-                                    if (part && acc[part] !== undefined) acc[part]++;
-                                    return acc;
-                                }, { soprano: 0, alto: 0, tenor: 0, bass: 0 });
-
-                                return (
-                                    <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow w-full text-left">
-                                        <div className="flex items-center gap-4 flex-1 min-w-0 text-left">
-                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 text-left">
-                                                {h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <LucideIcon name="calendar" className="w-8 h-8 text-gray-200" />}
-                                            </div>
-                                            <div className="min-w-0 flex flex-col gap-1 text-left">
-                                                <div className="font-black text-gray-800 text-base">{h.date}</div>
-                                                <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
-                                                    <span className="text-[#e91e63] bg-pink-50 px-1.5 py-0.5 rounded-md">S {countsByPart.soprano}</span>
-                                                    <span className="text-[#ff9800] bg-orange-50 px-1.5 py-0.5 rounded-md">A {countsByPart.alto}</span>
-                                                    <span className="text-[#2196f3] bg-blue-50 px-1.5 py-0.5 rounded-md">T {countsByPart.tenor}</span>
-                                                    <span className="text-[#37474f] bg-gray-100 px-1.5 py-0.5 rounded-md">B {countsByPart.bass}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0 ml-2 text-right">
-                                            <span className="text-sm font-black text-[#193278] bg-blue-50 px-3 py-2 rounded-2xl">{h.count}명</span>
-                                            <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-300" />
-                                        </div>
+                        <div className="flex items-center justify-between px-1"><h3 className="font-black text-gray-800 flex items-center gap-2"><LucideIcon name="history" className="w-5 h-5 text-blue-500" /> 상세 출석 이력</h3><button onClick={onAddAttendance} className="bg-[#193278] text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-1 transition-transform active:scale-95"><LucideIcon name="plus" className="w-3.5 h-3.5" /> 출석체크</button></div>
+                        {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : history.map(h => {
+                            const pCount = h.members.reduce((acc, name) => { const part = memberPartMap[name]; if (part && acc[part] !== undefined) acc[part]++; return acc; }, { soprano: 0, alto: 0, tenor: 0, bass: 0 });
+                            return (
+                                <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow w-full text-left">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">{h.image ? <img src={h.image} className="w-full h-full object-cover" /> : <LucideIcon name="calendar" className="w-8 h-8 text-gray-200" />}</div>
+                                        <div className="min-w-0 flex flex-col gap-1 text-left"><div className="font-black text-gray-800 text-base">{h.date}</div><div className="flex flex-wrap gap-1.5 text-[10px] font-bold text-left"><span className="text-[#e91e63] bg-pink-50 px-1.5 py-0.5 rounded-md">S {pCount.soprano}</span><span className="text-[#ff9800] bg-orange-50 px-1.5 py-0.5 rounded-md">A {pCount.alto}</span><span className="text-[#2196f3] bg-blue-50 px-1.5 py-0.5 rounded-md">T {pCount.tenor}</span><span className="text-[#37474f] bg-gray-100 px-1.5 py-0.5 rounded-md">B {pCount.bass}</span></div></div>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <div className="flex items-center gap-2 shrink-0 ml-2"><span className="text-sm font-black text-[#193278] bg-blue-50 px-3 py-2 rounded-2xl">{h.count}명</span><LucideIcon name="chevron-right" className="w-5 h-5 text-gray-300" /></div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -572,87 +495,44 @@
         const MusicView = ({ songs, requestAuth, askConfirm, showToast, isAdmin }) => {
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
-            const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } });
-
+            const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '' } });
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
-                let finalImage = form.image;
-                if (form.file) { finalImage = await compressImage(form.file, 400, 400); }
-                const data = { ...form, image: finalImage, updatedAt: new Date().toISOString() };
+                let finalImg = form.image;
+                if (form.file) finalImg = await compressImage(form.file, 400, 400);
+                const data = { ...form, image: finalImg, updatedAt: new Date().toISOString() };
                 delete data.file;
-                if (form.id) { await setDoc(doc(db, 'music', form.id), data); showToast("수정되었습니다."); }
-                else { await addDoc(collection(db, 'music'), data); showToast("저장되었습니다."); }
-                resetForm();
+                if (form.id) await setDoc(doc(db, 'music', form.id), data); else await addDoc(collection(db, 'music'), data);
+                showToast("저장 완료"); resetForm();
             });
-
-            const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } }); setShowAdd(false); };
-            const handleEdit = (song) => requestAuth(() => { 
-                setForm({
-                    id: song.id, title: song.title || '', date: song.date || '', image: song.image || '',
-                    links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '' }
-                });
-                setShowAdd(true); 
-            });
-            const handleDelete = (id) => requestAuth(() => {
-                askConfirm("성가 삭제", "이 데이터를 삭제하시겠습니까?", async () => {
-                    const { db, doc, deleteDoc } = window.MyFirebase;
-                    await deleteDoc(doc(db, 'music', id)); showToast("삭제되었습니다.");
-                });
-            });
-            const filteredSongs = songs.filter(s => (s.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
-
+            const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '' } }); setShowAdd(false); };
+            const filtered = songs.filter(s => (s.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
             return (
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left">
                             <h2 className="text-3xl font-black text-gray-800 text-left">성가음원&악보</h2>
-                            <p className="text-xs text-gray-400 font-bold text-left">연습용 음원 링크</p>
+                            <p className="text-xs text-gray-400 font-bold text-left text-left">연습용 음원 링크</p>
                         </div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left"><LucideIcon name={showAdd ? "x" : "plus"} className="text-left" /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
-                    <div className="relative w-full text-left">
-                        <input type="text" placeholder="성가 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500 text-left" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-left"><LucideIcon name="search" className="w-5 h-5 text-left" /></div>
-                    </div>
+                    <div className="relative w-full"><input type="text" placeholder="성가 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /><div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"><LucideIcon name="search" className="w-5 h-5 text-left" /></div></div>
                     {showAdd && (
                         <div className="bg-white p-6 rounded-[32px] border-2 border-blue-50 scale-in space-y-4 shadow-xl relative text-left w-full text-left">
                             <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
                             <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                            <div className="flex gap-2 text-left text-left">
-                                <label className="flex-1 bg-gray-100 p-4 rounded-2xl text-center cursor-pointer text-sm font-bold text-gray-500 hover:bg-gray-200 transition-colors truncate text-left">{form.image || form.file ? "이미지 선택됨" : "대표 이미지 선택"}<input type="file" hidden accept="image/*" onChange={e => setForm({...form, file: e.target.files[0]})} /></label>
-                                <input type="date" className="flex-1 bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 text-left text-left">
-                                <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
-                                <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
-                                <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
-                                <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
-                            </div>
-                            <div className="flex gap-2 pt-2 text-left text-left"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-left text-left">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black transition-transform active:scale-95 shadow-lg text-left text-left">저장 완료</button></div>
+                            <div className="flex gap-2"><label className="flex-1 bg-gray-100 p-4 rounded-2xl text-center cursor-pointer text-sm font-bold text-gray-500 truncate">{form.image || form.file ? "이미지 선택됨" : "대표 이미지 선택"}<input type="file" hidden accept="image/*" onChange={e => setForm({...form, file: e.target.files[0]})} /></label><input type="date" className="flex-1 bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
+                            <div className="grid grid-cols-2 gap-2 text-left">{['s', 'a', 't', 'b'].map(p => <input key={p} type="text" placeholder={`${p.toUpperCase()} 링크`} className="bg-gray-50 p-3 rounded-xl text-xs font-bold" value={form.links[p]} onChange={e=>setForm({...form, links:{...form.links, [p]:e.target.value}})} />)}</div>
+                            <div className="flex gap-2 pt-2 text-left"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black text-left">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg">저장 완료</button></div>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full text-left text-left">
-                        {filteredSongs.map(song => (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                        {filtered.map(song => (
                             <div key={song.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex min-h-[7.5rem] group transition-all hover:shadow-md text-left w-full text-left">
-                                <div className="w-36 sm:w-44 shrink-0 relative bg-gray-100 text-left text-left">
-                                    {song.image ? <img src={song.image} className="w-full h-full object-cover text-left" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left text-left"><LucideIcon name="music" className="w-8 h-8 text-left" /></div>}
-                                    <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-all z-10 text-left text-left ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/90 p-1.5 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform text-left text-left"><LucideIcon name="edit-2" className="w-3.5 h-3.5 text-left" /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-white/90 p-1.5 rounded-full text-red-500 shadow-md active:scale-90 transition-transform text-left text-left"><LucideIcon name="trash-2" className="w-3.5 h-3.5 text-left" /></button>
-                                    </div>
+                                <div className="w-36 sm:w-44 shrink-0 relative bg-gray-100">{song.image ? <img src={song.image} className="w-full h-full object-cover text-left text-left" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left"><LucideIcon name="music" className="w-8 h-8" /></div>}
+                                    <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}><button onClick={(e) => { e.stopPropagation(); requestAuth(() => { setForm({ ...song, links: song.links || { s: '', a: '', t: '', b: '' } }); setShowAdd(true); }); }} className="bg-white/90 p-1.5 rounded-full text-blue-500 shadow-md"><LucideIcon name="edit-2" className="w-3.5 h-3.5" /></button><button onClick={(e) => { e.stopPropagation(); askConfirm("삭제", "삭제하시겠습니까?", async () => { await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'music', song.id)); showToast("삭제 완료"); }); }} className="bg-white/90 p-1.5 rounded-full text-red-500 shadow-md text-left"><LucideIcon name="trash-2" className="w-3.5 h-3.5" /></button></div>
                                 </div>
-                                <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0 text-left text-left">
-                                    <div className="mb-1 text-left text-left">
-                                        <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight text-left">{song.title}</h3>
-                                        <p className="text-xs sm:text-sm text-[#193278] font-bold mt-0.5 text-left">{song.date}</p>
-                                    </div>
-                                    <div className="flex gap-1.5 mt-auto overflow-x-auto hide-scrollbar py-0.5 text-left">
-                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors text-left ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
-                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors text-left ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
-                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors text-left ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
-                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors text-left ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
-                                    </div>
-                                </div>
+                                <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0 text-left"><div className="text-left text-left text-left text-left"><h3 className="text-base sm:text-lg font-black text-gray-800 truncate text-left">{song.title}</h3><p className="text-xs sm:text-sm text-[#193278] font-bold mt-0.5 text-left">{song.date}</p></div><div className="flex gap-1.5 mt-auto overflow-x-auto hide-scrollbar py-0.5 text-left text-left">{['s', 'a', 't', 'b'].map(p => { const hasLink = song.links?.[p]; return <button key={p} onClick={() => hasLink && window.open(hasLink, '_blank')} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors text-left ${hasLink ? 'border-blue-100 text-[#193278] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>{p.toUpperCase()}</button>; })}</div></div>
                             </div>
                         ))}
                     </div>
@@ -664,61 +544,36 @@
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
             const [form, setForm] = useState({ title: '', date: '', url: '' });
-
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
-                const data = { ...form, createdAt: new Date().toISOString() };
-                if (form.id) { await setDoc(doc(db, 'videos', form.id), data); showToast("수정되었습니다."); }
-                else { await addDoc(collection(db, 'videos'), data); showToast("영상이 추가되었습니다."); }
-                resetForm();
+                if (form.id) await setDoc(doc(db, 'videos', form.id), { ...form, createdAt: new Date().toISOString() }); else await addDoc(collection(db, 'videos'), { ...form, createdAt: new Date().toISOString() });
+                showToast("저장 완료"); resetForm();
             });
-
             const resetForm = () => { setForm({ title: '', date: '', url: '' }); setShowAdd(false); };
-            const handleEdit = (vid) => requestAuth(() => { setForm(vid); setShowAdd(true); });
-            const handleDelete = (id) => requestAuth(() => {
-                askConfirm("영상 삭제", "정말 삭제하시겠습니까?", async () => {
-                    const { db, doc, deleteDoc } = window.MyFirebase;
-                    await deleteDoc(doc(db, 'videos', id)); showToast("삭제되었습니다.");
-                });
-            });
-            const filteredVideos = videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
-
+            const filtered = videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
             return (
-                <div className="fade-in text-left space-y-6 text-left text-left">
-                    <div className="flex justify-between items-center text-left text-left">
-                        <div><h2 className="text-3xl font-black text-gray-800 text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 text-left"><LucideIcon name={showAdd ? "x" : "plus"} className="text-left" /></button>
-                    </div>
-                    <div className="relative w-full text-left text-left text-left">
-                        <input type="text" placeholder="영상 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500 text-left text-left" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-left text-left text-left text-left"><LucideIcon name="search" className="w-5 h-5 text-left text-left text-left" /></div>
-                    </div>
+                <div className="fade-in text-left space-y-6 text-left">
+                    <div className="flex justify-between items-center text-left"><div><h2 className="text-3xl font-black text-gray-800 text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div><button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg active:scale-90 transition-transform"><LucideIcon name={showAdd ? "x" : "plus"} /></button></div>
+                    <div className="relative w-full"><input type="text" placeholder="영상 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /><div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-left"><LucideIcon name="search" className="w-5 h-5 text-left" /></div></div>
                     {showAdd && (
-                        <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl relative text-left w-full text-left text-left">
-                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left text-left">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
-                            <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                            <input type="date" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-                            <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left text-left" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
-                            <div className="flex gap-2 pt-2 text-left text-left text-left"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-left text-left text-left">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-left text-left text-left">완료</button></div>
+                        <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl relative text-left w-full text-left">
+                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
+                            <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                            <input type="date" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
+                            <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
+                            <div className="flex gap-2 pt-2 text-left"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg">완료</button></div>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full text-left text-left text-left">
-                        {filteredVideos.map(vid => {
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                        {filtered.map(vid => {
                             const yid = getYoutubeId(vid.url);
                             return (
-                                <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex h-24 sm:h-28 group transition-all hover:shadow-md text-left w-full cursor-pointer relative text-left text-left text-left">
-                                    <div className="w-36 sm:w-44 h-full bg-gray-100 shrink-0 relative text-left text-left text-left">
-                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/mqdefault.jpg`} className="w-full h-full object-cover text-left text-left" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-left text-left text-left"><LucideIcon name="play" className="w-8 h-8 text-left text-left" /></div>}
-                                        <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-left text-left text-left text-left"><div className="w-8 h-8 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white text-left text-left text-left text-left"><LucideIcon name="play" className="w-4 h-4 ml-0.5 text-left text-left" /></div></div>
+                                <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex h-24 sm:h-28 group transition-all hover:shadow-md text-left w-full cursor-pointer relative">
+                                    <div className="w-36 sm:w-44 h-full bg-gray-100 shrink-0 relative">{yid ? <img src={`https://img.youtube.com/vi/${yid}/mqdefault.jpg`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><LucideIcon name="play" className="w-8 h-8" /></div>}
+                                        <div className="absolute inset-0 bg-black/10 flex items-center justify-center"><div className="w-8 h-8 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white"><LucideIcon name="play" className="w-4 h-4 ml-0.5" /></div></div>
                                     </div>
-                                    <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0 pr-10 sm:pr-12 text-left text-left text-left">
-                                        <h4 className="text-base sm:text-lg font-black text-gray-800 line-clamp-2 leading-tight text-left text-left">{vid.title}</h4>
-                                        <div className="text-xs sm:text-sm font-bold text-red-500 mt-0.5 text-left text-left">{vid.date}</div>
-                                    </div>
-                                    <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all z-10 text-left text-left text-left ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-white/95 p-1.5 rounded-full text-blue-500 shadow-sm active:scale-90 transition-transform text-left text-left text-left text-left"><LucideIcon name="edit-2" className="w-3.5 h-3.5 text-left" /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-white/95 p-1.5 rounded-full text-red-500 shadow-sm active:scale-90 transition-transform text-left text-left text-left text-left"><LucideIcon name="trash-2" className="w-3.5 h-3.5 text-left" /></button>
-                                    </div>
+                                    <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0 pr-10 sm:pr-12 text-left"><h4 className="text-base sm:text-lg font-black text-gray-800 line-clamp-2 leading-tight text-left">{vid.title}</h4><div className="text-xs sm:text-sm font-bold text-red-500 mt-0.5 text-left">{vid.date}</div></div>
+                                    <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}><button onClick={(e) => { e.stopPropagation(); requestAuth(() => { setForm(vid); setShowAdd(true); }); }} className="bg-white/95 p-1.5 rounded-full text-blue-500 shadow-sm"><LucideIcon name="edit-2" className="w-3.5 h-3.5" /></button><button onClick={(e) => { e.stopPropagation(); askConfirm("삭제", "삭제하시겠습니까?", async () => { await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'videos', vid.id)); showToast("삭제 완료"); }); }} className="bg-white/95 p-1.5 rounded-full text-red-500 shadow-sm"><LucideIcon name="trash-2" className="w-3.5 h-3.5" /></button></div>
                                 </div>
                             );
                         })}
@@ -731,53 +586,24 @@
             const [partFilter, setPartFilter] = useState('all');
             const toggleStatus = (name) => requestAuth(async () => {
                 const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
-                const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
+                const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 완료");
             });
             const activeMembers = members.filter(m => m.status === 'active');
             const restingMembers = members.filter(m => m.status === 'inactive');
             const groupedByPart = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
             activeMembers.forEach(m => { if (groupedByPart[m.part]) groupedByPart[m.part].push(m); else groupedByPart.staff.push(m); });
-            const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
-            const filteredResting = partFilter === 'all' ? restingMembers : restingMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
+            const filteredResting = partFilter === 'all' ? restingMembers : restingMembers.filter(m => m.part === partFilter || (partFilter === 'staff' && !PARTS.some(p=>p.id===m.part)));
             return (
-                <div className="space-y-6 fade-in text-left text-left text-left text-left">
-                    <div className="text-left text-left text-left"><h2 className="text-3xl font-black text-gray-800 text-left text-left">명단관리</h2><p className="text-sm text-gray-400 font-bold text-left text-left">활동 팀원 현황</p></div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar text-left text-left text-left">
-                        {filterOptions.map(opt => (
-                            <button key={opt.id} onClick={() => setPartFilter(opt.id)} className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border text-left text-left ${partFilter === opt.id ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}>{opt.name}</button>
-                        ))}
-                    </div>
-                    <div className="space-y-10 mt-6 text-left text-left text-left">
-                        {filteredResting.length > 0 && (
-                            <div className="space-y-4 text-left text-left text-left">
-                                <h3 className="font-black text-gray-500 text-left px-1 flex items-center gap-2 text-left text-left"><div className="w-1.5 h-4 rounded-full bg-gray-300 text-left text-left"></div>휴식 중인 팀원 ({filteredResting.length})</h3>
-                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-60 w-full text-left text-left text-left">
-                                    {filteredResting.map(m => (
-                                        <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left text-left text-left">
-                                            <div className="font-bold text-gray-400 line-through text-left text-left text-left">{m.name}</div>
-                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-gray-50 text-gray-400 hover:text-green-600 transition-colors text-left text-left text-left">활동 복귀</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {filterOptions.filter(o => o.id !== 'all').map(opt => {
+                <div className="space-y-6 fade-in text-left">
+                    <h2 className="text-3xl font-black text-gray-800 text-left">명단관리</h2>
+                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">{[{id:'all', name:'전체'}, {id:'staff', name:'성가사/반주자'}, ...PARTS].map(opt => <button key={opt.id} onClick={() => setPartFilter(opt.id)} className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border ${partFilter === opt.id ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}>{opt.name}</button>)}</div>
+                    <div className="space-y-10 mt-6 text-left text-left">
+                        {filteredResting.length > 0 && <div className="space-y-4 text-left"><h3 className="font-black text-gray-500 text-left px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-gray-300"></div>휴식 팀원 ({filteredResting.length})</h3><div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-60 text-left">{filteredResting.map(m => <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left text-left"><div className="font-bold text-gray-400 line-through text-left">{m.name}</div><button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-gray-50 text-gray-400">활동 복귀</button></div>)}</div></div>}
+                        {[{id:'staff', name:'성가사 & 반주자', color:'#193278'}, ...PARTS].map(opt => {
                             if (partFilter !== 'all' && partFilter !== opt.id) return null;
                             const list = groupedByPart[opt.id];
                             if (!list || list.length === 0) return null;
-                            return (
-                                <div key={opt.id} className="space-y-4 text-left text-left text-left">
-                                    <h3 className="font-black text-gray-800 text-left px-1 flex items-center gap-2 text-left text-left text-left"><div className="w-1.5 h-4 rounded-full text-left text-left" style={{backgroundColor: opt.color || '#193278'}}></div>{opt.name} ({list.length})</h3>
-                                    <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 transition-shadow hover:shadow-md w-full text-left text-left text-left">
-                                        {list.map(m => (
-                                            <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left text-left text-left text-left">
-                                                <div className="font-bold text-gray-800 text-left text-left text-left">{m.name}</div>
-                                                <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-green-50 text-green-600 transition-colors text-left text-left text-left text-left">휴식 전환</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
+                            return <div key={opt.id} className="space-y-4 text-left"><h3 className="font-black text-gray-800 text-left px-1 flex items-center gap-2 text-left text-left"><div className="w-1.5 h-4 rounded-full" style={{backgroundColor: opt.color}}></div>{opt.name} ({list.length})</h3><div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 text-left">{list.map(m => <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left text-left text-left"><div className="font-bold text-gray-800 text-left">{m.name}</div><button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-green-50 text-green-600">휴식 전환</button></div>)}</div></div>;
                         })}
                     </div>
                 </div>
@@ -792,96 +618,49 @@
             const [ocrProgress, setOcrProgress] = useState(0);
             const activeMembers = members.filter(m => m.status === 'active');
             const fileInputRef = useRef(null);
-
             const handleOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
                 setOcrStatus("processing"); setOcrProgress(0);
                 try {
-                    const compressed = await compressImage(file);
-                    setPreviewImage(compressed);
-                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
-                        logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); }
-                    });
-                    const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
-                    const newMap = { ...attendanceMap };
-                    activeMembers.forEach(m => { if (cleanText.includes(m.name)) newMap[m.name] = true; });
-                    setAttendanceMap(newMap); setOcrStatus("success"); showToast("인식 완료");
-                } catch (err) { 
-                    setOcrStatus("idle"); showToast("인식 오류");
-                } finally { if (fileInputRef.current) fileInputRef.current.value = ""; }
+                    const compressed = await compressImage(file); setPreviewImage(compressed);
+                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', { logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } });
+                    const next = { ...attendanceMap };
+                    activeMembers.forEach(m => { if (text.replace(/[^가-힣a-zA-Z]/g, '').includes(m.name)) next[m.name] = true; });
+                    setAttendanceMap(next); setOcrStatus("success"); showToast("인식 완료");
+                } catch (err) { setOcrStatus("idle"); showToast("오류 발생"); } finally { if (fileInputRef.current) fileInputRef.current.value = ""; }
             };
-
             const togglePart = (partId) => {
                 const partMembers = activeMembers.filter(m => m.part === partId);
-                const allSelected = partMembers.every(m => attendanceMap[m.name]);
+                const all = partMembers.every(m => attendanceMap[m.name]);
                 const next = { ...attendanceMap };
-                if (allSelected) partMembers.forEach(m => delete next[m.name]);
-                else partMembers.forEach(m => next[m.name] = true);
+                partMembers.forEach(m => all ? delete next[m.name] : next[m.name] = true);
                 setAttendanceMap(next);
             };
-
-            const handleSave = () => {
-                requestAuth(async () => {
-                    const { db, collection, addDoc } = window.MyFirebase;
-                    const dateStr = date.replace(/-/g, '. ') + '.';
-                    const selectedNames = Object.keys(attendanceMap);
-                    await addDoc(collection(db, 'history'), { 
-                        date: dateStr, count: selectedNames.length, members: selectedNames, image: previewImage, updatedAt: new Date().toISOString() 
-                    });
-                    showToast("기록 저장 완료"); onCancel();
-                });
-            };
-
+            const handleSave = () => requestAuth(async () => {
+                const { db, collection, addDoc } = window.MyFirebase;
+                const sel = Object.keys(attendanceMap);
+                await addDoc(collection(db, 'history'), { date: date.replace(/-/g, '. ') + '.', count: sel.length, members: sel, image: previewImage, updatedAt: new Date().toISOString() });
+                showToast("저장 완료"); onCancel();
+            });
             return (
-                <div className="space-y-6 fade-in pb-10 text-left text-left text-left">
-                    <div className="flex items-center justify-between px-1 text-left text-left">
-                        <button onClick={onCancel} className="text-gray-400 font-bold flex items-center gap-1 transition-transform active:scale-90 text-left text-left"><LucideIcon name="chevron-left" className="text-left text-left" /> 뒤로</button>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-left text-left text-left">
-                            <h2 className="text-xl font-black text-gray-800 shrink-0 text-left text-left">새 출석 기록</h2>
-                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="header-date-input text-left text-left" />
-                        </div>
-                        <button onClick={handleSave} className="bg-[#193278] text-white px-5 py-2 rounded-xl font-black shadow-lg text-left text-left">저장</button>
+                <div className="space-y-6 fade-in pb-10 text-left text-left">
+                    <div className="flex items-center justify-between px-1">
+                        <button onClick={onCancel} className="text-gray-400 font-bold flex items-center gap-1 text-left"><LucideIcon name="chevron-left" /> 뒤로</button>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2"><h2 className="text-xl font-black text-gray-800 shrink-0 text-left">새 출석 기록</h2><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="header-date-input" /></div>
+                        <button onClick={handleSave} className="bg-[#193278] text-white px-5 py-2 rounded-xl font-black shadow-lg">저장</button>
                     </div>
-                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 overflow-hidden text-left text-left text-left text-left text-left">
-                        <div className="flex items-center justify-between mb-4 text-left text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2 text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="camera" className="w-5 h-5 text-blue-500 text-left text-left" /> 팀원 인식</h3></div>
-                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[160px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-left text-left text-left">
-                            {previewImage ? (
-                                <div className="w-full relative text-left text-left text-left">
-                                    <img src={previewImage} className="w-full max-h-48 object-contain rounded-2xl mx-auto text-left text-left text-left" />
-                                    {ocrStatus === "processing" && (
-                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center text-left text-left">
-                                            <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs text-left text-left"><div className="bg-[#193278] h-full progress-bar-fill text-left text-left" style={{ width: `${ocrProgress}%` }}></div></div>
-                                            <p className="text-[#193278] font-black text-xs uppercase animate-pulse text-left text-left">명단 인식 중... {ocrProgress}%</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center p-4 text-left text-left"><LucideIcon name="image-plus" className="w-8 h-8 text-gray-300 mx-auto mb-2 text-left text-left" /><p className="text-gray-400 text-xs font-bold text-left text-left">참석 명단 사진을 올리세요</p></div>
-                            )}
-                            <input ref={fileInputRef} type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer text-left text-left" onChange={handleOCR} disabled={ocrStatus === "processing"} />
+                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 text-left">
+                        <div className="mb-4 text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2 text-left"><LucideIcon name="camera" className="w-5 h-5 text-blue-500" /> 팀원 인식</h3></div>
+                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[160px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-left text-left">
+                            {previewImage ? <div className="w-full relative text-left"><img src={previewImage} className="w-full max-h-48 object-contain rounded-2xl mx-auto" />{ocrStatus === "processing" && <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center text-left text-left"><div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs text-left"><div className="bg-[#193278] h-full progress-bar-fill text-left" style={{ width: `${ocrProgress}%` }}></div></div><p className="text-[#193278] font-black text-xs animate-pulse text-left">명단 인식 중... {ocrProgress}%</p></div>}</div> : <div className="text-center p-4 text-left text-left"><LucideIcon name="image-plus" className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-gray-400 text-xs font-bold">사진을 올리세요</p></div>}
+                            <input ref={fileInputRef} type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleOCR} disabled={ocrStatus === "processing"} />
                         </div>
                     </section>
-                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left text-left text-left">
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left">
                         <div className="space-y-8 text-left text-left text-left">
                             {['staff', ...PARTS.map(p=>p.id)].map(partId => {
-                                const list = activeMembers.filter(m => m.part === partId);
-                                if (list.length === 0) return null;
-                                return (
-                                    <div key={partId} className="text-left text-left text-left">
-                                        <div className="flex items-center justify-between mb-3 text-left text-left text-left">
-                                            <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2 text-left text-left text-left text-left">
-                                                <span className="w-1 h-3 rounded-full text-left text-left text-left" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
-                                                {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
-                                            </h4>
-                                            <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 text-left text-left">전체</button>
-                                        </div>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-left text-left text-left">
-                                            {list.map(m => (
-                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }} className={`py-3 rounded-2xl text-[11px] font-bold border transition-all text-left text-left ${attendanceMap[m.name] ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
+                                const list = activeMembers.filter(m => m.part === partId); if (list.length === 0) return null;
+                                return <div key={partId} className="text-left text-left"><div className="flex items-center justify-between mb-3 text-left"><h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2 text-left"><span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h4><button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full text-left">전체</button></div><div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-left">{list.map(m => <button key={m.name} onClick={() => { const n = {...attendanceMap}; n[m.name] ? delete n[m.name] : n[m.name]=true; setAttendanceMap(n); }} className={`py-3 rounded-2xl text-[11px] font-bold border transition-all text-left ${attendanceMap[m.name] ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>)}</div></div>;
                             })}
                         </div>
                     </div>
@@ -889,7 +668,7 @@
             );
         };
 
-        // --- 메인 앱 컴포넌트 ---
+        // --- 5. 메인 앱 컴포넌트 ---
 
         const App = () => {
             const [ready, setReady] = useState(false);
@@ -908,111 +687,85 @@
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null });
 
             useEffect(() => {
-                const waitFirebase = setInterval(() => { 
-                    if (window.FB_READY && window.MyFirebase) { 
-                        clearInterval(waitFirebase); initApp(); 
-                    } 
-                }, 100);
-                return () => clearInterval(waitFirebase);
+                const wait = setInterval(() => { if (window.FB_READY && window.MyFirebase) { clearInterval(wait); initApp(); } }, 100);
+                return () => clearInterval(wait);
             }, []);
 
             const initApp = async () => {
                 const { auth, db, doc, collection, onSnapshot, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.MyFirebase;
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        try { await signInWithCustomToken(auth, __initial_auth_token); } catch (e) { await signInAnonymously(auth); }
-                    } else { await signInAnonymously(auth); }
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try { await signInWithCustomToken(auth, __initial_auth_token); } catch (e) { await signInAnonymously(auth); }
+                } else { await signInAnonymously(auth); }
 
-                    onAuthStateChanged(auth, (u) => {
-                        setUser(u);
-                        if (u) {
-                            onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
-                            onSnapshot(collection(db, 'history'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
-                                setHistory(list);
-                            });
-                            onSnapshot(collection(db, 'music'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                                setSongs(list);
-                            });
-                            onSnapshot(collection(db, 'videos'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                                setVideos(list);
-                            });
-                            setReady(true);
-                        }
-                    });
-                } catch (e) { console.error(e); }
+                onAuthStateChanged(auth, (u) => {
+                    setUser(u);
+                    if (u) {
+                        onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
+                        onSnapshot(collection(db, 'history'), (s) => {
+                            const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                            list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
+                            setHistory(list);
+                        });
+                        onSnapshot(collection(db, 'music'), (s) => {
+                            const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                            list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                            setSongs(list);
+                        });
+                        onSnapshot(collection(db, 'videos'), (s) => {
+                            const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                            list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                            setVideos(list);
+                        });
+                        setReady(true);
+                    }
+                });
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
-            const requestAuth = (callback) => { if (isAdmin) { callback(); } else { setAuthModal({ isOpen: true, onConfirm: callback }); } };
+            const requestAuth = (callback) => { if (isAdmin) callback(); else setAuthModal({ isOpen: true, onConfirm: callback }); };
             const askConfirm = (title, msg, onConfirm) => setConfirmModal({ isOpen: true, title, msg, onConfirm });
-            const handleShare = () => {
-                const dummy = document.createElement("textarea"); dummy.value = SHARE_LINK; document.body.appendChild(dummy); dummy.select(); document.execCommand('copy'); document.body.removeChild(dummy);
-                showToast("공유 링크가 복사되었습니다!");
-            };
-            const handleTabChange = (id) => { if (id === 'manage') { requestAuth(() => setActiveTab(id)); } else { setActiveTab(id); } };
-            const sortedMembers = useMemo(() => {
-                return [...members].sort((a, b) => {
-                    if (a.name === "박용규") return -1;
-                    if (b.name === "박용규") return 1;
-                    return a.name.localeCompare(b.name, 'ko');
-                });
-            }, [members]);
+            const handleShare = () => { const d = document.createElement("textarea"); d.value = SHARE_LINK; document.body.appendChild(d); d.select(); document.execCommand('copy'); document.body.removeChild(d); showToast("링크 복사 완료!"); };
+            const handleTabChange = (id) => { if (id === 'manage') requestAuth(() => setActiveTab(id)); else setActiveTab(id); };
+            const sortedMembers = useMemo(() => [...members].sort((a, b) => a.name === "박용규" ? -1 : b.name === "박용규" ? 1 : a.name.localeCompare(b.name, 'ko')), [members]);
 
-            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-left text-left"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin text-left text-left text-left"></div></div>;
+            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-left"><div className="w-10 h-10 border-4 border-t-[#193278] rounded-full animate-spin"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left text-left text-left text-left">
-                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left text-left text-left">
-                        <div className="mb-10 flex items-center gap-3 text-left text-left text-left text-left">
-                            <AppLogo className="w-10 h-10 text-left text-left text-left text-left" />
-                            <div className="text-left text-left text-left text-left">
-                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity text-left text-left text-left text-left text-left text-left text-left">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left text-left text-left text-left">
-                                    <span className={`w-2 h-2 rounded-full text-left text-left text-left text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
-                                    {isAdmin ? 'ADMIN SESSION ACTIVE' : 'ONLINE MODE'}
-                                </div>
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left text-left">
+                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left text-left">
+                        <div className="mb-10 flex items-center gap-3 text-left text-left text-left">
+                            <AppLogo className="w-10 h-10" />
+                            <div className="text-left text-left text-left">
+                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] cursor-pointer text-left text-left text-left text-left">주은혜 찬양사역팀</h1>
+                                <div className="text-[10px] text-gray-400 font-bold text-left text-left text-left text-left">{isAdmin ? 'ADMIN MODE' : 'ONLINE MODE'}</div>
                             </div>
                         </div>
-                        <nav className="flex-1 space-y-2 text-left text-left text-left text-left">
+                        <nav className="flex-1 space-y-2 text-left text-left text-left">
                             <NavBtn id="music" label="성가음원&악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
-                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left text-left">매니저 영역</div>
+                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase px-4 text-left text-left text-left">매니저 영역</div>
                             <NavBtn id="manage" label="명단관리" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
                         <div className="mt-auto space-y-2 text-left text-left text-left text-left text-left">
-                            <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-left text-left text-left text-left text-left"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2 text-left text-left text-left text-left text-left" /> 링크 공유</button>
-                            {isAdmin && (
-                                <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-left text-left text-left text-left text-left">
-                                    <LucideIcon name="log-out" className="w-3.5 h-3.5 mr-2 text-left text-left text-left text-left text-left" /> 관리 세션 종료
-                                </button>
-                            )}
+                            <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold text-left text-left text-left text-left"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2 text-left text-left text-left text-left" /> 링크 공유</button>
+                            {isAdmin && <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold text-left text-left text-left text-left">관리 종료</button>}
                         </div>
                     </aside>
-
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left text-left text-left text-left text-left">
-                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-20 text-left text-left text-left text-left text-left text-left">
+                    <main className="flex-1 flex flex-col min-h-0 relative bg-[#f8faff] text-left text-left text-left text-left text-left">
+                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 z-20 text-left text-left text-left text-left text-left text-left">
                             <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left text-left text-left text-left text-left">
-                                <AppLogo className="w-8 h-8 text-left text-left text-left text-left text-left text-left" />
-                                <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left text-left text-left">주은혜 찬양사역팀</span>
+                                <AppLogo className="w-8 h-8 text-left text-left text-left text-left text-left" />
+                                <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left text-left">주은혜 찬양사역팀</span>
                             </div>
-                            <div className="flex items-center gap-2 text-right text-left text-left text-left text-left">
-                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90 text-left text-left" title="공유 text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left text-left text-left text-left text-left" /></button>
-                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리 text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left text-left text-left text-left text-left" /></button>
-                                {isAdmin && (
-                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left text-left" title="세션 종료 text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left text-left text-left text-left text-left" /></button>
-                                )}
+                            <div className="flex gap-2 text-right text-left text-left text-left text-left text-left text-left text-left">
+                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90 text-left text-left text-left text-left text-left" title="공유 text-left text-left text-left text-left text-left text-left"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left text-left text-left text-left" /></button>
+                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리 text-left text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left text-left text-left text-left" /></button>
+                                {isAdmin && <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left text-left text-left text-left text-left" title="세션 종료 text-left text-left text-left text-left text-left text-left text-left"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left text-left text-left text-left" /></button>}
                             </div>
                         </header>
-
-                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left text-left text-left text-left">
-                            <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left text-left text-left text-left text-left">
+                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar w-full text-left text-left text-left text-left text-left text-left text-left text-left">
+                            <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left text-left text-left text-left text-left text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
@@ -1020,28 +773,17 @@
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} />}
                             </div>
                         </div>
-
-                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-left text-left text-left text-left text-left text-left text-left text-left text-left">
+                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around z-50 text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left">
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
                         </nav>
                     </main>
-
                     {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
-                    {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} onSave={async (updated) => { 
-                        const { db, doc, setDoc } = window.MyFirebase;
-                        await setDoc(doc(db, 'history', updated.id), updated);
-                        showToast("수정되었습니다."); setEditingHistory(null);
-                    }} onDelete={(id) => {
-                        askConfirm("기록 삭제", "정말 삭제하시겠습니까?", async () => {
-                            const { db, doc, deleteDoc } = window.MyFirebase;
-                            await deleteDoc(doc(db, 'history', id)); showToast("삭제되었습니다."); setEditingHistory(null);
-                        });
-                    }} showToast={showToast} />}
-                    {authModal.isOpen && <AuthModal onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={(p) => { if(p === MASTER_PASSWORD) { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); } else { alert("비밀번호 오류"); } }} />}
+                    {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} onSave={async (u) => { await window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', u.id), u); showToast("수정 완료"); setEditingHistory(null); }} onDelete={(id) => askConfirm("삭제", "삭제하시겠습니까?", async () => { await window.MyFirebase.deleteDoc(window.MyFirebase.doc(window.MyFirebase.db, 'history', id)); showToast("삭제 완료"); setEditingHistory(null); })} showToast={showToast} />}
+                    {authModal.isOpen && <AuthModal onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
-                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left">{toast.msg}</div>}
+                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center text-left text-left text-left text-left text-left text-left text-left text-left text-left">{toast.msg}</div>}
                 </div>
             );
         };
