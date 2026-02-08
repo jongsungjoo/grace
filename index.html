@@ -355,7 +355,7 @@
                                 <section>
                                     <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">참석 팀원 명단 ({selected.size}명)</h4>
                                     {['staff', ...PARTS.map(p=>p.id)].map(partId => {
-                                        const list = activeMembers.filter(m => m.part === partId);
+                                        const list = allMembers.filter(m => (m.status === 'active' || selected.has(m.name)) && m.part === partId);
                                         if (list.length === 0) return null;
                                         return (
                                             <div key={partId} className="mb-6">
@@ -600,7 +600,7 @@
                             <h2 className="text-3xl font-black text-gray-800">성가음원&악보</h2>
                             <p className="text-xs text-gray-400 font-bold">연습용 음원 링크</p>
                         </div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
                     <div className="relative w-full">
                         <input type="text" placeholder="성가 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -679,7 +679,7 @@
                 <div className="fade-in space-y-6">
                     <div className="flex justify-between items-center">
                         <div><h2 className="text-3xl font-black text-gray-800">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold">유튜브 영상 아카이브</p></div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="bg-[#193278] text-white p-3 rounded-full shadow-lg transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
                     <div className="relative w-full">
                         <input type="text" placeholder="영상 제목 검색" className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
