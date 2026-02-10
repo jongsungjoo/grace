@@ -44,11 +44,18 @@
         .scale-in { animation: scaleIn 0.2s ease-out; }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
         .scroll-container { flex: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; min-height: 0; display: flex; flex-direction: column; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
         
         button, a { touch-action: manipulation; }
@@ -74,42 +81,10 @@
         </div>
     </div>
 
-    <script>
-        (function() {
-            const manifest = {
-                "name": "주은혜 찬양사역팀",
-                "short_name": "주은혜",
-                "start_url": window.location.href,
-                "display": "standalone",
-                "background_color": "#f8faff",
-                "theme_color": "#193278",
-                "icons": [
-                    {
-                        "src": "https://jongsungjoo.github.io/grace/icon.jpg",
-                        "sizes": "192x192",
-                        "type": "image/jpeg"
-                    },
-                    {
-                        "src": "https://jongsungjoo.github.io/grace/icon.jpg",
-                        "sizes": "512x512",
-                        "type": "image/jpeg"
-                    }
-                ]
-            };
-            const stringManifest = JSON.stringify(manifest);
-            const blob = new Blob([stringManifest], {type: 'application/json'});
-            const manifestURL = URL.createObjectURL(blob);
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            link.href = manifestURL;
-            document.head.appendChild(link);
-        })();
-    </script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
@@ -126,7 +101,7 @@
             const auth = getAuth(app);
             const db = getFirestore(app);
             window.FB_READY = true;
-            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, signInAnonymously, onAuthStateChanged, signInWithCustomToken };
+            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, signInAnonymously, onAuthStateChanged, signInWithCustomToken };
             window.dispatchEvent(new Event('firebase-ready'));
         } catch (e) { console.error(e); }
     </script>
@@ -134,7 +109,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        const MASTER_PASSWORD = "onnurigrace";
         const SHARE_LINK = "https://cutt.ly/onnuri";
         const PARTS = [
             { id: 'soprano', name: '소프라노', color: '#e91e63' },
@@ -227,17 +201,39 @@
             </button>
         );
 
-        const AuthModal = ({ onClose, onConfirm }) => {
+        const AuthModal = ({ onClose, onConfirm, correctPassword }) => {
             const [input, setInput] = useState("");
+            const [error, setError] = useState(false);
+
+            const handleConfirm = () => {
+                if (input === correctPassword) {
+                    onConfirm();
+                } else {
+                    setError(true);
+                    setTimeout(() => setError(false), 500); // 흔들림 효과 후 상태 초기화
+                }
+            };
+
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5">
-                    <div className="bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl">
+                    <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${error ? 'shake' : ''}`}>
                         <h3 className="text-xl font-black text-gray-800 mb-2">매니저 인증</h3>
                         <p className="text-sm text-gray-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                        <input type="password" autoFocus className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-center tracking-widest mb-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Password" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter' && onConfirm(input)} />
+                        <div className="relative mb-4">
+                            <input 
+                                type="password" 
+                                autoFocus 
+                                className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none transition-all ${error ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-blue-500'}`} 
+                                placeholder="Password" 
+                                value={input} 
+                                onChange={e => { setInput(e.target.value); if(error) setError(false); }} 
+                                onKeyDown={e => e.key === 'Enter' && handleConfirm()} 
+                            />
+                            {error && <p className="text-red-500 text-[10px] font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                        </div>
                         <div className="flex gap-2">
                             <button onClick={onClose} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
-                            <button onClick={() => onConfirm(input)} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
+                            <button onClick={handleConfirm} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
                         </div>
                     </div>
                 </div>
@@ -534,7 +530,6 @@
 
                                 return (
                                     <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-50 flex flex-col gap-5 group cursor-pointer hover:shadow-md transition-all w-full text-left overflow-hidden">
-                                        {/* 상단 섹션: 날짜와 인원수 크기를 동일하게 맞춰 균형 조정 */}
                                         <div className="flex items-center justify-between border-b border-gray-50 pb-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">Attendance Date</span>
@@ -552,7 +547,6 @@
                                             </div>
                                         </div>
 
-                                        {/* 본문 섹션: 초대형 썸네일과 컴팩트 2x2 파트 정보 */}
                                         <div className="flex flex-col sm:flex-row items-center gap-6">
                                             <div className="w-full sm:w-52 h-44 sm:h-52 bg-gray-100 rounded-[32px] overflow-hidden shrink-0 relative shadow-inner">
                                                 {h.image ? (
@@ -751,18 +745,39 @@
             );
         };
 
-        const ManageView = ({ members, requestAuth, showToast }) => {
+        const ManageView = ({ members, currentPassword, requestAuth, showToast }) => {
             const [partFilter, setPartFilter] = useState('all');
+            const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
+            const [showPwdSetting, setShowPwdSetting] = useState(false);
+
             const toggleStatus = (name) => requestAuth(async () => {
                 const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
                 const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
             });
+
+            const handleUpdatePassword = async () => {
+                if (pwdForm.current !== currentPassword) return showToast("현재 비밀번호가 일치하지 않습니다.");
+                if (pwdForm.next.length < 4) return showToast("비밀번호는 4자리 이상이어야 합니다.");
+                if (pwdForm.next !== pwdForm.confirm) return showToast("새 비밀번호 확인이 일치하지 않습니다.");
+
+                const { db, doc, setDoc } = window.MyFirebase;
+                try {
+                    await setDoc(doc(db, 'settings', 'admin'), { password: pwdForm.next });
+                    showToast("비밀번호가 변경되었습니다.");
+                    setPwdForm({ current: '', next: '', confirm: '' });
+                    setShowPwdSetting(false);
+                } catch (e) {
+                    showToast("변경 중 오류가 발생했습니다.");
+                }
+            };
+
             const activeMembers = members.filter(m => m.status === 'active');
             const restingMembers = members.filter(m => m.status === 'inactive');
             const groupedByPart = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
             activeMembers.forEach(m => { if (groupedByPart[m.part]) groupedByPart[m.part].push(m); else groupedByPart.staff.push(m); });
             const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
             const filteredResting = partFilter === 'all' ? restingMembers : restingMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
+            
             return (
                 <div className="space-y-6 fade-in text-left">
                     <div className="text-left">
@@ -806,6 +821,32 @@
                                 </div>
                             );
                         })}
+
+                        <div className="pt-10 border-t border-gray-100">
+                            <h3 className="font-black text-gray-400 px-1 flex items-center gap-2 mb-4 text-[10px] uppercase tracking-widest"><LucideIcon name="settings" className="w-3.5 h-3.5" /> 시스템 설정</h3>
+                            <div className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-800">매니저 비밀번호 변경</p>
+                                        <p className="text-xs text-gray-400">인증용 비밀번호를 변경합니다.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowPwdSetting(!showPwdSetting)} 
+                                        className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black transition-colors hover:bg-gray-100"
+                                    >
+                                        {showPwdSetting ? "숨기기" : "변경하기"}
+                                    </button>
+                                </div>
+                                {showPwdSetting && (
+                                    <div className="mt-6 space-y-3 scale-in">
+                                        <input type="password" placeholder="현재 비밀번호" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none" value={pwdForm.current} onChange={e=>setPwdForm({...pwdForm, current:e.target.value})} />
+                                        <input type="password" placeholder="새 비밀번호" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none" value={pwdForm.next} onChange={e=>setPwdForm({...pwdForm, next:e.target.value})} />
+                                        <input type="password" placeholder="새 비밀번호 확인" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} />
+                                        <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">비밀번호 저장</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -927,6 +968,7 @@
             const [editingHistory, setEditingHistory] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [user, setUser] = useState(null);
+            const [masterPassword, setMasterPassword] = useState("onnurigrace");
 
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
@@ -951,6 +993,12 @@
                     onAuthStateChanged(auth, (u) => {
                         setUser(u);
                         if (u) {
+                            onSnapshot(doc(db, 'settings', 'admin'), (s) => {
+                                if (s.exists() && s.data().password) {
+                                    setMasterPassword(s.data().password);
+                                }
+                            });
+                            
                             onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
                             onSnapshot(collection(db, 'history'), (s) => {
                                 const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
@@ -992,61 +1040,61 @@
             if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-left"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin text-center text-left"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left text-left text-left text-left">
-                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left">
-                        <div className="mb-10 flex items-center gap-3 text-left text-left">
-                            <AppLogo className="w-10 h-10 text-left text-left text-left" />
-                            <div className="text-left text-left">
-                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity text-left text-left text-left">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left">
-                                    <span className={`w-2 h-2 rounded-full text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left">
+                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left">
+                        <div className="mb-10 flex items-center gap-3 text-left">
+                            <AppLogo className="w-10 h-10" />
+                            <div className="text-left">
+                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
+                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                    <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
                                     {isAdmin ? 'ADMIN SESSION ACTIVE' : 'ONLINE MODE'}
                                 </div>
                             </div>
                         </div>
-                        <nav className="flex-1 space-y-2 text-left text-left text-left">
+                        <nav className="flex-1 space-y-2 text-left">
                             <NavBtn id="music" label="성가음원&악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
-                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
+                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4">매니저 영역</div>
                             <NavBtn id="manage" label="명단관리" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
-                        <div className="mt-auto space-y-2 text-left text-left text-left">
-                            <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center text-left"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2 text-center text-left" /> 링크 공유</button>
+                        <div className="mt-auto space-y-2 text-left">
+                            <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2" /> 링크 공유</button>
                             {isAdmin && (
-                                <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center text-left">
-                                    <LucideIcon name="log-out" className="w-3.5 h-3.5 mr-2 text-center text-left" /> 관리 세션 종료
+                                <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center">
+                                    <LucideIcon name="log-out" className="w-3.5 h-3.5 mr-2" /> 관리 세션 종료
                                 </button>
                             )}
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left text-left">
-                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-20 text-left text-left">
-                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
-                                <AppLogo className="w-8 h-8 text-left text-left text-left" />
-                                <span className="font-black text-lg text-[#193278] text-left text-left text-left">주은혜 찬양사역팀</span>
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left">
+                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-20">
+                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer">
+                                <AppLogo className="w-8 h-8" />
+                                <span className="font-black text-lg text-[#193278]">주은혜 찬양사역팀</span>
                             </div>
-                            <div className="flex items-center gap-2 text-left text-left">
-                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90 text-left text-left" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
-                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left" /></button>
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5" /></button>
+                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리"><LucideIcon name="user-round" className="w-5 h-5" /></button>
                                 {isAdmin && (
-                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left" /></button>
+                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5" /></button>
                                 )}
                             </div>
                         </header>
 
-                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left">
-                            <div className="max-w-4xl mx-auto w-full text-left text-left">
+                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left">
+                            <div className="max-w-4xl mx-auto w-full text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} requestAuth={requestAuth} showToast={showToast} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} />}
                             </div>
                         </div>
 
-                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-left text-left">
+                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-left">
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
@@ -1064,9 +1112,9 @@
                             await deleteDoc(doc(db, 'history', id)); showToast("삭제되었습니다."); setEditingHistory(null);
                         });
                     }} showToast={showToast} />}
-                    {authModal.isOpen && <AuthModal onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={(p) => { if(p === MASTER_PASSWORD) { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); } else { alert("비밀번호 오류"); } }} />}
+                    {authModal.isOpen && <AuthModal correctPassword={masterPassword} onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
-                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center text-center text-left">{toast.msg}</div>}
+                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center">{toast.msg}</div>}
                 </div>
             );
         };
