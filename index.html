@@ -308,7 +308,9 @@
 
         const InterestModal = ({ members, history, onClose }) => {
             const activeOnes = members.filter(m => m.status === 'active');
-            const inactiveOnes = members.filter(m => m.status === 'inactive');
+            const shortAbsenceOnes = members.filter(m => m.status === 'short_absence');
+            const sabbaticalOnes = members.filter(m => m.status === 'inactive' || m.status === 'sabbatical');
+            
             const lastRecords = history.slice(0, 4);
             const records3 = lastRecords.slice(0, 3).flatMap(h => h.members);
             const records4 = lastRecords.flatMap(h => h.members);
@@ -349,14 +351,26 @@
                             </section>
 
                             <section>
+                                <h4 className="text-xs font-black text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                                    단기부재 팀원 — {shortAbsenceOnes.length}명
+                                </h4>
+                                {shortAbsenceOnes.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-2">{shortAbsenceOnes.map(m => ( <div key={m.name} className="bg-yellow-50 p-3 rounded-2xl border border-yellow-100 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-yellow-600">{m.name}</p></div> ))}</div>
+                                ) : (
+                                    <p className="text-xs text-gray-300 font-bold ml-3.5">해당하는 팀원이 없습니다.</p>
+                                )}
+                            </section>
+
+                            <section>
                                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                    휴식 중인 팀원 — {inactiveOnes.length}명
+                                    안식 중인 팀원 — {sabbaticalOnes.length}명
                                 </h4>
-                                {inactiveOnes.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">{inactiveOnes.map(m => ( <div key={m.name} className="bg-gray-50 p-3 rounded-2xl border border-gray-200 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-gray-400">{m.name}</p></div> ))}</div>
+                                {sabbaticalOnes.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-2">{sabbaticalOnes.map(m => ( <div key={m.name} className="bg-gray-50 p-3 rounded-2xl border border-gray-200 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-gray-400">{m.name}</p></div> ))}</div>
                                 ) : (
-                                    <p className="text-xs text-gray-300 font-bold ml-3.5">휴식 중인 팀원이 없습니다.</p>
+                                    <p className="text-xs text-gray-300 font-bold ml-3.5">안식 중인 팀원이 없습니다.</p>
                                 )}
                             </section>
                         </div>
@@ -877,8 +891,8 @@
             const [showPwdSetting, setShowPwdSetting] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
 
-            const toggleStatus = (name) => requestAuth(async () => {
-                const newList = members.map(m => m.name === name ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m);
+            const changeStatus = (name, newStatus) => requestAuth(async () => {
+                const newList = members.map(m => m.name === name ? { ...m, status: newStatus } : m);
                 const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
             });
 
@@ -899,11 +913,15 @@
             };
 
             const activeMembers = members.filter(m => m.status === 'active');
-            const restingMembers = members.filter(m => m.status === 'inactive');
+            const shortAbsenceMembers = members.filter(m => m.status === 'short_absence');
+            const sabbaticalMembers = members.filter(m => m.status === 'inactive' || m.status === 'sabbatical');
+            
             const groupedByPart = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
             activeMembers.forEach(m => { if (groupedByPart[m.part]) groupedByPart[m.part].push(m); else groupedByPart.staff.push(m); });
             const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
-            const filteredResting = partFilter === 'all' ? restingMembers : restingMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
+            
+            const filteredShortAbsence = partFilter === 'all' ? shortAbsenceMembers : shortAbsenceMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
+            const filteredSabbatical = partFilter === 'all' ? sabbaticalMembers : sabbaticalMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
             
             return (
                 <div className="space-y-6 fade-in text-left">
@@ -917,19 +935,33 @@
                         ))}
                     </div>
                     <div className="space-y-10 mt-6 text-left">
-                        {filteredResting.length > 0 && (
+                        {filteredShortAbsence.length > 0 && (
                             <div className="space-y-4 text-left">
-                                <h3 className="font-black text-gray-500 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-gray-300 text-left"></div>휴식 중인 팀원 ({filteredResting.length})</h3>
-                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-60 w-full text-left">
-                                    {filteredResting.map(m => (
+                                <h3 className="font-black text-yellow-500 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-yellow-400 text-left"></div>단기부재 팀원 ({filteredShortAbsence.length})</h3>
+                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-80 w-full text-left">
+                                    {filteredShortAbsence.map(m => (
                                         <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
-                                            <div className="font-bold text-gray-400 line-through text-left">{m.name}</div>
-                                            <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-gray-50 text-gray-400 hover:text-green-600 transition-colors text-center">활동 복귀</button>
+                                            <div className="font-bold text-gray-500 line-through text-left">{m.name}</div>
+                                            <button onClick={() => changeStatus(m.name, 'active')} className="px-4 py-2 rounded-xl text-[10px] font-black bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-center">활동 복귀</button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+                        {filteredSabbatical.length > 0 && (
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-black text-gray-400 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-gray-300 text-left"></div>안식 중인 팀원 ({filteredSabbatical.length})</h3>
+                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-60 w-full text-left">
+                                    {filteredSabbatical.map(m => (
+                                        <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
+                                            <div className="font-bold text-gray-400 line-through text-left">{m.name}</div>
+                                            <button onClick={() => changeStatus(m.name, 'active')} className="px-4 py-2 rounded-xl text-[10px] font-black bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-colors text-center">활동 복귀</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {filterOptions.filter(o => o.id !== 'all').map(opt => {
                             if (partFilter !== 'all' && partFilter !== opt.id) return null;
                             const list = groupedByPart[opt.id];
@@ -941,7 +973,10 @@
                                         {list.map(m => (
                                             <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
                                                 <div className="font-bold text-gray-800 text-left">{m.name}</div>
-                                                <button onClick={() => toggleStatus(m.name)} className="px-4 py-2 rounded-xl text-[10px] font-black bg-green-50 text-green-600 transition-colors text-center text-center">휴식 전환</button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => changeStatus(m.name, 'short_absence')} className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors text-center">단기부재</button>
+                                                    <button onClick={() => changeStatus(m.name, 'sabbatical')} className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors text-center">안식중</button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -1295,5 +1330,3 @@
     </script>
 </body>
 </html>
-
-
