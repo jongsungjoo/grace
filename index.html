@@ -631,7 +631,7 @@
         const MusicView = ({ songs, requestAuth, askConfirm, showToast, isAdmin }) => {
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
-            const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } });
+            const [form, setForm] = useState({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
 
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
@@ -644,11 +644,11 @@
                 resetForm();
             });
 
-            const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '' } }); setShowAdd(false); };
+            const resetForm = () => { setForm({ title: '', date: '', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
             const handleEdit = (song) => requestAuth(() => { 
                 setForm({
                     id: song.id, title: song.title || '', date: song.date || '', image: song.image || '',
-                    links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '' }
+                    links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '', chorus: song.links?.chorus || '' }
                 });
                 setShowAdd(true); 
             });
@@ -687,6 +687,7 @@
                                 <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
                                 <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
                             </div>
+                            <input type="text" placeholder="합창 유튜브" className="w-full bg-gray-50 border-0 p-4 rounded-2xl text-xs font-bold outline-none text-left mt-2" value={form.links?.chorus || ''} onChange={e=>setForm({...form, links:{...form.links, chorus:e.target.value}})} />
                             <div className="flex gap-2 pt-2 text-center"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black transition-transform active:scale-95 shadow-lg text-center">저장 완료</button></div>
                         </div>
                     )}
@@ -701,15 +702,22 @@
                                     </div>
                                 </div>
                                 <div className="flex-1 p-2.5 sm:p-4 flex flex-col justify-between min-w-0 pr-2 text-left">
-                                    <div className="mb-1 text-left">
-                                        <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight text-left">{song.title}</h3>
-                                        <p className="text-xs sm:text-sm text-[#193278] font-bold mt-0.5 text-left">{song.date}</p>
+                                    <div className="mb-1 flex justify-between items-start gap-2 text-left">
+                                        <div className="min-w-0">
+                                            <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight text-left">{song.title}</h3>
+                                            <p className="text-xs sm:text-sm text-[#193278] font-bold mt-0.5 text-left">{song.date}</p>
+                                        </div>
+                                        {song.links?.chorus && (
+                                            <button onClick={() => window.open(song.links.chorus, '_blank')} className="shrink-0 h-8 sm:h-9 flex items-center justify-center px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-black border border-emerald-100 text-emerald-600 bg-emerald-50 transition-colors hover:bg-emerald-100 shadow-sm">합창</button>
+                                        )}
                                     </div>
-                                    <div className="flex w-full gap-0.5 mt-auto text-center">
-                                        <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
-                                        <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
-                                        <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
-                                        <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
+                                    <div className="mt-auto w-full flex flex-col gap-1 text-center">
+                                        <div className="flex w-full gap-0.5 text-center">
+                                            <button onClick={() => song.links?.s && window.open(song.links.s, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.s ? 'border-pink-100 text-[#e91e63] bg-pink-50' : 'border-gray-50 text-gray-200'}`}>S</button>
+                                            <button onClick={() => song.links?.a && window.open(song.links.a, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.a ? 'border-orange-100 text-[#ff9800] bg-orange-50' : 'border-gray-50 text-gray-200'}`}>A</button>
+                                            <button onClick={() => song.links?.t && window.open(song.links.t, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.t ? 'border-blue-100 text-[#2196f3] bg-blue-50' : 'border-gray-50 text-gray-200'}`}>T</button>
+                                            <button onClick={() => song.links?.b && window.open(song.links.b, '_blank')} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-[11px] sm:text-xs font-black border-2 transition-colors ${song.links?.b ? 'border-gray-200 text-[#37474f] bg-gray-50' : 'border-gray-50 text-gray-200'}`}>B</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1165,3 +1173,6 @@
     </script>
 </body>
 </html>
+
+
+
