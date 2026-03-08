@@ -28,7 +28,6 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -109,6 +108,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
+        // ★★★ 구글 AI Studio에서 발급받은 무료 API 키를 아래에 넣어주세요 ★★★
+        const GEMINI_API_KEY = "AIzaSyBOWVlQM8tMaublJgM1oXukuaXLmza3q80"; 
+
         const SHARE_LINK = "https://cutt.ly/onnuri";
         const PARTS = [
             { id: 'soprano', name: '소프라노', color: '#e91e63' },
@@ -149,6 +151,60 @@
                 };
                 reader.onerror = (e) => reject(e);
             });
+        };
+
+        // 이미지 자르기 (컬러 유지, 상단 45% 제외, 하단 5% 제외)
+        const cropImageForOCR = (dataUrl, startYRatio = 0.45, endYRatio = 0.95) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const startY = img.height * startYRatio;
+                    const endY = img.height * endYRatio;
+                    const cropHeight = endY - startY;
+                    
+                    canvas.width = img.width;
+                    canvas.height = cropHeight;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, startY, img.width, cropHeight, 0, 0, img.width, cropHeight);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.9));
+                };
+                img.src = dataUrl;
+            });
+        };
+
+        // Gemini AI를 이용한 텍스트 추출 함수
+        const recognizeNamesWithGemini = async (base64Image) => {
+            if (!GEMINI_API_KEY) throw new Error("API_KEY_MISSING");
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const base64Data = base64Image.split(',')[1];
+            
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "이 이미지에는 사람 이름이 적힌 둥근 자석들이 있습니다. 이미지에서 식별 가능한 모든 사람의 이름을 추출해주세요. 다른 설명이나 기호 없이 오직 이름만 쉼표(,)로 구분해서 출력해주세요. 예: 홍길동,김철수,이영희" },
+                        { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1, // 창의성 낮춤 (정확도 향상)
+                }
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("API_REQUEST_FAILED");
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
         };
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
@@ -329,19 +385,36 @@
 
             const handleImageOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
-                setOcrStatus("processing"); setOcrProgress(0);
+                
+                if (!GEMINI_API_KEY) {
+                    showToast("Gemini API 키가 입력되지 않았습니다. 코드를 확인해주세요.");
+                    return;
+                }
+
+                setOcrStatus("processing"); setOcrProgress(50);
                 try {
                     const compressed = await compressImage(file);
-                    setImage(compressed);
-                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
-                        logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); } 
-                    });
-                    const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
+                    setImage(compressed); 
+                    
+                    const cropped = await cropImageForOCR(compressed, 0.45, 0.95); 
+                    
+                    const extractedText = await recognizeNamesWithGemini(cropped);
+                    setOcrProgress(100);
+
+                    const cleanText = extractedText.replace(/\s+/g, '');
                     const next = new Set(selected);
-                    allMembers.forEach(m => { if (cleanText.includes(m.name)) next.add(m.name); });
-                    setSelected(next); setOcrStatus("success"); showToast("팀원 인식이 완료되었습니다.");
+                    
+                    allMembers.forEach(m => { 
+                        if (cleanText.includes(m.name)) next.add(m.name); 
+                    });
+                    
+                    setSelected(next); 
+                    setOcrStatus("success"); 
+                    showToast("AI 이름 인식이 완료되었습니다.");
                 } catch (err) {
-                    setOcrStatus("idle"); showToast("인식 오류 발생");
+                    setOcrStatus("idle"); 
+                    if (err.message === "API_KEY_MISSING") showToast("Gemini API 키를 입력해주세요.");
+                    else showToast("AI 인식 중 오류가 발생했습니다.");
                 }
             };
 
@@ -386,9 +459,16 @@
                                     {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                         const list = allMembers.filter(m => (m.status === 'active' || selected.has(m.name)) && m.part === partId);
                                         if (list.length === 0) return null;
+                                        
+                                        const checkedCount = list.filter(m => selected.has(m.name)).length;
+                                        
                                         return (
                                             <div key={partId} className="mb-6 text-left">
-                                                <h5 className="text-[9px] font-black text-gray-400 uppercase flex items-center gap-1.5 mb-2"><span className="w-1 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>{partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}</h5>
+                                                <h5 className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1.5 mb-3">
+                                                    <span className="w-1.5 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
+                                                    {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
+                                                    <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
+                                                </h5>
                                                 <div className="grid grid-cols-3 gap-1.5">
                                                     {list.map(m => (
                                                         <button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable} className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center ${selected.has(m.name) ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400'} ${!isEditable ? '' : 'active:scale-95'}`}>{m.name}</button>
@@ -912,19 +992,37 @@
 
             const handleOCR = async (e) => {
                 const file = e.target.files[0]; if (!file) return;
-                setOcrStatus("processing"); setOcrProgress(0);
+
+                if (!GEMINI_API_KEY) {
+                    showToast("Gemini API 키가 입력되지 않았습니다. 코드를 확인해주세요.");
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    return;
+                }
+
+                setOcrStatus("processing"); setOcrProgress(50);
                 try {
                     const compressed = await compressImage(file);
-                    setPreviewImage(compressed);
-                    const { data: { text } } = await Tesseract.recognize(compressed, 'kor', {
-                        logger: m => { if (m.status === 'recognizing text') setOcrProgress(Math.round(m.progress * 100)); }
-                    });
-                    const cleanText = text.replace(/[^가-힣a-zA-Z]/g, '');
+                    setPreviewImage(compressed); 
+                    
+                    const cropped = await cropImageForOCR(compressed, 0.45, 0.95); 
+                    
+                    const extractedText = await recognizeNamesWithGemini(cropped);
+                    setOcrProgress(100);
+
+                    const cleanText = extractedText.replace(/\s+/g, '');
                     const newMap = { ...attendanceMap };
-                    activeMembers.forEach(m => { if (cleanText.includes(m.name)) newMap[m.name] = true; });
-                    setAttendanceMap(newMap); setOcrStatus("success"); showToast("인식 완료");
+                    
+                    activeMembers.forEach(m => { 
+                        if (cleanText.includes(m.name)) newMap[m.name] = true; 
+                    });
+                    
+                    setAttendanceMap(newMap); 
+                    setOcrStatus("success"); 
+                    showToast("AI 이름 인식이 완료되었습니다.");
                 } catch (err) { 
-                    setOcrStatus("idle"); showToast("인식 오류");
+                    setOcrStatus("idle"); 
+                    if (err.message === "API_KEY_MISSING") showToast("Gemini API 키를 설정해주세요.");
+                    else showToast("AI 인식 중 오류가 발생했습니다.");
                 } finally { if (fileInputRef.current) fileInputRef.current.value = ""; }
             };
 
@@ -983,12 +1081,16 @@
                             {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                 const list = activeMembers.filter(m => m.part === partId);
                                 if (list.length === 0) return null;
+                                
+                                const checkedCount = list.filter(m => attendanceMap[m.name]).length;
+                                
                                 return (
                                     <div key={partId} className="text-left">
                                         <div className="flex items-center justify-between mb-3 text-left">
                                             <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2 text-left">
                                                 <span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
                                                 {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
+                                                <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
                                             </h4>
                                             <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 transition-colors text-center text-center text-center text-center text-center">전체</button>
                                         </div>
@@ -1173,6 +1275,5 @@
     </script>
 </body>
 </html>
-
 
 
