@@ -182,7 +182,7 @@
             });
         };
 
-        // 완벽하게 정제된 Gemini AI 호출 함수 (단일 모델, 즉시 에러 확인)
+        // 완벽하게 정제된 Gemini API 호출 함수 (구글 ListModels API 연동 자동 탐색)
         const recognizeNamesWithGemini = async (base64Image, apiKey) => {
             const cleanKey = apiKey ? apiKey.trim().replace(/[^a-zA-Z0-9_-]/g, '') : "";
             const base64Data = base64Image.split(',')[1];
@@ -208,41 +208,64 @@
                 return data.candidates[0].content.parts[0].text;
             }
 
-            // [환경 분기 2] 시스템 설정에 키가 있는 경우 (깃허브 외부 배포용 공식 1.5-flash)
-            const models = ["gemini-1.5-flash", "gemini-1.5-flash-latest"];
-            let firstError = null;
+            // [환경 분기 2] 사용자 API 키를 통해 직접 사용 가능한 모델 목록 탐색 (에러 메시지 지침 반영)
+            let bestModel = "gemini-1.5-flash"; // 기본값
+            
+            try {
+                // 1단계: 내 키로 어떤 모델을 쓸 수 있는지 구글 서버에 먼저 물어봅니다.
+                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`;
+                const listRes = await fetch(listUrl);
+                
+                if (listRes.ok) {
+                    const listData = await listRes.json();
+                    const availableModels = listData.models || [];
+                    
+                    // generateContent를 지원하는 모델 필터링
+                    const validModels = availableModels.filter(m => 
+                        m.supportedGenerationMethods && 
+                        m.supportedGenerationMethods.includes("generateContent")
+                    );
 
-            for (const model of models) {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        const errMsg = errData.error?.message || `HTTP 에러 ${response.status}`;
-                        if (!firstError) firstError = errMsg;
+                    if (validModels.length > 0) {
+                        const prefs = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro-vision"];
+                        let foundModel = null;
                         
-                        // 구글에서 키 권한 문제(400:잘못된키, 403:권한없음)를 뱉으면 루프 즉시 종료
-                        if (response.status === 400 || response.status === 403) {
-                            throw new Error(errMsg);
+                        for (const pref of prefs) {
+                            foundModel = validModels.find(m => m.name.includes(pref));
+                            if (foundModel) break;
                         }
-                        continue;
+                        
+                        // 우선순위 모델이 없으면 그냥 리스트에서 가장 처음 나오는 모델을 사용합니다.
+                        bestModel = (foundModel || validModels[0]).name.replace('models/', '');
+                        console.log(`[AI 모델 자동 탐색] 사용 가능한 모델 발견: ${bestModel}`);
                     }
-                    
-                    const data = await response.json();
-                    if (!data.candidates || data.candidates.length === 0) throw new Error("추출된 결과가 없습니다.");
-                    return data.candidates[0].content.parts[0].text;
-                } catch (e) {
-                    if (!firstError) firstError = e.message;
-                    // 권한 꼬임 에러 확인 시 강제 예외 처리
-                    if (e.message.includes("API_KEY_INVALID") || e.message.includes("not been used")) {
-                        throw new Error(e.message);
-                    }
+                } else {
+                    const errData = await listRes.json();
+                    console.warn("[AI 모델 탐색 실패] 권한 또는 할당량 문제일 수 있습니다:", errData);
+                    // 에러가 나도 일단 기본 모델로 아래에서 찔러봐서 정확한 에러를 방출합니다.
                 }
+            } catch (e) {
+                console.warn("[AI 모델 탐색 실패] 네트워크 에러:", e);
+            }
+
+            // 2단계: 확정된 모델로 실제 추론 요청
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${bestModel}:generateContent?key=${cleanKey}`;
+            const response = await fetch(url, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(payload) 
+            });
+            
+            if (!response.ok) {
+                const errData = await response.json();
+                console.error("Gemini API Error Data:", errData);
+                // 구글 서버가 보내는 진짜 에러 메시지를 가리지 않고 그대로 던집니다.
+                throw new Error(errData.error?.message || `HTTP 에러 ${response.status}`);
             }
             
-            // 모든 모델 실패 시 가장 처음 발생했던(가장 정확한) 구글 에러 방출
-            throw new Error(firstError || "AI 인식 요청에 실패했습니다.");
+            const data = await response.json();
+            if (!data.candidates || data.candidates.length === 0) throw new Error("추출된 결과가 없습니다.");
+            return data.candidates[0].content.parts[0].text;
         };
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
@@ -259,9 +282,15 @@
         const AppLogo = ({ className = "w-10 h-10" }) => {
             const [error, setError] = useState(false);
             if (!LOGO_URL || error) {
-                return <div className={`${className} bg-[#193278] rounded-full flex items-center justify-center text-white shrink-0 shadow-md`}><LucideIcon name="church" className="w-1/2 h-1/2" /></div>;
+                return (
+                    <div className={`${className} bg-[#193278] rounded-full flex items-center justify-center text-white shrink-0 shadow-md`}>
+                        <LucideIcon name="church" className="w-1/2 h-1/2" />
+                    </div>
+                );
             }
-            return <img src={LOGO_URL} className={`${className} object-contain rounded-full shadow-sm bg-white shrink-0`} onError={() => setError(true)} alt="Logo" />;
+            return (
+                <img src={LOGO_URL} className={`${className} object-contain rounded-full shadow-sm bg-white shrink-0`} onError={() => setError(true)} alt="Logo" />
+            );
         };
 
         const StatCard = ({ label, val, unit, color }) => (
@@ -272,12 +301,15 @@
         );
 
         const NavBtn = ({ id, label, icon, active, onClick }) => (
-            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-blue-50 text-[#193278] font-bold' : 'text-gray-400 hover:bg-gray-50'}`}><LucideIcon name={icon} className="w-5 h-5" />{label}</button>
+            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-blue-50 text-[#193278] font-bold' : 'text-gray-400 hover:bg-gray-50'}`}>
+                <LucideIcon name={icon} className="w-5 h-5" />{label}
+            </button>
         );
 
         const NavIconBtn = ({ id, icon, label, active, onClick }) => (
             <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1.5 transition-all ${active ? 'text-[#193278] scale-105' : 'text-gray-300'}`}>
-                <LucideIcon name={icon} className="w-6 h-6" /><span className="text-[10px] font-black tracking-tighter uppercase">{label}</span>
+                <LucideIcon name={icon} className="w-6 h-6" />
+                <span className="text-[10px] font-black tracking-tighter uppercase">{label}</span>
             </button>
         );
 
@@ -286,7 +318,7 @@
             const [error, setError] = useState(false);
 
             const handleConfirm = () => {
-                if (input === correctPassword) onConfirm();
+                if (input === correctPassword) { onConfirm(); } 
                 else { setError(true); setTimeout(() => setError(false), 500); }
             };
 
@@ -442,7 +474,7 @@
                 } catch (err) {
                     setOcrStatus("idle"); 
                     console.error("OCR Error:", err);
-                    alert(`[구글 AI 에러]\n\n${err.message}\n\n▶ 권한 문제입니다. 시스템 설정에 입력된 키가 정확한지 확인해주세요.`);
+                    alert(`[구글 AI 에러 발생]\n\n${err.message}\n\n▶ 조치방법:\n1. 이 에러는 구글 서버에서 보낸 정확한 거부 사유입니다.\n2. API 키의 할당량이 초과되었거나 사용 권한이 비활성화되어 있습니다.\n3. AI Studio에서 새 계정으로 키를 다시 발급받는 것을 추천합니다.`);
                     showToast("인식에 실패했습니다.");
                 }
             };
@@ -1259,7 +1291,7 @@
                                         </div>
                                     </div>
                                     <div className="space-y-3 scale-in text-left">
-                                        <input type="password" placeholder="Gemini 전용 API Key 입력" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
+                                        <input type="password" placeholder="Gemini 전용 API Key 입력 (비우면 캔버스 모드)" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
                                         <button onClick={() => onSaveGeminiKey(apiForm)} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform text-center">API 키 저장</button>
                                     </div>
                                 </div>
@@ -1314,7 +1346,7 @@
                 } catch (err) { 
                     setOcrStatus("idle"); 
                     console.error("OCR Error:", err);
-                    alert(`[AI 처리 에러 발생]\n\n${err.message}\n\n▶ API 키에 문제가 있습니다. Google AI Studio에서 새 프로젝트로 다시 발급받아보세요.`);
+                    alert(`[AI 서버 통신 에러]\n\n${err.message}\n\n▶ 조치방법:\n1. 캔버스 환경에서는 API 키를 비워주세요.\n2. 실제 배포 서버에서는 새로 발급한 Gemini API 키가 필수입니다.\n3. 새 키 발급 시 '새 프로젝트'로 생성했는지 확인해주세요.`);
                     showToast("인식에 실패했습니다.");
                 }
             };
