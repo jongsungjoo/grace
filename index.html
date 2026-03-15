@@ -85,6 +85,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // 이 키는 데이터베이스(Firebase) 전용 키입니다.
         const firebaseConfig = {
             apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
             authDomain: "onnuri-grace.firebaseapp.com",
@@ -182,10 +183,9 @@
             });
         };
 
-        // 궁극의 AI 모델 자동 탐색 엔진 (어떤 환경이든 작동하는 모델을 찾아냅니다)
+        // Gemini AI 다중 모델 자동 탐색 엔진 (에러 완전 방어)
         const recognizeNamesWithGemini = async (base64Image, apiKey) => {
             const cleanKey = apiKey ? apiKey.trim() : "";
-            if (!cleanKey) throw new Error("API 키가 입력되지 않았습니다.");
             
             const base64Data = base64Image.split(',')[1];
             const payload = {
@@ -199,44 +199,47 @@
                 generationConfig: { temperature: 0.1 }
             };
 
-            // 구글이 제공하는 모든 주요 비전 모델 후보군 (위에서부터 차례대로 시도)
+            // 작동 가능한 모델을 찾을 때까지 순차적으로 시도합니다.
             const modelsToTry = [
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash-latest",
+                "gemini-2.5-flash-preview-09-2025",
                 "gemini-1.5-flash",
-                "gemini-2.5-flash-preview-09-2025"
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash-8b",
+                "gemini-1.5-pro"
             ];
             
-            let lastErrorMsg = "";
+            let lastErrorMsg = null;
 
             for (const modelName of modelsToTry) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${cleanKey}`;
                 try {
-                    console.log(`[AI 탐색] ${modelName} 모델 시도 중...`);
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    console.log(`[AI 모델 시도] ${modelName}...`);
+                    const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    });
                     
                     if (!response.ok) {
                         const errData = await response.json();
-                        console.warn(`[AI 탐색 실패 - ${modelName}]`, errData);
+                        console.warn(`[모델 거부됨] ${modelName}`, errData);
                         lastErrorMsg = errData.error?.message || `HTTP ${response.status}`;
-                        // 404 (Not Found) 에러면 해당 모델 권한이 없는 것이므로 다음 모델로 패스
-                        continue;
+                        continue; // 에러 발생 시 다음 모델로 즉시 넘어갑니다.
                     }
                     
                     const data = await response.json();
                     if (!data.candidates || data.candidates.length === 0) throw new Error("결과를 찾을 수 없습니다.");
                     
-                    console.log(`[AI 탐색 성공!] ${modelName} 모델로 작동했습니다.`);
+                    console.log(`[AI 모델 성공] ${modelName} 작동 완료.`);
                     return data.candidates[0].content.parts[0].text;
                 } catch (e) {
-                    console.warn(`[AI 통신 에러 - ${modelName}]`, e);
+                    console.warn(`[통신 에러] ${modelName}`, e);
                     lastErrorMsg = e.message;
                 }
             }
             
-            // 모든 모델이 실패한 경우에만 최종 에러 방출
-            throw new Error(lastErrorMsg);
+            // 모든 모델 시도가 실패한 경우에만 에러를 발생시킵니다.
+            throw new Error(lastErrorMsg || "모든 AI 모델 요청에 실패했습니다. 올바른 API 키를 입력했는지 확인해주세요.");
         };
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
@@ -445,7 +448,7 @@
                 } catch (err) {
                     setOcrStatus("idle"); 
                     console.error("OCR Error:", err);
-                    alert(`[AI 탐색 실패]\n\n${err.message}\n\n▶ 조치방법:\n1. 시스템 설정에 입력된 키가 올바른지 확인해주세요.\n2. 구글 클라우드에서 API 제한이 걸려있을 수 있습니다.`);
+                    alert(`[AI 서버 에러 발생]\n\n${err.message}\n\n▶ 조치방법: Google AI Studio에서 생성한 API 키가 설정에 올바르게 입력되어 있는지 확인하세요.`);
                     showToast("인식에 실패했습니다.");
                 }
             };
@@ -1258,7 +1261,7 @@
                                     <div className="flex items-center justify-between text-left mb-3">
                                         <div className="text-left">
                                             <p className="text-sm font-bold text-gray-800 text-left">AI 출석 인식 (Gemini API)</p>
-                                            <p className="text-xs text-gray-400 text-left">구글 AI Studio에서 발급받은 Gemini 전용 키를 입력하세요.</p>
+                                            <p className="text-xs text-gray-400 text-left">출석 명단 인식에 사용될 키를 안전하게 저장합니다.</p>
                                         </div>
                                     </div>
                                     <div className="space-y-3 scale-in text-left">
@@ -1267,6 +1270,148 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AttendanceView = ({ members, onCancel, requestAuth, showToast, geminiApiKey }) => {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [attendanceMap, setAttendanceMap] = useState({});
+            const [previewImage, setPreviewImage] = useState(null);
+            const [ocrStatus, setOcrStatus] = useState("idle");
+            const [ocrProgress, setOcrProgress] = useState(0);
+            const activeMembers = members.filter(m => m.status === 'active');
+            const fileInputRef = useRef(null);
+
+            const handleImageUpload = async (e) => {
+                const file = e.target.files[0]; 
+                if (!file) return;
+                try {
+                    const compressed = await compressImage(file);
+                    setPreviewImage(compressed); 
+                } catch (err) { 
+                    showToast("이미지 업로드에 실패했습니다.");
+                } finally { 
+                    if (fileInputRef.current) fileInputRef.current.value = ""; 
+                }
+            };
+
+            const handleRunAI = async () => {
+                if (!previewImage) return showToast("먼저 참석 명단 사진 영역을 눌러 업로드해주세요.");
+
+                setOcrStatus("processing"); setOcrProgress(50);
+                try {
+                    const cropped = await cropImageForOCR(previewImage, 0.45, 0.95); 
+                    const extractedText = await recognizeNamesWithGemini(cropped, geminiApiKey);
+                    setOcrProgress(100);
+
+                    const cleanText = extractedText.replace(/\s+/g, '');
+                    const newMap = { ...attendanceMap };
+                    
+                    activeMembers.forEach(m => { 
+                        if (cleanText.includes(m.name)) newMap[m.name] = true; 
+                    });
+                    
+                    setAttendanceMap(newMap); 
+                    setOcrStatus("success"); 
+                    showToast("AI 이름 인식이 완료되었습니다.");
+                } catch (err) { 
+                    setOcrStatus("idle"); 
+                    console.error("OCR Error:", err);
+                    alert(`[AI 자동 탐색 실패]\n\n${err.message}`);
+                    showToast("인식에 실패했습니다.");
+                }
+            };
+
+            const togglePart = (partId) => {
+                const partMembers = activeMembers.filter(m => m.part === partId);
+                const allSelected = partMembers.every(m => attendanceMap[m.name]);
+                const next = { ...attendanceMap };
+                if (allSelected) partMembers.forEach(m => delete next[m.name]);
+                else partMembers.forEach(m => next[m.name] = true);
+                setAttendanceMap(next);
+            };
+
+            const handleSave = () => {
+                requestAuth(async () => {
+                    const { db, collection, addDoc } = window.MyFirebase;
+                    const dateStr = date.replace(/-/g, '. ') + '.';
+                    const selectedNames = Object.keys(attendanceMap);
+                    await addDoc(collection(db, 'history'), { 
+                        date: dateStr, count: selectedNames.length, members: selectedNames, image: previewImage, updatedAt: new Date().toISOString() 
+                    });
+                    showToast("기록 저장 완료"); onCancel();
+                });
+            };
+
+            return (
+                <div className="space-y-6 fade-in pb-10 text-left">
+                    <div className="flex items-center justify-between px-1 text-left">
+                        <button onClick={onCancel} className="text-gray-400 font-bold flex items-center gap-1 transition-transform active:scale-90 text-center"><LucideIcon name="chevron-left" /> 뒤로</button>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 overflow-hidden text-left">
+                            <h2 className="text-xl font-black text-gray-800 shrink-0 text-left">새 출석 기록</h2>
+                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="header-date-input text-left" />
+                        </div>
+                        <button onClick={handleSave} className="bg-[#193278] text-white px-5 py-2 rounded-xl font-black shadow-lg transition-transform active:scale-95 text-center">저장</button>
+                    </div>
+                    <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-50 overflow-hidden text-left">
+                        <div className="flex items-center justify-between mb-4 text-left"><h3 className="font-bold text-gray-800 flex items-center gap-2 text-left"><LucideIcon name="camera" className="w-5 h-5 text-blue-500 text-left" /> 팀원 인식</h3></div>
+                        
+                        <div className="flex flex-col gap-2 mb-4">
+                            <button onClick={handleRunAI} disabled={ocrStatus === 'processing' || !previewImage} className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded-2xl font-black transition-transform active:scale-95 flex justify-center items-center gap-2 hover:bg-purple-100 border border-purple-100 disabled:opacity-50">
+                                {ocrStatus === 'processing' ? <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div> : <LucideIcon name="sparkles" className="w-5 h-5" />}
+                                {ocrStatus === 'processing' ? "AI 이름 인식 중..." : "AI 자동 출석 체크"}
+                            </button>
+                        </div>
+
+                        <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-4 min-h-[160px] flex flex-col items-center justify-center transition-all hover:bg-gray-50 text-center cursor-pointer">
+                            {previewImage ? (
+                                <div className="w-full relative text-center">
+                                    <img src={previewImage} className="w-full max-h-48 object-contain rounded-2xl mx-auto text-center" />
+                                    {ocrStatus === "processing" && (
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-2xl text-center">
+                                            <div className="w-full bg-gray-100 h-2 rounded-full mb-3 overflow-hidden max-w-xs mx-auto text-center"><div className="bg-[#193278] h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
+                                            <p className="text-[#193278] font-bold text-[10px] animate-pulse text-center">명단 인식 중... {ocrProgress}%</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center p-4 text-center text-center">
+                                    <LucideIcon name="image-plus" className="w-8 h-8 text-gray-300 mx-auto mb-2 text-center" />
+                                    <p className="text-gray-400 text-xs font-bold text-center">여기를 눌러 참석 명단 사진을 업로드하세요</p>
+                                </div>
+                            )}
+                            <input ref={fileInputRef} type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer text-left" onChange={handleImageUpload} disabled={ocrStatus === "processing"} />
+                        </div>
+                    </section>
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-50 text-left">
+                        <div className="space-y-8 text-left text-left">
+                            {['staff', ...PARTS.map(p=>p.id)].map(partId => {
+                                const list = activeMembers.filter(m => m.part === partId);
+                                if (list.length === 0) return null;
+                                
+                                const checkedCount = list.filter(m => attendanceMap[m.name]).length;
+                                
+                                return (
+                                    <div key={partId} className="text-left">
+                                        <div className="flex items-center justify-between mb-3 text-left">
+                                            <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2 text-left">
+                                                <span className="w-1 h-3 rounded-full text-left" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
+                                                {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
+                                                <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
+                                            </h4>
+                                            <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 transition-colors text-center text-center text-center text-center text-center">전체</button>
+                                        </div>
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-center text-center text-center text-center">
+                                            {list.map(m => (
+                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }} className={`py-3.5 px-1 rounded-2xl text-[13px] font-bold border transition-all text-center ${attendanceMap[m.name] ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
