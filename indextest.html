@@ -1553,29 +1553,29 @@
                 });
             }, [members]);
 
-            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-center"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin"></div></div>;
+            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-center text-center text-center text-center"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin"></div></div>;
 
             return (
                 <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left">
-                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left">
-                        <div className="mb-10 flex items-center gap-3 text-left">
-                            <AppLogo className="w-10 h-10 text-left" />
-                            <div className="text-left">
+                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left text-left text-left">
+                        <div className="mb-10 flex items-center gap-3 text-left text-left text-left text-left">
+                            <AppLogo className="w-10 h-10 text-left text-left text-left text-left" />
+                            <div className="text-left text-left text-left text-left">
                                 <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left">
-                                    <span className={`w-2 h-2 rounded-full text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
+                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left">
+                                    <span className={`w-2 h-2 rounded-full text-left text-left text-left text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
                                     {isAdmin ? 'ADMIN SESSION ACTIVE' : 'ONLINE MODE'}
                                 </div>
                             </div>
                         </div>
-                        <nav className="flex-1 space-y-2 text-left">
+                        <nav className="flex-1 space-y-2 text-left text-left text-left">
                             <NavBtn id="music" label="성가음원&악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
-                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left">매니저 영역</div>
+                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
                             <NavBtn id="manage" label="명단관리" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
-                        <div className="mt-auto space-y-2 text-left">
+                        <div className="mt-auto space-y-2 text-left text-left text-left text-left">
                             <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2" /> 링크 공유</button>
                             {isAdmin && (
                                 <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center">
@@ -1585,25 +1585,25 @@
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left text-left text-left text-left">
                         {/* 스크롤 방향에 따라 변환되는 Header */}
-                        <header className={`md:hidden fixed top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-50 transition-transform duration-300 ease-in-out ${isScrolled ? '-translate-y-full' : 'translate-y-0'}`}>
-                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left">
-                                <AppLogo className="w-8 h-8 text-left" />
-                                <span className="font-black text-lg text-[#193278] text-left">주은혜 찬양사역팀</span>
+                        <header className={`md:hidden fixed top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-50 transition-transform duration-300 ease-in-out ${isScrolled ? '-translate-y-full' : 'translate-y-0'} text-left text-left`}>
+                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
+                                <AppLogo className="w-8 h-8 text-left text-left text-left text-left" />
+                                <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
                             </div>
-                            <div className="flex items-center gap-2 text-left">
-                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left" /></button>
-                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리"><LucideIcon name="user-round" className="w-5 h-5 text-left" /></button>
+                            <div className="flex items-center gap-2 text-left text-left text-left text-left">
+                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
+                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left" /></button>
                                 {isAdmin && (
-                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5 text-left" /></button>
+                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left" /></button>
                                 )}
                             </div>
                         </header>
 
                         {/* 상단 Header가 fixed 되었기 때문에 pt-20을 주어 콘텐츠 영역을 확보하고 스크롤 이벤트를 연결합니다. */}
-                        <div className="flex-1 scroll-container p-4 pt-20 md:p-10 md:pt-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
-                            <div className="max-w-4xl mx-auto w-full text-left">
+                        <div className="flex-1 scroll-container p-4 pt-20 md:p-10 md:pt-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left" onScroll={handleScroll}>
+                            <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
@@ -1613,7 +1613,7 @@
                         </div>
 
                         {/* 스크롤 방향에 따라 변환되는 Navigation 바 */}
-                        <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] transition-transform duration-300 ease-in-out ${isScrolled ? 'translate-y-full' : 'translate-y-0'}`}>
+                        <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] transition-transform duration-300 ease-in-out ${isScrolled ? 'translate-y-full' : 'translate-y-0'} text-left text-left text-left text-left text-left`}>
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
@@ -1633,7 +1633,7 @@
                     }} showToast={showToast} />}
                     {authModal.isOpen && <AuthModal correctPassword={masterPassword} onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
-                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center">{toast.msg}</div>}
+                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center text-center text-left text-left text-left">{toast.msg}</div>}
                 </div>
             );
         };
