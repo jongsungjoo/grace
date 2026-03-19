@@ -85,7 +85,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 데이터베이스(Firebase) 전용 설정 (절대 변경 금지)
+        // 이 키는 데이터베이스(Firebase) 전용 키입니다. (절대 수정 금지)
         const firebaseConfig = {
             apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
             authDomain: "onnuri-grace.firebaseapp.com",
@@ -182,9 +182,21 @@
             });
         };
 
-        // 완벽하게 정제된 Gemini API 호출 함수 (구글 ListModels API 연동 자동 탐색)
+        // ★ 순수하고 단일화된 Gemini API 호출 함수 (복잡한 우회 제거)
         const recognizeNamesWithGemini = async (base64Image, apiKey) => {
             const cleanKey = apiKey ? apiKey.trim().replace(/[^a-zA-Z0-9_-]/g, '') : "";
+            
+            if (!cleanKey) {
+                throw new Error("시스템 설정 메뉴에서 발급받으신 Gemini API 키를 입력해주세요.");
+            }
+            
+            // Firebase 키 혼동 방지
+            if (cleanKey.includes("AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww")) {
+                 throw new Error("데이터베이스 전용 키가 입력되었습니다. 구글 AI Studio에서 새로 발급받은 키를 넣어주세요.");
+            }
+
+            // 공식 안정화 버전인 1.5-flash 모델로 고정 호출
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
             const base64Data = base64Image.split(',')[1];
             
             const payload = {
@@ -197,76 +209,30 @@
                 generationConfig: { temperature: 0.1 }
             };
 
-            // [환경 분기 1] 시스템 설정에 키가 비어있는 경우 (캔버스 미리보기 우회용)
-            if (!cleanKey) {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`;
-                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) {
-                    throw new Error("외부 서버(깃허브 등)에서는 시스템 설정에 API 키 입력이 필수입니다.");
-                }
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            }
-
-            // [환경 분기 2] 사용자 API 키를 통해 직접 사용 가능한 모델 목록 탐색 (에러 메시지 지침 반영)
-            let bestModel = "gemini-1.5-flash"; // 기본값
-            
             try {
-                // 1단계: 내 키로 어떤 모델을 쓸 수 있는지 구글 서버에 먼저 물어봅니다.
-                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`;
-                const listRes = await fetch(listUrl);
+                const response = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
                 
-                if (listRes.ok) {
-                    const listData = await listRes.json();
-                    const availableModels = listData.models || [];
-                    
-                    // generateContent를 지원하는 모델 필터링
-                    const validModels = availableModels.filter(m => 
-                        m.supportedGenerationMethods && 
-                        m.supportedGenerationMethods.includes("generateContent")
-                    );
-
-                    if (validModels.length > 0) {
-                        const prefs = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro-vision"];
-                        let foundModel = null;
-                        
-                        for (const pref of prefs) {
-                            foundModel = validModels.find(m => m.name.includes(pref));
-                            if (foundModel) break;
-                        }
-                        
-                        // 우선순위 모델이 없으면 그냥 리스트에서 가장 처음 나오는 모델을 사용합니다.
-                        bestModel = (foundModel || validModels[0]).name.replace('models/', '');
-                        console.log(`[AI 모델 자동 탐색] 사용 가능한 모델 발견: ${bestModel}`);
-                    }
-                } else {
-                    const errData = await listRes.json();
-                    console.warn("[AI 모델 탐색 실패] 권한 또는 할당량 문제일 수 있습니다:", errData);
-                    // 에러가 나도 일단 기본 모델로 아래에서 찔러봐서 정확한 에러를 방출합니다.
+                if (!response.ok) {
+                    const errData = await response.json();
+                    console.error("Gemini API Error Detail:", errData);
+                    // 구글이 보낸 에러 메시지를 가리지 않고 그대로 던집니다.
+                    throw new Error(errData.error?.message || `HTTP 통신 에러 (${response.status})`);
                 }
+                
+                const data = await response.json();
+                if (!data.candidates || data.candidates.length === 0) throw new Error("결과를 찾을 수 없습니다.");
+                return data.candidates[0].content.parts[0].text;
             } catch (e) {
-                console.warn("[AI 모델 탐색 실패] 네트워크 에러:", e);
+                console.error("Fetch Error:", e);
+                throw e; // 밖으로 에러를 그대로 전달
             }
-
-            // 2단계: 확정된 모델로 실제 추론 요청
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${bestModel}:generateContent?key=${cleanKey}`;
-            const response = await fetch(url, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(payload) 
-            });
-            
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Gemini API Error Data:", errData);
-                // 구글 서버가 보내는 진짜 에러 메시지를 가리지 않고 그대로 던집니다.
-                throw new Error(errData.error?.message || `HTTP 에러 ${response.status}`);
-            }
-            
-            const data = await response.json();
-            if (!data.candidates || data.candidates.length === 0) throw new Error("추출된 결과가 없습니다.");
-            return data.candidates[0].content.parts[0].text;
         };
+
+        // --- 여기서부터 UI 컴포넌트 선언부 (중복 제거됨) ---
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
             const ref = useRef(null);
@@ -439,7 +405,8 @@
             const [ocrProgress, setOcrProgress] = useState(0);
             const [isFullScreen, setIsFullScreen] = useState(false);
             
-            const activeMembers = allMembers.filter(m => m.status === 'active' || selected.has(m.name));
+            const safeMembers = allMembers || [];
+            const activeMembers = safeMembers.filter(m => m && (m.status === 'active' || selected.has(m.name)));
 
             const handleImageUpload = async (e) => {
                 const file = e.target.files[0]; 
@@ -453,7 +420,7 @@
             };
 
             const handleRunAI = async () => {
-                if (!image) return showToast("먼저 참석 명단 사진 영역을 눌러 업로드해주세요.");
+                if (!image) return showToast("먼저 참석 명단 사진을 업로드해주세요.");
 
                 setOcrStatus("processing"); setOcrProgress(50);
                 try {
@@ -465,7 +432,7 @@
                     const next = new Set(selected);
                     
                     allMembers.forEach(m => { 
-                        if (cleanText.includes(m.name)) next.add(m.name); 
+                        if (m && m.name && cleanText.includes(m.name)) next.add(m.name); 
                     });
                     
                     setSelected(next); 
@@ -474,7 +441,7 @@
                 } catch (err) {
                     setOcrStatus("idle"); 
                     console.error("OCR Error:", err);
-                    alert(`[구글 AI 에러 발생]\n\n${err.message}\n\n▶ 조치방법:\n1. 이 에러는 구글 서버에서 보낸 정확한 거부 사유입니다.\n2. API 키의 할당량이 초과되었거나 사용 권한이 비활성화되어 있습니다.\n3. AI Studio에서 새 계정으로 키를 다시 발급받는 것을 추천합니다.`);
+                    alert(`[AI 서버 에러 발생]\n\n${err.message}\n\n▶ 조치방법: Google AI Studio에서 생성한 API 키가 설정에 올바르게 입력되어 있는지 확인하세요.`);
                     showToast("인식에 실패했습니다.");
                 }
             };
@@ -535,16 +502,19 @@
                                 <section>
                                     <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 text-left">참석 팀원 명단 ({selected.size}명)</h4>
                                     {['staff', ...PARTS.map(p=>p.id)].map(partId => {
-                                        const list = allMembers.filter(m => (m.status === 'active' || selected.has(m.name)) && m.part === partId);
+                                        const list = activeMembers.filter(m => m && m.part === partId);
                                         if (list.length === 0) return null;
                                         
-                                        const checkedCount = list.filter(m => selected.has(m.name)).length;
+                                        const checkedCount = list.filter(m => m && selected.has(m.name)).length;
+                                        const partObj = PARTS.find(p => p.id === partId);
+                                        const partColor = partId === 'staff' ? '#193278' : (partObj ? partObj.color : '#ccc');
+                                        const partNameLabel = partId === 'staff' ? '성가사 & 반주자' : (partObj ? partObj.name : '');
                                         
                                         return (
                                             <div key={partId} className="mb-6 text-left">
                                                 <h5 className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1.5 mb-3">
-                                                    <span className="w-1.5 h-3 rounded-full" style={{backgroundColor: partId === 'staff' ? '#193278' : (PARTS.find(p=>p.id===partId)?.color || '#ccc')}}></span>
-                                                    {partId === 'staff' ? '성가사 & 반주자' : (PARTS.find(p=>p.id===partId)?.name)}
+                                                    <span className="w-1.5 h-3 rounded-full" style={{backgroundColor: partColor}}></span>
+                                                    {partNameLabel}
                                                     <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
                                                 </h5>
                                                 <div className="grid grid-cols-3 gap-1.5">
@@ -581,42 +551,49 @@
             const [selectedMember, setSelectedMember] = useState('');
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
-            const activeMembers = members.filter(m => m.status === 'active');
+            
+            const safeMembers = members || [];
+            const activeMembers = safeMembers.filter(m => m && m.status === 'active');
 
             const memberPartMap = useMemo(() => {
-                return members.reduce((acc, m) => ({ ...acc, [m.name]: m.part }), {});
-            }, [members]);
+                return safeMembers.reduce((acc, m) => {
+                    if (m && m.name) acc[m.name] = m.part;
+                    return acc;
+                }, {});
+            }, [safeMembers]);
 
             const stats = useMemo(() => {
-                if (history.length === 0) return { avg: 0, max: 0, attention: 0 };
-                const avg = (history.reduce((a,b) => a + b.count, 0) / history.length).toFixed(1);
-                const max = Math.max(...history.map(h => h.count));
-                const last3 = history.slice(0, 3).flatMap(h => h.members);
-                const attention = activeMembers.filter(m => !last3.includes(m.name)).length;
+                const safeHistory = history || [];
+                if (safeHistory.length === 0) return { avg: 0, max: 0, attention: 0 };
+                const avg = (safeHistory.reduce((a,b) => a + (b.count || 0), 0) / safeHistory.length).toFixed(1);
+                const max = Math.max(...safeHistory.map(h => h.count || 0));
+                const last3 = safeHistory.slice(0, 3).flatMap(h => h.members || []);
+                const attention = activeMembers.filter(m => m && m.name && !last3.includes(m.name)).length;
                 return { avg, max, attention };
             }, [history, activeMembers]);
 
             useEffect(() => {
-                if (history.length > 0 && chartRef.current && (subTab === 'total' || subTab === 'part')) {
+                const safeHistory = history || [];
+                if (safeHistory.length > 0 && chartRef.current && (subTab === 'total' || subTab === 'part')) {
                     if (chartInstance.current) chartInstance.current.destroy();
-                    const sorted = [...history].reverse().slice(-10);
+                    const sorted = [...safeHistory].reverse().slice(-10);
                     const labels = sorted.map(h => {
-                        const parts = h.date.split('. ');
+                        const parts = (h.date || "").split('. ');
                         if (parts.length >= 3) {
                             const month = parseInt(parts[1]);
                             const day = parseInt(parts[2]);
                             return `${month}.${day}`;
                         }
-                        return h.date;
+                        return h.date || "";
                     });
 
                     let datasets = [];
                     if (subTab === 'total') {
-                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count), borderColor: '#193278', backgroundColor: 'rgba(25, 50, 120, 0.1)', fill: true, tension: 0.4, font: { weight: 'bold' } }];
+                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count || 0), borderColor: '#193278', backgroundColor: 'rgba(25, 50, 120, 0.1)', fill: true, tension: 0.4, font: { weight: 'bold' } }];
                     } else if (subTab === 'part') {
                         datasets = PARTS.map(p => ({
                             label: p.name,
-                            data: sorted.map(h => h.members.filter(name => memberPartMap[name] === p.id).length),
+                            data: sorted.map(h => (h.members || []).filter(name => memberPartMap[name] === p.id).length),
                             borderColor: p.color,
                             backgroundColor: 'transparent',
                             tension: 0.3,
@@ -638,10 +615,10 @@
             }, [history, subTab, memberPartMap]);
 
             const individualHistory = useMemo(() => {
-                if (!selectedMember || history.length === 0) return [];
+                if (!selectedMember || !history || history.length === 0) return [];
                 return history.slice(0, 10).map(h => ({
                     date: h.date,
-                    isPresent: h.members.includes(selectedMember)
+                    isPresent: (h.members || []).includes(selectedMember)
                 }));
             }, [selectedMember, history]);
 
@@ -649,7 +626,7 @@
                 <div className="space-y-6 fade-in text-left">
                     <div className="flex flex-col sm:flex-row sm:items-end gap-2 mb-2 text-left">
                         <h2 className="text-3xl font-black text-gray-800">출석현황판</h2>
-                        <p className="text-sm text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {members.length}명)</span></p>
+                        <p className="text-sm text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {safeMembers.length}명)</span></p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 md:gap-4 text-left">
@@ -719,9 +696,9 @@
                             </button>
                         </div>
                         <div className="grid gap-3">
-                            {history.length === 0 ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
+                            {(!history || history.length === 0) ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
                             history.map(h => {
-                                const countsByPart = h.members.reduce((acc, name) => {
+                                const countsByPart = (h.members || []).reduce((acc, name) => {
                                     const part = memberPartMap[name];
                                     if (part && acc[part] !== undefined) acc[part]++;
                                     return acc;
@@ -1308,7 +1285,7 @@
             const [previewImage, setPreviewImage] = useState(null);
             const [ocrStatus, setOcrStatus] = useState("idle");
             const [ocrProgress, setOcrProgress] = useState(0);
-            const activeMembers = members.filter(m => m.status === 'active');
+            const activeMembers = members.filter(m => m && m.status === 'active');
             const fileInputRef = useRef(null);
 
             const handleImageUpload = async (e) => {
@@ -1457,6 +1434,8 @@
             const [user, setUser] = useState(null);
             const [masterPassword, setMasterPassword] = useState("onnurigrace");
             const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+            const [isNavVisible, setIsNavVisible] = useState(true);
+            const lastScrollY = useRef(0);
 
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
@@ -1517,7 +1496,11 @@
                 const dummy = document.createElement("textarea"); dummy.value = SHARE_LINK; document.body.appendChild(dummy); dummy.select(); document.execCommand('copy'); document.body.removeChild(dummy);
                 showToast("공유 링크가 복사되었습니다!");
             };
-            const handleTabChange = (id) => { if (id === 'manage') { requestAuth(() => setActiveTab(id)); } else { setActiveTab(id); } };
+            
+            const handleTabChange = (id) => { 
+                setIsNavVisible(true);
+                if (id === 'manage') { requestAuth(() => setActiveTab(id)); } else { setActiveTab(id); } 
+            };
             
             const handleSaveGeminiKey = (key) => {
                 const cleanKey = key.trim();
@@ -1526,11 +1509,28 @@
                 showToast("API 키가 브라우저에 안전하게 저장되었습니다.");
             };
 
+            const handleScroll = (e) => {
+                const currentScrollY = e.target.scrollTop;
+                if (currentScrollY <= 0) {
+                    setIsNavVisible(true);
+                    lastScrollY.current = currentScrollY;
+                    return;
+                }
+                if (currentScrollY > lastScrollY.current + 10) {
+                    setIsNavVisible(false);
+                } else if (currentScrollY < lastScrollY.current - 10) {
+                    setIsNavVisible(true);
+                }
+                lastScrollY.current = currentScrollY;
+            };
+
             const sortedMembers = useMemo(() => {
-                return [...members].sort((a, b) => {
-                    if (a.name === "박용규") return -1;
-                    if (b.name === "박용규") return 1;
-                    return a.name.localeCompare(b.name, 'ko');
+                const safeMembers = members || [];
+                return [...safeMembers].sort((a, b) => {
+                    if (a && a.name === "박용규") return -1;
+                    if (b && b.name === "박용규") return 1;
+                    if (a && b && a.name && b.name) return a.name.localeCompare(b.name, 'ko');
+                    return 0;
                 });
             }, [members]);
 
@@ -1567,7 +1567,7 @@
                     </aside>
 
                     <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left text-left text-left text-left">
-                        <header className="md:hidden bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-20 text-left text-left">
+                        <header className={`md:hidden absolute top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                             <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
                                 <AppLogo className="w-8 h-8 text-left text-left text-left text-left" />
                                 <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
@@ -1581,7 +1581,7 @@
                             </div>
                         </header>
 
-                        <div className="flex-1 scroll-container p-4 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left">
+                        <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
@@ -1591,7 +1591,7 @@
                             </div>
                         </div>
 
-                        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-lg text-left text-left text-left text-left text-left">
+                        <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
