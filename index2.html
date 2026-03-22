@@ -632,7 +632,7 @@
                         {/* 헤더 */}
                         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
                             <div className="min-w-0 flex-1 pr-3">
-                                <h3 className="font-black text-gray-800 text-base sm:text-lg leading-tight">이번달 생일 팀원</h3>
+                                <h3 className="font-black text-gray-800 text-base sm:text-lg leading-tight">생일 팀원</h3>
                                 <p className="text-[11px] text-pink-400 font-bold mt-0.5">🎂 생일 달력</p>
                             </div>
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 shrink-0"><LucideIcon name="x" className="w-6 h-6" /></button>
@@ -803,23 +803,26 @@
                     <div className="grid grid-cols-3 gap-2 md:gap-4 text-left">
                         {/* 평균/최다 통합 카드 */}
                         <div className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center text-left min-w-0">
-                            <div className="text-gray-400 text-[8px] md:text-[10px] font-black mb-1.5 leading-tight">평균/최다 출석</div>
-                            <div className="flex items-baseline gap-1 flex-wrap">
-                                <span className="text-lg md:text-3xl font-black text-[#193278] leading-none">{stats.avg}</span>
-                                <span className="text-[8px] font-bold text-gray-300">/</span>
-                                <span className="text-lg md:text-3xl font-black text-green-600 leading-none">{stats.max}</span>
-                                <span className="text-[9px] font-normal text-gray-300">명</span>
+                            <div className="text-gray-400 text-[9px] font-black mb-1.5 leading-tight whitespace-nowrap">평균/최다 출석</div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl md:text-3xl font-black text-[#193278] leading-none">{stats.avg}</span>
+                                <span className="text-[10px] font-bold text-gray-300">/</span>
+                                <span className="text-xl md:text-3xl font-black text-green-600 leading-none">{stats.max}</span>
+                                <span className="text-[9px] font-normal text-gray-300 ml-0.5">명</span>
                             </div>
                         </div>
-                        {/* 이번달 생일 팀원 카드 */}
+                        {/* 생일 팀원 카드 */}
                         <div onClick={() => setShowBdCalendar(true)} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-pink-50 transition-colors group text-left min-w-0">
-                            <div className="text-pink-400 text-[8px] md:text-[10px] font-black mb-1.5 leading-tight flex items-center gap-0.5">🎂 <span>이번달<br className="md:hidden"/>생일</span></div>
-                            <div className="text-lg md:text-4xl font-black text-pink-500">{thisMonthBdCount}<span className="text-[9px] md:text-sm font-normal text-pink-200 ml-0.5">명</span></div>
+                            <div className="text-pink-400 text-[9px] font-black mb-1.5 leading-tight whitespace-nowrap flex items-center gap-0.5">🎂 생일 팀원</div>
+                            <div className="flex items-baseline gap-1 flex-wrap">
+                                <span className="text-xl md:text-4xl font-black text-pink-500 leading-none">{thisMonthBdCount}명</span>
+                                <span className="text-[10px] font-bold text-pink-300">/ {new Date().getMonth()+1}월</span>
+                            </div>
                         </div>
                         {/* 관심 팀원 카드 */}
                         <div onClick={onOpenInterest} className="bg-white p-3 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-orange-50 transition-colors group text-left min-w-0">
-                            <div className="text-orange-500 text-[8px] md:text-[10px] font-black mb-1.5 leading-tight flex items-center gap-0.5"><LucideIcon name="alert-circle" className="w-3 h-3 shrink-0" /> <span>관심<br className="md:hidden"/>팀원</span></div>
-                            <div className="text-lg md:text-4xl font-black text-orange-600">{stats.attention}<span className="text-[9px] md:text-sm font-normal text-orange-300 ml-0.5">명</span></div>
+                            <div className="text-orange-500 text-[9px] font-black mb-1.5 leading-tight whitespace-nowrap flex items-center gap-0.5"><LucideIcon name="alert-circle" className="w-3 h-3 shrink-0" /> 관심 팀원</div>
+                            <div className="text-xl md:text-4xl font-black text-orange-600 leading-none">{stats.attention}<span className="text-[9px] font-normal text-orange-300 ml-0.5">명</span></div>
                         </div>
                     </div>
 
