@@ -1790,26 +1790,22 @@
                 return acc;
             }, {});
 
-            // 칩 컴포넌트 — MemberChipWithPart와 동일 스타일, 상태점+직책 추가
+            // 칩 컴포넌트 — 높이 통일, 왕관 제거, 직책은 하단 고정 공간
             const MemberChip = ({ m, showPartAbbr }) => { // localAdmin from closure
                 const hasRole = m.role && m.role.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
-                // 파트 아이콘 — PART_ICON 전역 사용 (S/A/T/B/성/반)
                 let pi = PART_ICON[m.part] || null;
                 if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
-                // 파트장 뷰에서는 showPartAbbr 무시 (pi로 통일)
                 return (
                     <button
                         onClick={() => localAdmin && setEditingMember(m)}
-                        className={`relative flex flex-col items-center justify-center px-1.5 py-2.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
-                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: hasRole ? '68px' : '52px' }}
+                        className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
+                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: '64px', paddingTop: '10px', paddingBottom: '10px' }}
                     >
                         {/* 상태 점 */}
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dot }}></span>
-                        {/* 임원 왕관 */}
-                        {hasRole && <span className="text-xs mb-0.5">👑</span>}
-                        {/* 파트 아이콘 + 이름 가로 배치 */}
+                        {/* 파트 아이콘 + 이름 */}
                         <div className="flex items-center justify-center gap-1">
                             {pi && (
                                 <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
@@ -1817,12 +1813,10 @@
                             )}
                             <span className="font-bold text-gray-800 text-sm leading-tight">{m.name}</span>
                         </div>
-                        {/* 직책 배지 */}
-                        {hasRole && (
-                            <span className="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none bg-purple-50 text-purple-600">
-                                {m.role}
-                            </span>
-                        )}
+                        {/* 직책 — 항상 동일한 공간 차지 (없으면 투명) */}
+                        <span className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${hasRole ? 'bg-purple-50 text-purple-600' : 'invisible'}`}>
+                            {hasRole ? m.role : '없음'}
+                        </span>
                     </button>
                 );
             };
