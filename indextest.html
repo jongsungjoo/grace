@@ -1350,10 +1350,10 @@
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            // 필터 옵션 (임원진 추가)
-            const filterTabs = [
-                { id: 'all',    name: '전체',      color: '#193278', special: false },
-                { id: 'officer',name: '임원진',    color: '#7c3aed', special: true  },
+            // 레벨 2 필터탭 목록
+            const partTabs = [
+                { id: 'all',     name: '전체',         color: '#193278' },
+                { id: 'officer', name: '임원진',        color: '#7c3aed' },
                 ...PART_OPTIONS,
             ];
 
@@ -1364,53 +1364,52 @@
                 sabbatical:    members.filter(m => statusNorm(m) === 'sabbatical').length,
             };
 
-            // 필터링
+            // 레벨1 필터 (상태)
             const byStatus = members.filter(m => statusNorm(m) === statusFilter);
-            let filtered;
-            if (partFilter === 'all') {
-                filtered = byStatus;
-            } else if (partFilter === 'officer') {
-                filtered = byStatus.filter(m => m.role && m.role.trim());
-            } else {
-                filtered = byStatus.filter(m => m.part === partFilter);
-            }
 
-            // 파트별 그룹핑 (임원진일 때도 파트 기준으로 묶음)
+            // 레벨2 필터 (파트/임원)
+            let filtered;
+            if (partFilter === 'all')          filtered = byStatus;
+            else if (partFilter === 'officer') filtered = byStatus.filter(m => m.role && m.role.trim());
+            else                               filtered = byStatus.filter(m => m.part === partFilter);
+
+            // 파트별 그룹핑
             const grouped = PART_OPTIONS.map(p => ({
                 ...p,
                 members: filtered.filter(m => m.part === p.id),
             })).filter(g => g.members.length > 0);
 
-            // 칩 컴포넌트
-            const MemberChip = ({ m }) => {
-                const pt = PART_OPTIONS.find(p => p.id === m.part);
+            // 레벨2 탭별 카운트
+            const partCounts = partTabs.reduce((acc, p) => {
+                if (p.id === 'all')          acc[p.id] = byStatus.length;
+                else if (p.id === 'officer') acc[p.id] = byStatus.filter(m => m.role && m.role.trim()).length;
+                else                          acc[p.id] = byStatus.filter(m => m.part === p.id).length;
+                return acc;
+            }, {});
+
+            // 칩 컴포넌트 — 임원이면 직책, 아니면 파트명 없음
+            const MemberChip = ({ m, showPartLabel }) => {
                 const hasRole = m.role && m.role.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
                 return (
                     <button
                         onClick={() => requestAuth(() => setEditingMember(m))}
-                        className="relative flex flex-col items-center justify-center px-3 py-3 bg-white border-2 rounded-2xl transition-all active:scale-95 hover:shadow-md text-center min-w-0 w-full"
-                        style={{ borderColor: hasRole ? '#7c3aed22' : '#f1f5f9' }}
+                        className="relative flex flex-col items-center justify-center px-2 py-3 bg-white border-2 rounded-2xl transition-all active:scale-95 hover:shadow-md text-center w-full"
+                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9' }}
                     >
-                        {/* 상태 점 */}
                         <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
-                        {/* 임원 왕관 */}
                         {hasRole && <span className="absolute top-1.5 left-2 text-[10px]">👑</span>}
-                        {/* 이름 */}
-                        <span className="font-black text-gray-800 text-sm leading-tight">{m.name}</span>
-                        {/* 파트 또는 직책 */}
-                        {hasRole ? (
+                        <span className="font-black text-gray-800 text-sm leading-tight mt-1">{m.name}</span>
+                        {hasRole && (
                             <span className="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 leading-none">{m.role}</span>
-                        ) : (
-                            <span className="mt-0.5 text-[10px] font-bold text-gray-300 leading-none">{pt?.name?.slice(0,3) || ''}</span>
                         )}
                     </button>
                 );
             };
 
             return (
-                <div className="space-y-5 fade-in text-left">
+                <div className="space-y-4 fade-in text-left">
                     {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
@@ -1429,39 +1428,42 @@
                         </div>
                     </div>
 
-                    {/* 상태 탭 */}
-                    <div className="flex gap-2">
-                        {STATUS_OPTIONS.map(s => (
-                            <button key={s.id} onClick={() => setStatusFilter(s.id)}
-                                className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${statusFilter === s.id ? 'bg-[#193278] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>
-                                <span className="text-lg font-black leading-tight">{counts[s.id]}</span>
-                                <span>{s.label}</span>
-                            </button>
-                        ))}
+                    {/* 레벨 1 — 상태 (활동중 / 단기부재 / 안식중) */}
+                    <div>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-0.5">상태</p>
+                        <div className="flex gap-2">
+                            {STATUS_OPTIONS.map(s => (
+                                <button key={s.id}
+                                    onClick={() => { setStatusFilter(s.id); setPartFilter('all'); }}
+                                    className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${statusFilter === s.id ? 'bg-[#193278] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>
+                                    <span className="text-lg font-black leading-tight">{counts[s.id]}</span>
+                                    <span>{s.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* 파트/임원 필터 */}
-                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                        {filterTabs.map(p => {
-                            const cnt = p.id === 'all' ? filtered.length
-                                      : p.id === 'officer' ? members.filter(m => statusNorm(m) === statusFilter && m.role && m.role.trim()).length
-                                      : members.filter(m => m.part === p.id && statusNorm(m) === statusFilter).length;
-                            return (
-                                <button key={p.id} onClick={() => setPartFilter(p.id)}
-                                    className={`px-3.5 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border-2 flex-shrink-0 flex items-center gap-1.5 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}
+                    {/* 레벨 2 — 파트 / 임원진 (wrap 그리드, 스크롤 없음) */}
+                    <div>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-0.5">파트</p>
+                        <div className="flex flex-wrap gap-2">
+                            {partTabs.map(p => (
+                                <button key={p.id}
+                                    onClick={() => setPartFilter(p.id)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'}`}
                                     style={partFilter === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
                                 >
-                                    {p.id === 'officer' && <span className="text-[10px]">👑</span>}
+                                    {p.id === 'officer' && <span>👑</span>}
                                     {p.name}
-                                    <span className={`text-[10px] font-black ${partFilter === p.id ? 'opacity-70' : 'text-gray-300'}`}>{cnt}</span>
+                                    <span className={`text-[10px] font-black ml-0.5 ${partFilter === p.id ? 'opacity-60' : 'text-gray-300'}`}>{partCounts[p.id]}</span>
                                 </button>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
 
                     {/* 멤버 칩 그리드 */}
                     {grouped.length === 0 ? (
-                        <div className="text-center py-16 text-gray-300">
+                        <div className="text-center py-14 text-gray-300">
                             <LucideIcon name="users" className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold text-sm">해당 팀원이 없습니다.</p>
                         </div>
@@ -1469,9 +1471,9 @@
                         <div className="space-y-5">
                             {grouped.map(group => (
                                 <div key={group.id}>
-                                    <div className="flex items-center gap-2 mb-2.5 px-0.5">
-                                        <span className="w-2 h-5 rounded-full shrink-0" style={{backgroundColor: group.color}}></span>
-                                        <span className="text-xs font-black text-gray-500 tracking-wide">{group.name}</span>
+                                    <div className="flex items-center gap-2 mb-2 px-0.5">
+                                        <span className="w-2 h-4 rounded-full shrink-0" style={{backgroundColor: group.color}}></span>
+                                        <span className="text-xs font-black text-gray-500">{group.name}</span>
                                         <span className="text-xs font-bold text-gray-300">{group.members.length}명</span>
                                     </div>
                                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
@@ -1483,7 +1485,7 @@
                     )}
 
                     {/* 범례 */}
-                    <div className="flex items-center gap-4 px-1 pt-1">
+                    <div className="flex items-center gap-4 px-0.5 pt-1 pb-2">
                         <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">상태</span>
                         {[['#22c55e','활동중'],['#eab308','단기부재'],['#9ca3af','안식중']].map(([c,l]) => (
                             <span key={l} className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
