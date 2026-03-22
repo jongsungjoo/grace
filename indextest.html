@@ -663,7 +663,7 @@
                         ) : (
                             <div className="flex-1 flex flex-col py-4 space-y-4 animate-fadeIn text-left">
                                 <div className="flex flex-wrap gap-2">
-                                    {[{ id: 'staff', name: '성가사', color: '#193278' }, ...PARTS].map(p => (
+                                    {[{ id: 'staff', name: '성가사/반주자', color: '#193278' }, ...PARTS].map(p => (
                                         <button
                                             key={p.id}
                                             onClick={() => { setSelectedPart(p.id === selectedPart ? '' : p.id); setSelectedMember(''); }}
@@ -1227,38 +1227,42 @@
         };
 
         const PART_OPTIONS = [
-            { id: 'staff',   name: '성가사',   color: '#193278' },
-            { id: 'soprano', name: '소프라노', color: '#e91e63' },
-            { id: 'alto',    name: '알토',     color: '#ff9800' },
-            { id: 'tenor',   name: '테너',     color: '#2196f3' },
-            { id: 'bass',    name: '베이스',   color: '#37474f' },
+            { id: 'staff',   name: '성가사/반주자', color: '#193278' },
+            { id: 'soprano', name: '소프라노',      color: '#e91e63' },
+            { id: 'alto',    name: '알토',          color: '#ff9800' },
+            { id: 'tenor',   name: '테너',          color: '#2196f3' },
+            { id: 'bass',    name: '베이스',        color: '#37474f' },
         ];
         const STATUS_OPTIONS = [
-            { id: 'active',        label: '활동중',   color: 'bg-green-100 text-green-700',  dot: 'bg-green-400' },
-            { id: 'short_absence', label: '단기부재', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' },
-            { id: 'sabbatical',    label: '안식중',   color: 'bg-gray-100 text-gray-500',    dot: 'bg-gray-400' },
+            { id: 'active',        label: '활동중',   color: 'bg-green-100 text-green-700' },
+            { id: 'short_absence', label: '단기부재', color: 'bg-yellow-100 text-yellow-700' },
+            { id: 'sabbatical',    label: '안식중',   color: 'bg-gray-100 text-gray-500' },
         ];
 
         const MemberEditModal = ({ member, onClose, onSave, onDelete }) => {
-            const [form, setForm] = useState({ name: member ? member.name : '', part: member ? member.part : 'soprano', status: member ? (member.status === 'inactive' ? 'sabbatical' : member.status) : 'active' });
             const isNew = !member;
+            const [form, setForm] = useState({
+                name:   member ? member.name   : '',
+                part:   member ? member.part   : 'soprano',
+                status: member ? (member.status === 'inactive' ? 'sabbatical' : (member.status || 'active')) : 'active',
+                role:   member ? (member.role  || '') : '',
+            });
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4">
-                    <div className="bg-white w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col">
-                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                    <div className="bg-white w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
                             <h3 className="font-black text-gray-800 text-lg">{isNew ? '새 팀원 추가' : '팀원 정보 수정'}</h3>
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </div>
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-5 overflow-y-auto hide-scrollbar">
+                            {/* 이름 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">이름</label>
-                                <input
-                                    type="text" placeholder="팀원 이름"
+                                <input type="text" placeholder="팀원 이름"
                                     className="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                                    autoFocus={isNew}
-                                />
+                                    value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus={isNew} />
                             </div>
+                            {/* 파트 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">파트</label>
                                 <div className="flex flex-wrap gap-2">
@@ -1270,6 +1274,7 @@
                                     ))}
                                 </div>
                             </div>
+                            {/* 상태 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">상태</label>
                                 <div className="flex gap-2">
@@ -1280,11 +1285,19 @@
                                     ))}
                                 </div>
                             </div>
+                            {/* 임원 직책 */}
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">임원 직책 <span className="normal-case font-normal">(없으면 비워두세요)</span></label>
+                                <input type="text" placeholder="예: 단장, 부단장, 총무, 서기 …"
+                                    className="w-full bg-gray-50 p-3.5 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={form.role} onChange={e => setForm({...form, role: e.target.value})} />
+                            </div>
                         </div>
-                        <div className="flex gap-2 px-6 pb-6 pt-2">
+                        <div className="flex gap-2 px-6 pb-6 pt-3 border-t border-gray-100 shrink-0">
                             {!isNew && <button onClick={onDelete} className="p-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><LucideIcon name="trash-2" className="w-5 h-5" /></button>}
                             <button onClick={onClose} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black active:scale-95 transition-transform">취소</button>
-                            <button onClick={() => { if (!form.name.trim()) return; onSave(form); }} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform">저장</button>
+                            <button onClick={() => { if (!form.name.trim()) return; onSave(form); }}
+                                className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform">저장</button>
                         </div>
                     </div>
                 </div>
@@ -1294,11 +1307,13 @@
         const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
-            const [editingMember, setEditingMember] = useState(null);  // null=closed, false=new, obj=edit
+            const [editingMember, setEditingMember] = useState(null); // null=closed, false=new, obj=edit
             const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
             const [showPwdSetting, setShowPwdSetting] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
+
+            const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
 
             const saveRoster = async (newList) => {
                 const { db, doc, setDoc } = window.MyFirebase;
@@ -1307,15 +1322,11 @@
 
             const handleSaveMember = (form) => requestAuth(async () => {
                 let newList;
+                const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim() };
                 if (!editingMember) {
-                    // 신규 추가
-                    newList = [...members, { name: form.name.trim(), part: form.part, status: form.status }];
+                    newList = [...members, data];
                 } else {
-                    // 수정
-                    newList = members.map(m => m.name === editingMember.name
-                        ? { ...m, name: form.name.trim(), part: form.part, status: form.status }
-                        : m
-                    );
+                    newList = members.map(m => m.name === editingMember.name ? { ...m, ...data } : m);
                 }
                 await saveRoster(newList);
                 showToast(editingMember ? "수정되었습니다." : "팀원이 추가되었습니다.");
@@ -1323,10 +1334,8 @@
             });
 
             const handleDeleteMember = (name) => requestAuth(async () => {
-                const newList = members.filter(m => m.name !== name);
-                await saveRoster(newList);
-                showToast("삭제되었습니다.");
-                setEditingMember(null);
+                await saveRoster(members.filter(m => m.name !== name));
+                showToast("삭제되었습니다."); setEditingMember(null);
             });
 
             const handleUpdatePassword = async () => {
@@ -1337,37 +1346,71 @@
                 try {
                     await setDoc(doc(db, 'settings', 'admin'), { password: pwdForm.next });
                     showToast("비밀번호가 변경되었습니다.");
-                    setPwdForm({ current: '', next: '', confirm: '' });
-                    setShowPwdSetting(false);
+                    setPwdForm({ current: '', next: '', confirm: '' }); setShowPwdSetting(false);
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            const allParts = [{ id: 'all', name: '전체', color: '#193278' }, ...PART_OPTIONS];
-            const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
+            // 필터 옵션 (임원진 추가)
+            const filterTabs = [
+                { id: 'all',    name: '전체',      color: '#193278', special: false },
+                { id: 'officer',name: '임원진',    color: '#7c3aed', special: true  },
+                ...PART_OPTIONS,
+            ];
 
-            const filtered = members.filter(m => {
-                const partOk = partFilter === 'all' || m.part === partFilter;
-                const statusOk = statusNorm(m) === statusFilter;
-                return partOk && statusOk;
-            });
-
-            // 파트 순서대로 그룹핑
-            const grouped = PART_OPTIONS.map(p => ({
-                ...p,
-                members: filtered.filter(m => m.part === p.id)
-            })).filter(g => partFilter === 'all' ? g.members.length > 0 : g.id === partFilter && g.members.length > 0);
-            if (partFilter !== 'all' && grouped.length === 0 && filtered.length > 0) {
-                // partFilter에 해당하지만 grouped에 안잡힐 경우 fallback
-            }
-
+            // 상태 카운트
             const counts = {
                 active:        members.filter(m => statusNorm(m) === 'active').length,
                 short_absence: members.filter(m => statusNorm(m) === 'short_absence').length,
                 sabbatical:    members.filter(m => statusNorm(m) === 'sabbatical').length,
             };
 
+            // 필터링
+            const byStatus = members.filter(m => statusNorm(m) === statusFilter);
+            let filtered;
+            if (partFilter === 'all') {
+                filtered = byStatus;
+            } else if (partFilter === 'officer') {
+                filtered = byStatus.filter(m => m.role && m.role.trim());
+            } else {
+                filtered = byStatus.filter(m => m.part === partFilter);
+            }
+
+            // 파트별 그룹핑 (임원진일 때도 파트 기준으로 묶음)
+            const grouped = PART_OPTIONS.map(p => ({
+                ...p,
+                members: filtered.filter(m => m.part === p.id),
+            })).filter(g => g.members.length > 0);
+
+            // 칩 컴포넌트
+            const MemberChip = ({ m }) => {
+                const pt = PART_OPTIONS.find(p => p.id === m.part);
+                const hasRole = m.role && m.role.trim();
+                const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
+                const dot = statusDots[statusNorm(m)] || '#9ca3af';
+                return (
+                    <button
+                        onClick={() => requestAuth(() => setEditingMember(m))}
+                        className="relative flex flex-col items-center justify-center px-3 py-3 bg-white border-2 rounded-2xl transition-all active:scale-95 hover:shadow-md text-center min-w-0 w-full"
+                        style={{ borderColor: hasRole ? '#7c3aed22' : '#f1f5f9' }}
+                    >
+                        {/* 상태 점 */}
+                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
+                        {/* 임원 왕관 */}
+                        {hasRole && <span className="absolute top-1.5 left-2 text-[10px]">👑</span>}
+                        {/* 이름 */}
+                        <span className="font-black text-gray-800 text-sm leading-tight">{m.name}</span>
+                        {/* 파트 또는 직책 */}
+                        {hasRole ? (
+                            <span className="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 leading-none">{m.role}</span>
+                        ) : (
+                            <span className="mt-0.5 text-[10px] font-bold text-gray-300 leading-none">{pt?.name?.slice(0,3) || ''}</span>
+                        )}
+                    </button>
+                );
+            };
+
             return (
-                <div className="space-y-6 fade-in text-left">
+                <div className="space-y-5 fade-in text-left">
                     {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
@@ -1375,10 +1418,12 @@
                             <p className="text-sm text-gray-400 font-bold mt-0.5">총 {members.length}명 · 활동 {counts.active}명</p>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={() => setShowSettings(!showSettings)} className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                            <button onClick={() => setShowSettings(!showSettings)}
+                                className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
                                 <LucideIcon name="settings" className="w-5 h-5" />
                             </button>
-                            <button onClick={() => requestAuth(() => setEditingMember(false))} className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
+                            <button onClick={() => requestAuth(() => setEditingMember(false))}
+                                className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
                                 <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
                             </button>
                         </div>
@@ -1388,77 +1433,66 @@
                     <div className="flex gap-2">
                         {STATUS_OPTIONS.map(s => (
                             <button key={s.id} onClick={() => setStatusFilter(s.id)}
-                                className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center gap-1 ${statusFilter === s.id ? 'bg-[#193278] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}
-                            >
-                                <span className="text-base font-black">{counts[s.id]}</span>
+                                className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${statusFilter === s.id ? 'bg-[#193278] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>
+                                <span className="text-lg font-black leading-tight">{counts[s.id]}</span>
                                 <span>{s.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    {/* 파트 필터 */}
+                    {/* 파트/임원 필터 */}
                     <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                        {allParts.map(p => (
-                            <button key={p.id} onClick={() => setPartFilter(p.id)}
-                                className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border-2 flex-shrink-0 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}
-                                style={partFilter === p.id ? { backgroundColor: p.color || '#193278', borderColor: p.color || '#193278' } : {}}
-                            >
-                                {p.name}
-                                {p.id !== 'all' && <span className="ml-1.5 opacity-70">{members.filter(m => m.part === p.id && statusNorm(m) === statusFilter).length}</span>}
-                            </button>
-                        ))}
+                        {filterTabs.map(p => {
+                            const cnt = p.id === 'all' ? filtered.length
+                                      : p.id === 'officer' ? members.filter(m => statusNorm(m) === statusFilter && m.role && m.role.trim()).length
+                                      : members.filter(m => m.part === p.id && statusNorm(m) === statusFilter).length;
+                            return (
+                                <button key={p.id} onClick={() => setPartFilter(p.id)}
+                                    className={`px-3.5 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border-2 flex-shrink-0 flex items-center gap-1.5 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}
+                                    style={partFilter === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
+                                >
+                                    {p.id === 'officer' && <span className="text-[10px]">👑</span>}
+                                    {p.name}
+                                    <span className={`text-[10px] font-black ${partFilter === p.id ? 'opacity-70' : 'text-gray-300'}`}>{cnt}</span>
+                                </button>
+                            );
+                        })}
                     </div>
 
-                    {/* 멤버 목록 */}
+                    {/* 멤버 칩 그리드 */}
                     {grouped.length === 0 ? (
                         <div className="text-center py-16 text-gray-300">
                             <LucideIcon name="users" className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold text-sm">해당 팀원이 없습니다.</p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-5">
                             {grouped.map(group => (
                                 <div key={group.id}>
-                                    {partFilter === 'all' && (
-                                        <div className="flex items-center gap-2 mb-3 px-1">
-                                            <span className="w-2 h-5 rounded-full" style={{backgroundColor: group.color}}></span>
-                                            <span className="text-xs font-black text-gray-500 uppercase tracking-wider">{group.name}</span>
-                                            <span className="text-xs font-bold text-gray-300">{group.members.length}명</span>
-                                        </div>
-                                    )}
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {group.members.map(m => {
-                                            const st = STATUS_OPTIONS.find(s => s.id === statusNorm(m)) || STATUS_OPTIONS[0];
-                                            const pt = PART_OPTIONS.find(p => p.id === m.part);
-                                            return (
-                                                <div key={m.name} onClick={() => requestAuth(() => setEditingMember(m))}
-                                                    className="bg-white rounded-2xl px-5 py-4 flex items-center justify-between border border-gray-50 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-sm" style={{backgroundColor: pt?.color || '#193278'}}>
-                                                            {m.name[0]}
-                                                        </div>
-                                                        <div>
-                                                            <span className="font-black text-gray-800 text-base">{m.name}</span>
-                                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                                <span className="text-[10px] font-bold text-gray-400">{pt?.name || m.part}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${st.color}`}>{st.label}</span>
-                                                        <LucideIcon name="chevron-right" className="w-4 h-4 text-gray-200 group-hover:text-gray-400 transition-colors" />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                    <div className="flex items-center gap-2 mb-2.5 px-0.5">
+                                        <span className="w-2 h-5 rounded-full shrink-0" style={{backgroundColor: group.color}}></span>
+                                        <span className="text-xs font-black text-gray-500 tracking-wide">{group.name}</span>
+                                        <span className="text-xs font-bold text-gray-300">{group.members.length}명</span>
+                                    </div>
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                        {group.members.map(m => <MemberChip key={m.name} m={m} />)}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* 시스템 설정 (접이식) */}
+                    {/* 범례 */}
+                    <div className="flex items-center gap-4 px-1 pt-1">
+                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">상태</span>
+                        {[['#22c55e','활동중'],['#eab308','단기부재'],['#9ca3af','안식중']].map(([c,l]) => (
+                            <span key={l} className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                <span className="w-2 h-2 rounded-full" style={{backgroundColor:c}}></span>{l}
+                            </span>
+                        ))}
+                    </div>
+
+                    {/* 시스템 설정 */}
                     {showSettings && (
                         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6 scale-in">
                             <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2"><LucideIcon name="settings" className="w-3.5 h-3.5" /> 시스템 설정</h3>
