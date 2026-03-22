@@ -547,12 +547,52 @@
             );
         };
 
-        // ── 음력→양력 근사 변환 (윤달 미반영 단순 추정, ±1일 오차 있음)
-        // 실용적으로: 음력 월-일을 그대로 solar로 취급하되 월별 오프셋 적용
-        const lunarToSolarMonth = (lunarMM) => {
-            // 음력은 양력보다 보통 3~7주 늦으므로 약 한 달 후로 추정
-            const offsets = [1,1,1,1,1,1,1,1,1,1,1,1]; // simplified: 같은 월 유지 (정확도 한계)
-            return lunarMM; // 음력 생일은 해당 음력 월 기준으로 달력에 표시
+        // ── 음력→양력 정확 변환 (한국천문연구원 기준 월별 날수 데이터 테이블)
+        // 각 항목: { newYear:[양력월,양력일], months:[12개월_날수], leap:윤달위치(0=없음), leapDays:윤달날수 }
+        const LUNAR_YEAR_DATA = {
+            2020: { newYear:[1,25],  months:[29,29,30,30,30,29,30,30,29,30,30,29], leap:4, leapDays:29 },
+            2021: { newYear:[2,12],  months:[29,30,29,30,29,30,29,30,29,30,30,29], leap:0, leapDays:0  },
+            2022: { newYear:[2,1],   months:[30,29,30,29,30,29,30,29,30,29,30,30], leap:0, leapDays:0  },
+            2023: { newYear:[1,22],  months:[29,30,30,29,30,29,30,29,30,29,30,30], leap:2, leapDays:29 },
+            2024: { newYear:[2,10],  months:[29,30,29,30,29,30,29,30,29,30,29,30], leap:0, leapDays:0  },
+            2025: { newYear:[1,29],  months:[30,29,30,29,30,29,30,29,30,30,30,29], leap:6, leapDays:29 },
+            2026: { newYear:[2,17],  months:[29,30,29,30,29,30,29,30,29,30,30,29], leap:0, leapDays:0  },
+            2027: { newYear:[2,6],   months:[30,29,30,29,30,29,30,29,30,29,30,29], leap:0, leapDays:0  },
+            2028: { newYear:[1,26],  months:[29,30,29,30,29,30,30,29,30,29,30,30], leap:5, leapDays:29 },
+            2029: { newYear:[2,13],  months:[30,29,30,29,30,29,30,29,30,29,30,30], leap:0, leapDays:0  },
+            2030: { newYear:[2,3],   months:[29,30,29,30,30,29,30,29,30,29,30,29], leap:0, leapDays:0  },
+        };
+
+        // 음력 → 양력 변환 함수
+        // solarYear: 기준 양력 연도, lunarMonth: 음력 월(1~12), lunarDay: 음력 일(1~30)
+        // 반환: { year, month, day } 양력 날짜, 또는 null
+        const lunarToSolar = (solarYear, lunarMonth, lunarDay) => {
+            const data = LUNAR_YEAR_DATA[solarYear];
+            if (!data) return null;
+            const [nyMM, nyDD] = data.newYear;
+            const { months, leap, leapDays } = data;
+            // 윤달 포함 전체 월 목록 생성
+            const fullMonths = [];
+            for (let m = 1; m <= 12; m++) {
+                fullMonths.push({ m, isLeap: false, days: months[m - 1] });
+                if (leap > 0 && m === leap) {
+                    fullMonths.push({ m, isLeap: true, days: leapDays });
+                }
+            }
+            // 신년부터 목표 음력 날짜까지 일수 계산 (윤달은 건너뜀)
+            let offset = 0, found = false;
+            for (const fm of fullMonths) {
+                if (fm.m === lunarMonth && !fm.isLeap) {
+                    offset += lunarDay - 1;
+                    found = true;
+                    break;
+                }
+                offset += fm.days;
+            }
+            if (!found) return null;
+            const base = new Date(solarYear, nyMM - 1, nyDD);
+            base.setDate(base.getDate() + offset);
+            return { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() };
         };
 
         // 생일 달력 컴포넌트
@@ -605,8 +645,18 @@
                     let lunarMM = null, lunarDD = null;
                     if (m.birthdayType === 'lunar') {
                         lunarMM = mm; lunarDD = dd;
-                        // 양력 근사: +1달
-                        displayMM = mm === 12 ? 1 : mm + 1;
+                        // 정확한 음력→양력 변환
+                        let solar = lunarToSolar(calYear, mm, dd);
+                        // 음력 11~12월처럼 다음 양력 연도로 넘어가는 경우: 이전 음력 연도 기준 재계산
+                        if (!solar || solar.year !== calYear) {
+                            solar = lunarToSolar(calYear - 1, mm, dd);
+                        }
+                        if (solar && solar.year === calYear) {
+                            displayMM = solar.month;
+                            displayDD = solar.day;
+                        } else {
+                            return;
+                        }
                     }
                     if (displayMM === calMonth) {
                         if (!map[displayDD]) map[displayDD] = [];
@@ -614,7 +664,7 @@
                     }
                 });
                 return map;
-            }, [members, calMonth]);
+            }, [members, calMonth, calYear]);
 
             const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
             const daysInMonth = new Date(calYear, calMonth, 0).getDate();
@@ -870,12 +920,16 @@
             const thisMonthBdCount = useMemo(() => {
                 const now = new Date();
                 const thisM = now.getMonth() + 1;
+                const thisY = now.getFullYear();
                 return safeMembers.filter(m => m.status !== 'sabbatical' && m.status !== 'inactive').filter(m => {
                     if (!m.birthday) return false;
-                    const [mm] = m.birthday.split('-').map(Number);
-                    let displayMM = mm;
-                    if (m.birthdayType === 'lunar') displayMM = mm === 12 ? 1 : mm + 1;
-                    return displayMM === thisM;
+                    const [mm, dd] = m.birthday.split('-').map(Number);
+                    if (!mm || !dd) return false;
+                    if (m.birthdayType !== 'lunar') return mm === thisM;
+                    // 정확한 음력→양력 변환
+                    let solar = lunarToSolar(thisY, mm, dd);
+                    if (!solar || solar.year !== thisY) solar = lunarToSolar(thisY - 1, mm, dd);
+                    return solar && solar.year === thisY && solar.month === thisM;
                 }).length;
             }, [safeMembers]);
 
