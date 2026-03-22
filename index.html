@@ -291,7 +291,7 @@
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
                     <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${error ? 'shake' : ''}`}>
-                        <h3 className="text-xl font-black text-gray-800 mb-2">매니저 인증</h3>
+                        <h3 className="text-xl font-black text-gray-800 mb-2">관리자 인증</h3>
                         <p className="text-sm text-gray-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
                         <div className="relative mb-4">
                             <input type="password" autoFocus className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none transition-all ${error ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-blue-500'}`} placeholder="Password" value={input} onChange={e => { setInput(e.target.value); if(error) setError(false); }} onKeyDown={e => e.key === 'Enter' && handleConfirm()} />
@@ -1660,7 +1660,7 @@
             );
         };
 
-        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin }) => {
+        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [editingMember, setEditingMember] = useState(null);
@@ -1678,7 +1678,9 @@
 
             const handleLocalAdminLogin = () => {
                 if (adminPwInput === currentPassword) {
-                    setLocalAdmin(true); setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false);
+                    setLocalAdmin(true);
+                    if (onBecomeAdmin) onBecomeAdmin(); // 전역 isAdmin도 활성화
+                    setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false);
                 } else {
                     setAdminPwError(true); setTimeout(() => setAdminPwError(false), 600);
                 }
@@ -1850,15 +1852,12 @@
                                         className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
                                         <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
                                     </button>
-                                    <button onClick={() => { setLocalAdmin(false); setShowSettings(false); }}
-                                        className="flex items-center gap-1.5 bg-red-50 text-red-400 px-3 py-3 rounded-2xl font-black text-xs active:scale-95 transition-transform border border-red-100">
-                                        <LucideIcon name="shield-off" className="w-4 h-4" /> 종료
-                                    </button>
+
                                 </>
                             ) : (
                                 <button onClick={() => setShowAdminModal(true)}
                                     className="flex items-center gap-2 bg-gray-100 text-gray-500 px-4 py-3 rounded-2xl font-black text-sm active:scale-95 transition-transform hover:bg-blue-50 hover:text-[#193278]">
-                                    <LucideIcon name="shield" className="w-4 h-4" /> 관리자 모드
+                                    <LucideIcon name="shield" className="w-4 h-4" /> 관리자 인증
                                 </button>
                             )}
                         </div>
@@ -1987,22 +1986,21 @@
 
                     {/* 관리자 모드 진입 모달 */}
                     {showAdminModal && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[400] flex items-center justify-center p-5">
-                            <div className={`bg-white p-8 rounded-[32px] w-full max-w-xs shadow-2xl scale-in ${adminPwError ? 'shake' : ''}`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <LucideIcon name="shield" className="w-5 h-5 text-[#193278]" />
-                                    <h3 className="text-xl font-black text-gray-800">관리자 모드</h3>
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
+                            <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${adminPwError ? 'shake' : ''}`}>
+                                <h3 className="text-xl font-black text-gray-800 mb-2">관리자 인증</h3>
+                                <p className="text-sm text-gray-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
+                                <div className="relative mb-4">
+                                    <input type="password" autoFocus
+                                        className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none transition-all ${adminPwError ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-blue-500'}`}
+                                        placeholder="Password"
+                                        value={adminPwInput}
+                                        onChange={e => { setAdminPwInput(e.target.value); setAdminPwError(false); }}
+                                        onKeyDown={e => e.key === 'Enter' && handleLocalAdminLogin()}
+                                    />
+                                    {adminPwError && <p className="text-red-500 text-[10px] font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
                                 </div>
-                                <p className="text-sm text-gray-400 mb-6">비밀번호를 입력하세요.</p>
-                                <input type="password" autoFocus
-                                    className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none mb-1 transition-all ${adminPwError ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-blue-500'}`}
-                                    placeholder="Password"
-                                    value={adminPwInput}
-                                    onChange={e => { setAdminPwInput(e.target.value); setAdminPwError(false); }}
-                                    onKeyDown={e => e.key === 'Enter' && handleLocalAdminLogin()}
-                                />
-                                {adminPwError && <p className="text-red-500 text-[10px] font-bold text-center mb-3 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
-                                <div className="flex gap-2 mt-4">
+                                <div className="flex gap-2">
                                     <button onClick={() => { setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false); }} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
                                     <button onClick={handleLocalAdminLogin} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
                                 </div>
@@ -2331,7 +2329,7 @@
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
