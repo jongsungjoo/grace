@@ -339,62 +339,41 @@
                             <h3 className="text-xl font-black text-gray-800 tracking-tight flex items-center gap-2"><LucideIcon name="heart" className="text-red-500 w-6 h-6" /> 관심 팀원 관리</h3>
                             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </header>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-10 hide-scrollbar text-left">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-6 hide-scrollbar text-left">
+                            {/* 공통 멤버 섹션 */}
+                            {[
+                                { list: attentionList,    label: '관심 필요 (3주 미출석)',  bgColor: 'bg-orange-50', borderColor: 'border-orange-100', nameColor: 'text-orange-800', dot: '#f97316', labelColor: '#f97316' },
+                                { list: confirmationList, label: '확인 필요 (4주+ 미출석)', bgColor: 'bg-red-50',    borderColor: 'border-red-100',    nameColor: 'text-red-800',    dot: '#ef4444', labelColor: '#ef4444' },
+                                { list: shortAbsenceOnes, label: '단기부재',                bgColor: 'bg-yellow-50', borderColor: 'border-yellow-100', nameColor: 'text-yellow-800', dot: '#eab308', labelColor: '#eab308' },
+                            ].map(({ list, label, bgColor, borderColor, nameColor, dot, labelColor }) => (
+                                <section key={label}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: dot}}></span>
+                                        <span className="text-sm font-black" style={{color: labelColor}}>{label}</span>
+                                        <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{list.length}명</span>
+                                    </div>
+                                    {list.length > 0 ? (
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {list.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} bgColor={bgColor} borderColor={borderColor} nameColor={nameColor} />)}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-300 font-bold pl-1">해당하는 팀원이 없습니다.</p>
+                                    )}
+                                </section>
+                            ))}
                             <section>
-                                <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                                    관심 필요 팀원 (3주 미출석) — {attentionList.length}명
-                                </h4>
-                                {attentionList.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">{attentionList.map(m => ( <div key={m.name} className="bg-orange-50 p-3 rounded-2xl border border-orange-100 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-orange-700">{m.name}</p></div> ))}</div>
-                                ) : (
-                                    <p className="text-xs text-gray-300 font-bold ml-3.5">해당하는 팀원이 없습니다.</p>
-                                )}
-                            </section>
-                            
-                            <section>
-                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                    확인 필요 팀원 (4주+ 미출석) — {confirmationList.length}명
-                                </h4>
-                                {confirmationList.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">{confirmationList.map(m => ( <div key={m.name} className="bg-red-50 p-3 rounded-2xl border border-red-100 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-red-700">{m.name}</p></div> ))}</div>
-                                ) : (
-                                    <p className="text-xs text-gray-300 font-bold ml-3.5">해당하는 팀원이 없습니다.</p>
-                                )}
-                            </section>
-
-                            <section>
-                                <h4 className="text-xs font-black text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                                    단기부재 팀원 — {shortAbsenceOnes.length}명
-                                </h4>
-                                {shortAbsenceOnes.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2">{shortAbsenceOnes.map(m => ( <div key={m.name} className="bg-yellow-50 p-3 rounded-2xl border border-yellow-100 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-yellow-600">{m.name}</p></div> ))}</div>
-                                ) : (
-                                    <p className="text-xs text-gray-300 font-bold ml-3.5">해당하는 팀원이 없습니다.</p>
-                                )}
-                            </section>
-
-                            <section>
-                                <button 
-                                    onClick={() => setShowSabbatical(!showSabbatical)}
-                                    className="w-full flex items-center justify-between text-left mb-2 group py-2"
-                                >
-                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                        안식 중인 팀원 — {sabbaticalOnes.length}명
-                                    </h4>
-                                    <LucideIcon name={showSabbatical ? "chevron-up" : "chevron-down"} className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                                <button onClick={() => setShowSabbatical(!showSabbatical)}
+                                    className="w-full flex items-center gap-2 mb-3 py-1 group text-left">
+                                    <span className="w-2 h-2 rounded-full bg-gray-400 shrink-0"></span>
+                                    <span className="text-sm font-black text-gray-400">안식 중인 팀원</span>
+                                    <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{sabbaticalOnes.length}명</span>
+                                    <LucideIcon name={showSabbatical?"chevron-up":"chevron-down"} className="w-4 h-4 text-gray-400 ml-auto" />
                                 </button>
-                                
                                 {showSabbatical && (
-                                    <div className="animate-fadeIn mt-2">
-                                        {sabbaticalOnes.length > 0 ? (
-                                            <div className="grid grid-cols-3 gap-2">{sabbaticalOnes.map(m => ( <div key={m.name} className="bg-gray-50 p-3 rounded-2xl border border-gray-200 text-center transition-shadow hover:shadow-sm"><p className="text-sm font-bold text-gray-400">{m.name}</p></div> ))}</div>
-                                        ) : (
-                                            <p className="text-xs text-gray-300 font-bold ml-3.5">안식 중인 팀원이 없습니다.</p>
-                                        )}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {sabbaticalOnes.length > 0
+                                            ? sabbaticalOnes.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} bgColor="bg-gray-50" borderColor="border-gray-200" nameColor="text-gray-500" />)
+                                            : <p className="text-sm text-gray-300 font-bold pl-1 col-span-3">안식 중인 팀원이 없습니다.</p>}
                                     </div>
                                 )}
                             </section>
@@ -567,13 +546,29 @@
         };
 
         // 생일 달력 컴포넌트
-        // 파트 약자 아이콘 (배경색 + 텍스트)
+        // 파트 아이콘 — S/A/T/B 영문 약자, 통일된 컬러
         const PART_ICON = {
-            staff:   { abbr: '성', color: '#193278' },
-            soprano: { abbr: '소', color: '#e91e63' },
-            alto:    { abbr: '알', color: '#ff9800' },
-            tenor:   { abbr: '테', color: '#2196f3' },
-            bass:    { abbr: '베', color: '#37474f' },
+            staff:   { abbr: '반', color: '#193278' },
+            soprano: { abbr: 'S',  color: '#e91e63' },
+            alto:    { abbr: 'A',  color: '#ff9800' },
+            tenor:   { abbr: 'T',  color: '#2196f3' },
+            bass:    { abbr: 'B',  color: '#37474f' },
+        };
+        // 공통 멤버 칩 컴포넌트 (파트 아이콘 + 이름, 3열 그리드 사용)
+        // partMap: {name->part} 맵 OR null, partOverride: 직접 파트 id 전달 시 사용
+        const MemberChipWithPart = ({ name, partMap, partOverride, bgColor = 'bg-white', borderColor = 'border-gray-100', nameColor = 'text-gray-800', extra }) => {
+            const part = partOverride || (partMap ? partMap[name] : null);
+            const pi = PART_ICON[part] || null;
+            return (
+                <div className={`flex items-center gap-1.5 px-3 py-2.5 ${bgColor} border ${borderColor} rounded-2xl`}>
+                    {pi && (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
+                            style={{ backgroundColor: pi.color, fontSize: '10px' }}>{pi.abbr}</span>
+                    )}
+                    <span className={`font-bold text-sm ${nameColor} leading-tight truncate`}>{name}</span>
+                    {extra && <span className="ml-auto text-xs text-gray-400 font-bold shrink-0">{extra}</span>}
+                </div>
+            );
         };
 
         const BirthdayCalendarModal = ({ members, onClose }) => {
@@ -680,12 +675,12 @@
                                     <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">이달 생일자 {bdList.length}명</p>
                                     <div className="space-y-2">
                                         {bdList.map((b, i) => (
-                                            <div key={i} className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-2xl">
-                                                <PartIcon part={b.part} />
-                                                <span className="font-black text-gray-800 text-sm">{b.name}</span>
-                                                <span className="ml-auto text-xs font-bold text-gray-500">
+                                            <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-2.5 rounded-2xl">
+                                                {(() => { const pi = PART_ICON[b.part]; return pi ? <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0" style={{backgroundColor:pi.color,fontSize:'10px'}}>{pi.abbr}</span> : null; })()}
+                                                <span className="font-bold text-gray-800 text-sm">{b.name}</span>
+                                                <span className="ml-auto text-sm font-bold text-gray-500">
                                                     {calMonth}/{b.displayD}
-                                                    {b.lunar && <span className="text-purple-400 ml-1">(음{b.lunarMM}/{b.lunarDD})</span>}
+                                                    {b.lunar && <span className="text-purple-400 ml-1 text-xs">(음{b.lunarMM}/{b.lunarDD})</span>}
                                                 </span>
                                             </div>
                                         ))}
@@ -703,90 +698,53 @@
         };
 
         const AttendStatsModal = ({ history, members, memberPartMap, onClose }) => {
-            const safeHistory = history || [];
+            const safeHistory = (history || []).filter(h => {
+                // 2026년 1월 이후 데이터만
+                const parts = (h.date || '').split('. ');
+                if (parts.length < 2) return false;
+                const y = parseInt(parts[0]); const m = parseInt(parts[1]);
+                return (y > 2026) || (y === 2026 && m >= 1);
+            });
             const activeMembers = (members || []).filter(m => m && m.status === 'active');
             const totalSessions = safeHistory.length;
 
-            // 최다 출석 날짜
-            const maxEntry = safeHistory.reduce((best, h) => (!best || h.count > best.count) ? h : best, null);
-
-            // 파트별 평균
-            const PARTS_LIST = [
-                { id: 'soprano', name: '소프라노', color: '#e91e63' },
-                { id: 'alto',    name: '알토',     color: '#ff9800' },
-                { id: 'tenor',   name: '테너',     color: '#2196f3' },
-                { id: 'bass',    name: '베이스',   color: '#37474f' },
-                { id: 'staff',   name: '성가사/반주자', color: '#193278' },
+            const PARTS_MAIN = [
+                { id: 'soprano', abbr: 'S', name: '소프라노', color: '#e91e63' },
+                { id: 'alto',    abbr: 'A', name: '알토',     color: '#ff9800' },
+                { id: 'tenor',   abbr: 'T', name: '테너',     color: '#2196f3' },
+                { id: 'bass',    abbr: 'B', name: '베이스',   color: '#37474f' },
             ];
 
-            // 멤버별 출석 횟수 집계
             const attendCount = useMemo(() => {
                 const map = {};
                 activeMembers.forEach(m => { map[m.name] = 0; });
                 safeHistory.forEach(h => {
-                    (h.members || []).forEach(name => {
-                        if (map[name] !== undefined) map[name]++;
-                    });
+                    (h.members || []).forEach(name => { if (map[name] !== undefined) map[name]++; });
                 });
                 return map;
             }, [history, members]);
 
-            // 개근 멤버 (전체 세션 모두 출석)
             const perfectMembers = activeMembers.filter(m => attendCount[m.name] === totalSessions && totalSessions > 0);
-
-            // 1회 결석 멤버
             const oneAbsenceMembers = activeMembers.filter(m => attendCount[m.name] === totalSessions - 1 && totalSessions > 1);
 
-            // 파트별 평균 출석률
-            const partStats = PARTS_LIST.map(p => {
-                const partMembers = activeMembers.filter(m => m.part === p.id);
-                if (partMembers.length === 0 || totalSessions === 0) return { ...p, avg: 0, rate: 0, count: 0 };
-                const totalPresent = safeHistory.reduce((sum, h) =>
-                    sum + (h.members || []).filter(name => memberPartMap[name] === p.id).length, 0);
-                const avg = (totalPresent / totalSessions).toFixed(1);
-                const rate = Math.round((totalPresent / (totalSessions * partMembers.length)) * 100);
-                return { ...p, avg, rate, count: partMembers.length };
+            const partStats = PARTS_MAIN.map(p => {
+                const pm = activeMembers.filter(m => m.part === p.id);
+                if (!pm.length || !totalSessions) return { ...p, avg: 0, rate: 0, count: 0 };
+                const total = safeHistory.reduce((s,h) => s+(h.members||[]).filter(n=>memberPartMap[n]===p.id).length,0);
+                return { ...p, avg: (total/totalSessions).toFixed(1), rate: Math.round(total/(totalSessions*pm.length)*100), count: pm.length };
             }).filter(p => p.count > 0);
 
-            // 최고 출석률 파트
-            const topPart = [...partStats].sort((a,b) => b.rate - a.rate)[0];
+            const topPart = [...partStats].sort((a,b)=>b.rate-a.rate)[0];
+            const top3dates = [...safeHistory].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,3);
 
-            // 출석률 상위 5명 (최소 5회 이상 기록)
-            const topAttenders = Object.entries(attendCount)
-                .filter(([,cnt]) => totalSessions > 0)
-                .map(([name, cnt]) => ({ name, cnt, rate: Math.round(cnt/totalSessions*100), part: memberPartMap[name] }))
-                .sort((a,b) => b.rate - a.rate || b.cnt - a.cnt)
-                .slice(0, 5);
-
-            const PartBadge = ({ part }) => {
-                const p = PARTS_LIST.find(x => x.id === part);
-                return p ? <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md text-white" style={{backgroundColor: p.color}}>{p.name.slice(0,2)}</span> : null;
-            };
-
-            const MemberRow = ({ name, sub, rate, badge }) => (
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl">
-                    <PartBadge part={memberPartMap[name]} />
-                    <span className="font-black text-gray-800 text-sm flex-1">{name}</span>
-                    {sub && <span className="text-xs text-gray-400 font-bold">{sub}</span>}
-                    {rate !== undefined && (
-                        <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                                <div className="h-1.5 rounded-full bg-[#193278]" style={{width: `${rate}%`}}></div>
-                            </div>
-                            <span className="text-xs font-black text-[#193278] w-8 text-right">{rate}%</span>
-                        </div>
-                    )}
-                    {badge && <span className="text-xs font-black px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">{badge}</span>}
-                </div>
-            );
-
-            const Section = ({ icon, title, color, children, empty }) => (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-1">
-                        <span className="text-base">{icon}</span>
-                        <span className="text-xs font-black uppercase tracking-wider" style={{color}}>{title}</span>
+            const Section = ({ icon, title, color, children, count, empty }) => (
+                <div className="space-y-2.5">
+                    <div className="flex items-center gap-2 px-0.5">
+                        <span>{icon}</span>
+                        <span className="font-black text-sm" style={{color}}>{title}</span>
+                        {count !== undefined && <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{count}명</span>}
                     </div>
-                    {empty ? <p className="text-xs text-gray-300 font-bold px-4 py-3">해당 없음</p> : children}
+                    {empty ? <p className="text-sm text-gray-300 font-bold px-1">해당 없음</p> : children}
                 </div>
             );
 
@@ -795,92 +753,77 @@
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
                         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
                             <div>
-                                <h3 className="font-black text-gray-800 text-base sm:text-lg">출석 통계</h3>
-                                <p className="text-[11px] text-gray-400 font-bold mt-0.5">총 {totalSessions}회 기준 · 활동 팀원 {activeMembers.length}명</p>
+                                <h3 className="font-black text-gray-800 text-lg">출석 통계</h3>
+                                <p className="text-sm text-gray-400 font-bold mt-0.5">2026년 1월~ · {totalSessions}회 기준 · 활동 {activeMembers.length}명</p>
                             </div>
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600 shrink-0"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </div>
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-5 py-5 space-y-6">
 
-                            {/* 하이라이트 3총사 */}
+                            {/* 역대 최다 출석 날짜 — 최상단 */}
+                            <Section icon="📅" title="역대 최다 출석 날짜" color="#22c55e">
+                                <div className="space-y-2">
+                                    {top3dates.map((h, i) => (
+                                        <div key={h.id||i} className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl">
+                                            <span className="font-black text-gray-300 w-4 text-sm">{i+1}</span>
+                                            <span className="font-bold text-gray-700 text-sm flex-1">{h.date}</span>
+                                            <span className="font-black text-green-600 text-xl">{h.count}<span className="text-xs font-normal text-gray-400 ml-0.5">명</span></span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Section>
+
+                            {/* 요약 카드 */}
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="bg-blue-50 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black text-blue-400 mb-1">평균 출석</p>
+                                    <p className="text-xs font-black text-blue-400 mb-1">평균 출석</p>
                                     <p className="text-2xl font-black text-[#193278]">{(safeHistory.reduce((a,b)=>a+(b.count||0),0)/Math.max(1,totalSessions)).toFixed(1)}</p>
-                                    <p className="text-[9px] text-blue-300">명</p>
+                                    <p className="text-xs text-blue-300">명</p>
                                 </div>
                                 <div className="bg-green-50 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black text-green-500 mb-1">최다 출석</p>
-                                    <p className="text-2xl font-black text-green-600">{maxEntry ? maxEntry.count : 0}</p>
-                                    <p className="text-[9px] text-green-400">{maxEntry ? maxEntry.date : '-'}</p>
+                                    <p className="text-xs font-black text-green-600 mb-1">최다 출석</p>
+                                    <p className="text-2xl font-black text-green-700">{top3dates[0]?.count||0}</p>
+                                    <p className="text-xs text-green-400">{top3dates[0]?.date||'-'}</p>
                                 </div>
                                 <div className="bg-purple-50 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black text-purple-400 mb-1">🏆 개근</p>
+                                    <p className="text-xs font-black text-purple-500 mb-1">🏆 개근</p>
                                     <p className="text-2xl font-black text-purple-600">{perfectMembers.length}</p>
-                                    <p className="text-[9px] text-purple-300">명</p>
+                                    <p className="text-xs text-purple-300">명</p>
                                 </div>
                             </div>
 
-                            {/* 파트별 출석률 */}
+                            {/* 파트별 출석률 (성가사 제외) */}
                             <Section icon="🎼" title="파트별 출석률" color="#193278">
                                 <div className="space-y-2">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map(p => (
                                         <div key={p.id} className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-2xl">
-                                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md text-white w-10 text-center shrink-0" style={{backgroundColor: p.color}}>{p.name.slice(0,2)}</span>
-                                            <span className="text-sm font-black text-gray-700 w-6 shrink-0">{p.avg}명</span>
+                                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-white font-black text-sm shrink-0" style={{backgroundColor: p.color}}>{p.abbr}</span>
+                                            <span className="font-bold text-gray-700 text-sm w-14 shrink-0">{p.name}</span>
+                                            <span className="text-sm font-black text-gray-600 w-10 shrink-0">{p.avg}명</span>
                                             <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                <div className="h-2 rounded-full transition-all" style={{width:`${p.rate}%`, backgroundColor: p.color}}></div>
+                                                <div className="h-2 rounded-full" style={{width:`${p.rate}%`,backgroundColor:p.color}}></div>
                                             </div>
-                                            <span className="text-xs font-black w-9 text-right shrink-0" style={{color: p.color}}>{p.rate}%</span>
-                                            {topPart && p.id === topPart.id && <span className="text-xs">🥇</span>}
+                                            <span className="font-black text-sm w-10 text-right shrink-0" style={{color:p.color}}>{p.rate}%</span>
+                                            {topPart?.id===p.id && <span>🥇</span>}
                                         </div>
                                     ))}
                                 </div>
                             </Section>
 
-                            {/* 개근 멤버 */}
-                            <Section icon="🏆" title={`개근 (${totalSessions}회 전부 출석)`} color="#7c3aed" empty={perfectMembers.length === 0}>
-                                <div className="space-y-1.5">
-                                    {perfectMembers.map(m => <MemberRow key={m.name} name={m.name} badge="개근" />)}
+                            {/* 개근 */}
+                            <Section icon="🏆" title={`개근 — ${totalSessions}회 전부 출석`} color="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {perfectMembers.map(m => (
+                                        <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} bgColor="bg-purple-50" borderColor="border-purple-100" nameColor="text-purple-800" />
+                                    ))}
                                 </div>
                             </Section>
 
                             {/* 아쉽게 1회 결석 */}
-                            <Section icon="😢" title="아쉽게 1회 결석" color="#f59e0b" empty={oneAbsenceMembers.length === 0}>
-                                <div className="space-y-1.5">
-                                    {oneAbsenceMembers.map(m => <MemberRow key={m.name} name={m.name} sub={`${attendCount[m.name]}/${totalSessions}회`} />)}
-                                </div>
-                            </Section>
-
-                            {/* 출석률 상위 5명 */}
-                            <Section icon="📊" title="출석률 TOP 5" color="#0ea5e9">
-                                <div className="space-y-1.5">
-                                    {topAttenders.map((m, i) => (
-                                        <div key={m.name} className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl">
-                                            <span className="text-sm font-black text-gray-300 w-4">{i+1}</span>
-                                            <PartBadge part={m.part} />
-                                            <span className="font-black text-gray-800 text-sm flex-1">{m.name}</span>
-                                            <span className="text-xs text-gray-400 font-bold">{m.cnt}/{totalSessions}회</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-14 bg-gray-200 rounded-full h-1.5">
-                                                    <div className="h-1.5 rounded-full bg-sky-500" style={{width:`${m.rate}%`}}></div>
-                                                </div>
-                                                <span className="text-xs font-black text-sky-600 w-8 text-right">{m.rate}%</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Section>
-
-                            {/* 최다 출석 날짜 TOP 3 */}
-                            <Section icon="📅" title="역대 최다 출석 날짜" color="#22c55e">
-                                <div className="space-y-1.5">
-                                    {[...safeHistory].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,3).map((h, i) => (
-                                        <div key={h.id || i} className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl">
-                                            <span className="text-sm font-black text-gray-300 w-4">{i+1}</span>
-                                            <span className="font-bold text-gray-700 text-sm flex-1">{h.date}</span>
-                                            <span className="text-lg font-black text-green-600">{h.count}명</span>
-                                        </div>
+                            <Section icon="😢" title="아쉽게 1회 결석" color="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {oneAbsenceMembers.map(m => (
+                                        <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} bgColor="bg-yellow-50" borderColor="border-yellow-100" nameColor="text-yellow-800" />
                                     ))}
                                 </div>
                             </Section>
