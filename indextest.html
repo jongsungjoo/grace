@@ -1500,11 +1500,24 @@
         const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
-            const [editingMember, setEditingMember] = useState(null); // null=closed, false=new, obj=edit
+            const [editingMember, setEditingMember] = useState(null);
             const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
             const [showPwdSetting, setShowPwdSetting] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
+            // 찬양팀명단 전용 로컬 관리자 모드 (전역 isAdmin과 분리)
+            const [localAdmin, setLocalAdmin] = useState(false);
+            const [showAdminModal, setShowAdminModal] = useState(false);
+            const [adminPwInput, setAdminPwInput] = useState('');
+            const [adminPwError, setAdminPwError] = useState(false);
+
+            const handleLocalAdminLogin = () => {
+                if (adminPwInput === currentPassword) {
+                    setLocalAdmin(true); setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false);
+                } else {
+                    setAdminPwError(true); setTimeout(() => setAdminPwError(false), 600);
+                }
+            };
 
             const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
 
@@ -1513,7 +1526,7 @@
                 await setDoc(doc(db, 'roster', 'current'), { list: newList });
             };
 
-            const handleSaveMember = (form) => requestAuth(async () => {
+            const handleSaveMember = async (form) => {
                 let newList;
                 const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim(), birthday: form.birthday.trim(), birthdayType: form.birthdayType || 'solar' };
                 if (!editingMember) {
@@ -1524,12 +1537,12 @@
                 await saveRoster(newList);
                 showToast(editingMember ? "수정되었습니다." : "팀원이 추가되었습니다.");
                 setEditingMember(null);
-            });
+            };
 
-            const handleDeleteMember = (name) => requestAuth(async () => {
+            const handleDeleteMember = async (name) => {
                 await saveRoster(members.filter(m => m.name !== name));
                 showToast("삭제되었습니다."); setEditingMember(null);
-            });
+            };
 
             const handleUpdatePassword = async () => {
                 if (pwdForm.current !== currentPassword) return showToast("현재 비밀번호가 일치하지 않습니다.");
@@ -1623,7 +1636,7 @@
             }, {});
 
             // 칩 컴포넌트 — 크기 통일, 임원이면 직책 배지
-            const MemberChip = ({ m, showPartAbbr }) => {
+            const MemberChip = ({ m, showPartAbbr }) => { // localAdmin from closure
                 const hasRole = m.role && m.role.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
@@ -1631,8 +1644,8 @@
                 const pt = PART_OPTIONS.find(p => p.id === m.part);
                 return (
                     <button
-                        onClick={() => requestAuth(() => setEditingMember(m))}
-                        className="relative flex flex-col items-center justify-center px-2 py-3 bg-white border-2 rounded-2xl transition-all active:scale-95 hover:shadow-md text-center w-full"
+                        onClick={() => localAdmin && setEditingMember(m)}
+                        className={`relative flex flex-col items-center justify-center px-2 py-3 bg-white border-2 rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-md cursor-pointer' : 'cursor-default'}`}
                         style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: '76px' }}
                     >
                         <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
@@ -1656,18 +1669,31 @@
                     {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
-                            <h2 className="text-3xl font-black text-gray-800">명단관리</h2>
+                            <h2 className="text-3xl font-black text-gray-800">찬양팀명단</h2>
                             <p className="text-sm text-gray-400 font-bold mt-0.5">총 {members.length}명 · 활동 {counts.active}명</p>
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => setShowSettings(!showSettings)}
-                                className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
-                                <LucideIcon name="settings" className="w-5 h-5" />
-                            </button>
-                            <button onClick={() => requestAuth(() => setEditingMember(false))}
-                                className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
-                                <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
-                            </button>
+                        <div className="flex gap-2 items-center">
+                            {localAdmin ? (
+                                <>
+                                    <button onClick={() => setShowSettings(!showSettings)}
+                                        className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                                        <LucideIcon name="settings" className="w-5 h-5" />
+                                    </button>
+                                    <button onClick={() => setEditingMember(false)}
+                                        className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
+                                        <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
+                                    </button>
+                                    <button onClick={() => { setLocalAdmin(false); setShowSettings(false); }}
+                                        className="flex items-center gap-1.5 bg-red-50 text-red-400 px-3 py-3 rounded-2xl font-black text-xs active:scale-95 transition-transform border border-red-100">
+                                        <LucideIcon name="shield-off" className="w-4 h-4" /> 종료
+                                    </button>
+                                </>
+                            ) : (
+                                <button onClick={() => setShowAdminModal(true)}
+                                    className="flex items-center gap-2 bg-gray-100 text-gray-500 px-4 py-3 rounded-2xl font-black text-sm active:scale-95 transition-transform hover:bg-blue-50 hover:text-[#193278]">
+                                    <LucideIcon name="shield" className="w-4 h-4" /> 관리자 모드
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -1771,14 +1797,39 @@
                         </div>
                     )}
 
-                    {/* 팀원 편집 모달 */}
-                    {editingMember !== null && (
+                    {/* 팀원 편집 모달 (관리자 모드만) */}
+                    {localAdmin && editingMember !== null && (
                         <MemberEditModal
                             member={editingMember === false ? null : editingMember}
                             onClose={() => setEditingMember(null)}
                             onSave={handleSaveMember}
                             onDelete={() => handleDeleteMember(editingMember.name)}
                         />
+                    )}
+
+                    {/* 관리자 모드 진입 모달 */}
+                    {showAdminModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[400] flex items-center justify-center p-5">
+                            <div className={`bg-white p-8 rounded-[32px] w-full max-w-xs shadow-2xl scale-in ${adminPwError ? 'shake' : ''}`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <LucideIcon name="shield" className="w-5 h-5 text-[#193278]" />
+                                    <h3 className="text-xl font-black text-gray-800">관리자 모드</h3>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-6">비밀번호를 입력하세요.</p>
+                                <input type="password" autoFocus
+                                    className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none mb-1 transition-all ${adminPwError ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-blue-500'}`}
+                                    placeholder="Password"
+                                    value={adminPwInput}
+                                    onChange={e => { setAdminPwInput(e.target.value); setAdminPwError(false); }}
+                                    onKeyDown={e => e.key === 'Enter' && handleLocalAdminLogin()}
+                                />
+                                {adminPwError && <p className="text-red-500 text-[10px] font-bold text-center mb-3 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                                <div className="flex gap-2 mt-4">
+                                    <button onClick={() => { setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false); }} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
+                                    <button onClick={handleLocalAdminLogin} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             );
@@ -2059,7 +2110,7 @@
                             <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
                             <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
-                            <NavBtn id="manage" label="명단관리" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
+                            <NavBtn id="manage" label="찬양팀명단" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
                         <div className="mt-auto space-y-2 text-left text-left text-left text-left">
                             <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2" /> 링크 공유</button>
@@ -2079,7 +2130,7 @@
                             </div>
                             <div className="flex items-center gap-2 text-left text-left text-left text-left">
                                 <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
-                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="명단관리"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left" /></button>
+                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="찬양팀명단"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left" /></button>
                                 {isAdmin && (
                                     <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left" /></button>
                                 )}
