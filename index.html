@@ -494,7 +494,7 @@
                                     <div className={`relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center transition-all hover:bg-gray-100 ${isEditable ? 'cursor-pointer' : ''}`}>
                                         {image ? (
                                             <div className={`w-full relative group ${!isEditable ? 'cursor-zoom-in' : ''}`} onClick={() => !isEditable && setIsFullScreen(true)}>
-                                                <img src={image} className="w-full h-40 object-cover" />
+                                                <img src={image} className="w-full max-h-[70vh] object-contain bg-gray-50" />
                                                 {ocrStatus === "processing" && (
                                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
                                                         <div className="w-full bg-gray-100 h-1.5 rounded-full mb-2 max-w-[150px]"><div className="bg-[#193278] h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
@@ -561,6 +561,7 @@
         const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onDetail, requestAuth, askConfirm, showToast }) => {
             const [subTab, setSubTab] = useState('part'); 
             const [selectedMember, setSelectedMember] = useState('');
+            const [selectedPart, setSelectedPart] = useState('');
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
             
@@ -660,16 +661,33 @@
                         {subTab !== 'individual' ? (
                             <div className="flex-1 min-h-[250px] text-left"><canvas ref={chartRef}></canvas></div>
                         ) : (
-                            <div className="flex-1 flex flex-col items-center py-4 space-y-6 animate-fadeIn text-left">
-                                <select 
-                                    className="w-full max-w-xs bg-gray-50 border-0 p-3 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={selectedMember}
-                                    onChange={(e) => setSelectedMember(e.target.value)}
-                                >
-                                    <option value="">팀원 선택</option>
-                                    {activeMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-                                </select>
-                                
+                            <div className="flex-1 flex flex-col py-4 space-y-4 animate-fadeIn text-left">
+                                <div className="flex flex-wrap gap-2">
+                                    {[{ id: 'staff', name: '성가사', color: '#193278' }, ...PARTS].map(p => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => { setSelectedPart(p.id === selectedPart ? '' : p.id); setSelectedMember(''); }}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 ${selectedPart === p.id ? 'text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+                                            style={selectedPart === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
+                                        >{p.name}</button>
+                                    ))}
+                                </div>
+                                {selectedPart ? (
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                        {activeMembers.filter(m => m.part === selectedPart).map(m => (
+                                            <button
+                                                key={m.name}
+                                                onClick={() => setSelectedMember(m.name === selectedMember ? '' : m.name)}
+                                                className={`py-2 px-1 rounded-xl text-xs font-bold border-2 transition-all text-center ${selectedMember === m.name ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-600'}`}
+                                            >{m.name}</button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-gray-300 py-6 text-center">
+                                        <LucideIcon name="users" className="w-10 h-10 mb-2 opacity-20" />
+                                        <p className="text-sm font-bold">파트를 먼저 선택하세요</p>
+                                    </div>
+                                )}
                                 {selectedMember ? (
                                     <div className="w-full space-y-4 text-left">
                                         <div className="flex items-center justify-between px-2 text-left">
@@ -690,12 +708,7 @@
                                             ))}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-gray-300 py-10 text-center">
-                                        <LucideIcon name="user-search" className="w-12 h-12 mb-2 opacity-20" />
-                                        <p className="text-sm font-bold">팀원을 선택하여 타임라인을 확인하세요</p>
-                                    </div>
-                                )}
+                                ) : null}
                             </div>
                         )}
                     </div>
@@ -808,30 +821,74 @@
                 });
             });
 
-            const handleCopyText = () => {
+            const handleShareAll = async () => {
                 if (!form.title) return showToast("성가 곡명을 먼저 입력해주세요.");
-                
+
                 let dateStr = "날짜 미지정";
                 if (form.date) {
                     const [y, m, d] = form.date.split('-');
                     dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
                 }
 
-                let text = `▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
+                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \ncutt.ly/onnuri\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
                 if (form.links?.s) text += `- 소프라노\n${form.links.s}\n`;
                 if (form.links?.a) text += `- 알토\n${form.links.a}\n`;
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
                 if (form.links?.b) text += `- 베이스\n${form.links.b}\n`;
                 if (form.links?.chorus) text += `- 합창\n${form.links.chorus}\n`;
+                text = text.trim();
 
-                const dummy = document.createElement("textarea");
-                dummy.value = text.trim();
-                document.body.appendChild(dummy);
-                dummy.select();
-                document.execCommand('copy');
-                document.body.removeChild(dummy);
-                
-                showToast("게시물 텍스트가 복사되었습니다!");
+                // 텍스트는 항상 클립보드에 먼저 복사 (카톡은 Web Share의 text를 무시함)
+                const copyText = async () => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                    } catch {
+                        const dummy = document.createElement("textarea");
+                        dummy.value = text;
+                        document.body.appendChild(dummy);
+                        dummy.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(dummy);
+                    }
+                };
+
+                const hasImage = !!(form.file || form.image);
+
+                // ① 모바일 Web Share API로 이미지 공유 + 텍스트는 클립보드
+                if (hasImage && navigator.share) {
+                    try {
+                        let file;
+                        if (form.file) {
+                            file = form.file;
+                        } else {
+                            const res = await fetch(form.image);
+                            const blob = await res.blob();
+                            const ext = blob.type.includes('png') ? 'png' : 'jpg';
+                            file = new File([blob], `thumbnail.${ext}`, { type: blob.type });
+                        }
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await copyText(); // 공유 시트 열기 전에 클립보드 복사
+                            showToast("텍스트 복사됨 ✓  이미지 전송 후 채팅창에 붙여넣기 하세요!");
+                            await navigator.share({ files: [file] });
+                            return;
+                        }
+                    } catch (e) {
+                        if (e.name === 'AbortError') return; // 사용자가 취소
+                        console.warn("파일 공유 실패, 폴백 실행:", e);
+                    }
+                }
+
+                // ② 폴백: 이미지 자동 다운로드 + 텍스트 클립보드 복사
+                if (hasImage) {
+                    const a = document.createElement('a');
+                    a.href = form.file ? URL.createObjectURL(form.file) : form.image;
+                    a.download = `찬양썸네일_${form.title}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+                await copyText();
+                showToast(hasImage ? "이미지 저장 + 텍스트 복사 완료! 카톡에 붙여넣기 하세요." : "텍스트가 복사되었습니다!");
             };
 
             const synthesizeThumbnail = (bgBase64, title) => {
@@ -995,55 +1052,65 @@
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"><LucideIcon name="search" className="w-5 h-5" /></div>
                     </div>
                     {showAdd && (
-                        <div className="bg-white p-6 rounded-[32px] border-2 border-blue-50 scale-in space-y-4 shadow-xl relative text-left w-full text-left">
-                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{(form.id ? "성가 정보 수정" : "새 성가 등록")}</h3>
-                            <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                            
-                            <div className="flex flex-col gap-2">
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    <button onClick={handleGenerateAIImage} disabled={isGenerating} className="flex-[2] bg-purple-50 text-purple-600 py-3 px-4 rounded-2xl font-black transition-transform active:scale-95 flex justify-center items-center gap-2 hover:bg-purple-100 border border-purple-100 disabled:opacity-50">
-                                        {isGenerating ? <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div> : <LucideIcon name="sparkles" className="w-5 h-5" />}
-                                        {isGenerating ? "AI 썸네일 생성 중..." : "AI 썸네일 생성"}
-                                    </button>
-                                    <label className="flex-1 bg-gray-50 text-gray-500 py-3 px-4 rounded-2xl font-bold text-sm text-center cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-200">
-                                        <LucideIcon name="upload" className="w-4 h-4 mr-2" /> 직접 업로드
-                                        <input type="file" hidden accept="image/*" onChange={e => setForm({...form, file: e.target.files[0]})} />
-                                    </label>
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                            <div className="bg-white w-full sm:max-w-lg rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
+                                    <h3 className="font-black text-gray-800 text-lg">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
+                                    <button onClick={resetForm} className="p-2 text-gray-300 hover:text-gray-600 transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
                                 </div>
-                                
-                                {(form.image || form.file) && (
-                                    <div className="relative w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
-                                        <img src={form.file ? URL.createObjectURL(form.file) : form.image} className="w-full h-full object-cover" />
-                                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {form.image && !form.file && (
-                                                <button onClick={handleDownloadThumbnail} className="bg-white/90 p-2 rounded-xl text-blue-600 shadow-sm hover:scale-105 transition-transform" title="다운로드">
-                                                    <LucideIcon name="download" className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button onClick={() => setForm({...form, image: '', file: null})} className="bg-white/90 p-2 rounded-xl text-red-500 shadow-sm hover:scale-105 transition-transform" title="삭제">
-                                                <LucideIcon name="trash-2" className="w-4 h-4" />
+                                <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-4">
+                                    <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                    
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <button onClick={handleGenerateAIImage} disabled={isGenerating} className="flex-[2] bg-purple-50 text-purple-600 py-3 px-4 rounded-2xl font-black transition-transform active:scale-95 flex justify-center items-center gap-2 hover:bg-purple-100 border border-purple-100 disabled:opacity-50">
+                                                {isGenerating ? <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div> : <LucideIcon name="sparkles" className="w-5 h-5" />}
+                                                {isGenerating ? "AI 썸네일 생성 중..." : "AI 썸네일 생성"}
                                             </button>
+                                            <label className="flex-1 bg-gray-50 text-gray-500 py-3 px-4 rounded-2xl font-bold text-sm text-center cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-200">
+                                                <LucideIcon name="upload" className="w-4 h-4 mr-2" /> 직접 업로드
+                                                <input type="file" hidden accept="image/*" onChange={e => setForm({...form, file: e.target.files[0]})} />
+                                            </label>
                                         </div>
+                                        
+                                        {(form.image || form.file) && (
+                                            <div className="relative w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
+                                                <img src={form.file ? URL.createObjectURL(form.file) : form.image} className="w-full h-full object-cover" />
+                                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {form.image && !form.file && (
+                                                        <button onClick={handleDownloadThumbnail} className="bg-white/90 p-2 rounded-xl text-blue-600 shadow-sm hover:scale-105 transition-transform" title="다운로드">
+                                                            <LucideIcon name="download" className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => setForm({...form, image: '', file: null})} className="bg-white/90 p-2 rounded-xl text-red-500 shadow-sm hover:scale-105 transition-transform" title="삭제">
+                                                        <LucideIcon name="trash-2" className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="flex gap-2 text-left">
-                                <input type="date" className="flex-[2] bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-                                <button onClick={handleCopyText} className="flex-[1] bg-blue-50 text-blue-600 p-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center gap-1 hover:bg-blue-100 border border-blue-100">
-                                    <LucideIcon name="copy" className="w-4 h-4 shrink-0" />
-                                    <span className="truncate text-xs sm:text-sm">텍스트 복사</span>
-                                </button>
+                                    <div className="flex gap-2">
+                                        <input type="date" className="flex-[2] bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
+                                        <button onClick={handleShareAll} className="flex-[1] bg-yellow-50 text-yellow-700 p-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center gap-1 hover:bg-yellow-100 border border-yellow-200">
+                                            <LucideIcon name="share-2" className="w-4 h-4 shrink-0" />
+                                            <span className="truncate text-xs sm:text-sm">카톡 공유</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
+                                        <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
+                                        <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
+                                        <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
+                                    </div>
+                                    <input type="text" placeholder="합창 유튜브" className="w-full bg-gray-50 border-0 p-4 rounded-2xl text-xs font-bold outline-none text-left" value={form.links?.chorus || ''} onChange={e=>setForm({...form, links:{...form.links, chorus:e.target.value}})} />
+                                </div>
+                                <div className="flex gap-2 p-6 pt-4 border-t border-gray-100 shrink-0">
+                                    <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button>
+                                    <button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black transition-transform active:scale-95 shadow-lg text-center">저장 완료</button>
+                                </div>
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 text-left">
-                                <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
-                                <input type="text" placeholder="알토 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
-                                <input type="text" placeholder="테너 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
-                                <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 p-3 rounded-xl text-xs font-bold text-left" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
-                            </div>
-                            <input type="text" placeholder="합창 유튜브" className="w-full bg-gray-50 border-0 p-4 rounded-2xl text-xs font-bold outline-none text-left mt-2" value={form.links?.chorus || ''} onChange={e=>setForm({...form, links:{...form.links, chorus:e.target.value}})} />
-                            <div className="flex gap-2 pt-2 text-center"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black transition-transform active:scale-95 shadow-lg text-center">저장 완료</button></div>
                         </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full text-left">
@@ -1116,12 +1183,22 @@
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-left"><LucideIcon name="search" className="w-5 h-5" /></div>
                     </div>
                     {showAdd && (
-                        <div className="bg-white p-6 rounded-[32px] border-2 border-red-50 scale-in space-y-4 shadow-xl relative text-left w-full text-left">
-                            <h3 className="font-black text-gray-800 text-lg mb-2 text-left">{(form.id ? "영상 정보 수정" : "새 영상 등록")}</h3>
-                            <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                            <input type="date" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-                            <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
-                            <div className="flex gap-2 pt-2 text-center text-center"><button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button><button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-center text-center">완료</button></div>
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                            <div className="bg-white w-full sm:max-w-lg rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                                    <h3 className="font-black text-gray-800 text-lg">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
+                                    <button onClick={resetForm} className="p-2 text-gray-300 hover:text-gray-600 transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                    <input type="date" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
+                                    <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
+                                </div>
+                                <div className="flex gap-2 px-6 pb-6 pt-0 border-t border-gray-100 shrink-0">
+                                    <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button>
+                                    <button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-center">완료</button>
+                                </div>
+                            </div>
                         </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full text-left">
