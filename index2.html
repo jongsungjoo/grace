@@ -1741,7 +1741,7 @@
             })).filter(g => g.members.length > 0);
 
             // 임원진 모드 전용 그룹핑
-            const PART_ABBR = { staff: '성', soprano: '소', alto: '알', tenor: '테', bass: '베' };
+            const PART_ABBR = { staff: '성', soprano: 'S', alto: 'A', tenor: 'T', bass: 'B' };
             const getRoleCategory = (role) => {
                 if (!role) return 4;
                 const r = role.trim();
@@ -1790,31 +1790,39 @@
                 return acc;
             }, {});
 
-            // 칩 컴포넌트 — 크기 통일, 임원이면 직책 배지
+            // 칩 컴포넌트 — MemberChipWithPart와 동일 스타일, 상태점+직책 추가
             const MemberChip = ({ m, showPartAbbr }) => { // localAdmin from closure
                 const hasRole = m.role && m.role.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
-                const abbr = showPartAbbr ? PART_ABBR[m.part] : null;
-                const pt = PART_OPTIONS.find(p => p.id === m.part);
+                // 파트 아이콘 — PART_ICON 전역 사용 (S/A/T/B/성/반)
+                let pi = PART_ICON[m.part] || null;
+                if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
+                // 파트장 뷰에서는 showPartAbbr 무시 (pi로 통일)
                 return (
                     <button
                         onClick={() => localAdmin && setEditingMember(m)}
-                        className={`relative flex flex-col items-center justify-center px-2 py-3 bg-white border-2 rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-md cursor-pointer' : 'cursor-default'}`}
-                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: '76px' }}
+                        className={`relative flex flex-col items-center justify-center px-1.5 py-2.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
+                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: hasRole ? '68px' : '52px' }}
                     >
-                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
-                        {hasRole && <span className="absolute top-1.5 left-2 text-[10px]">👑</span>}
-                        {/* 파트장일 때 파트 약자 아이콘 */}
-                        {abbr && (
-                            <span className="absolute bottom-1.5 left-2 text-[9px] font-black px-1 py-0.5 rounded-md text-white leading-none"
-                                style={{ backgroundColor: pt?.color || '#193278' }}>{abbr}</span>
+                        {/* 상태 점 */}
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dot }}></span>
+                        {/* 임원 왕관 */}
+                        {hasRole && <span className="text-xs mb-0.5">👑</span>}
+                        {/* 파트 아이콘 + 이름 가로 배치 */}
+                        <div className="flex items-center justify-center gap-1">
+                            {pi && (
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
+                                    style={{ backgroundColor: pi.color, fontSize: '10px' }}>{pi.abbr}</span>
+                            )}
+                            <span className="font-bold text-gray-800 text-sm leading-tight">{m.name}</span>
+                        </div>
+                        {/* 직책 배지 */}
+                        {hasRole && (
+                            <span className="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none bg-purple-50 text-purple-600">
+                                {m.role}
+                            </span>
                         )}
-                        <span className="font-black text-gray-800 text-sm leading-tight">{m.name}</span>
-                        {/* 직책 배지 — 항상 공간 확보해서 칩 높이 통일 */}
-                        <span className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${hasRole ? 'bg-purple-50 text-purple-600' : 'text-transparent'}`}>
-                            {hasRole ? m.role : '—'}
-                        </span>
                     </button>
                 );
             };
