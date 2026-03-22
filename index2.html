@@ -510,7 +510,8 @@
                                                 </h5>
                                                 <div className="grid grid-cols-3 gap-1.5">
                                                     {list.map(m => (
-                                                        <button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable} className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center ${selected.has(m.name) ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400'} ${!isEditable ? '' : 'active:scale-95'}`}>{m.name}</button>
+                                                        <button key={m.name} onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }} disabled={!isEditable}
+    className={`min-h-[48px] px-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all flex items-center justify-center text-center ${selected.has(m.name) ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'} ${!isEditable ? '' : 'active:scale-95'}`}>{m.name}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -560,13 +561,13 @@
             const part = partOverride || (partMap ? partMap[name] : null);
             const pi = PART_ICON[part] || null;
             return (
-                <div className={`flex items-center gap-1.5 px-3 py-2.5 ${bgColor} border ${borderColor} rounded-2xl`}>
+                <div className={`flex items-center justify-center gap-1.5 px-2 py-3 ${bgColor} border ${borderColor} rounded-2xl min-h-[48px]`}>
                     {pi && (
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
                             style={{ backgroundColor: pi.color, fontSize: '10px' }}>{pi.abbr}</span>
                     )}
-                    <span className={`font-bold text-sm ${nameColor} leading-tight truncate`}>{name}</span>
-                    {extra && <span className="ml-auto text-xs text-gray-400 font-bold shrink-0">{extra}</span>}
+                    <span className={`font-bold text-sm ${nameColor} leading-tight text-center`}>{name}</span>
+                    {extra && <span className="text-xs text-gray-400 font-bold shrink-0">{extra}</span>}
                 </div>
             );
         };
@@ -778,14 +779,16 @@
                                 <div className="bg-gray-50 rounded-2xl overflow-hidden">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
                                         <div key={p.id} className={`flex items-center gap-3 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-white' : ''}`}>
-                                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-white font-black text-sm shrink-0" style={{backgroundColor: p.color}}>{p.abbr}</span>
+                                            {/* 순위: 1위는 금메달, 나머지는 숫자 */}
+                                            <span className="inline-flex items-center justify-center w-7 h-7 shrink-0">
+                                                {i === 0 ? <span className="text-xl">🥇</span> : <span className="font-black text-gray-400 text-base">{i+1}</span>}
+                                            </span>
                                             <span className="font-bold text-gray-700 text-sm w-14 shrink-0">{p.name}</span>
                                             <span className="text-sm font-black text-gray-600 whitespace-nowrap shrink-0">{p.avg}명</span>
                                             <div className="flex-1 bg-gray-200 rounded-full h-2 min-w-0">
                                                 <div className="h-2 rounded-full" style={{width:`${p.rate}%`,backgroundColor:p.color}}></div>
                                             </div>
                                             <span className="font-black text-sm w-9 text-right shrink-0" style={{color:p.color}}>{p.rate}%</span>
-                                            {topPart?.id===p.id && <span className="shrink-0">🥇</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -2094,9 +2097,10 @@
                                             </h4>
                                             <button onClick={() => togglePart(partId)} className="text-[10px] font-black text-gray-400 border border-gray-100 px-2 py-0.5 rounded-full hover:bg-gray-50 transition-colors text-center text-center text-center text-center text-center">전체</button>
                                         </div>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-center text-center text-center text-center">
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                             {list.map(m => (
-                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }} className={`py-3.5 px-1 rounded-2xl text-[13px] font-bold border transition-all text-center ${attendanceMap[m.name] ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400 active:scale-95'}`}>{m.name}</button>
+                                                <button key={m.name} onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }}
+                                                    className={`min-h-[48px] px-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all flex items-center justify-center text-center active:scale-95 ${attendanceMap[m.name] ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'}`}>{m.name}</button>
                                             ))}
                                         </div>
                                     </div>
