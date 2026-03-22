@@ -817,7 +817,7 @@
                     dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
                 }
 
-                let text = `▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
+                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \ncutt.ly/onnuri\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
                 if (form.links?.s) text += `- 소프라노\n${form.links.s}\n`;
                 if (form.links?.a) text += `- 알토\n${form.links.a}\n`;
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
@@ -825,31 +825,43 @@
                 if (form.links?.chorus) text += `- 합창\n${form.links.chorus}\n`;
                 text = text.trim();
 
+                // 텍스트는 항상 클립보드에 먼저 복사 (카톡은 Web Share의 text를 무시함)
+                const copyText = async () => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                    } catch {
+                        const dummy = document.createElement("textarea");
+                        dummy.value = text;
+                        document.body.appendChild(dummy);
+                        dummy.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(dummy);
+                    }
+                };
+
                 const hasImage = !!(form.file || form.image);
 
-                // ① 모바일 Web Share API로 이미지+텍스트 통합 공유 시도
+                // ① 모바일 Web Share API로 이미지 공유 + 텍스트는 클립보드
                 if (hasImage && navigator.share) {
                     try {
                         let file;
                         if (form.file) {
                             file = form.file;
                         } else {
-                            // base64 dataURL → Blob → File 변환
                             const res = await fetch(form.image);
                             const blob = await res.blob();
                             const ext = blob.type.includes('png') ? 'png' : 'jpg';
                             file = new File([blob], `thumbnail.${ext}`, { type: blob.type });
                         }
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({ files: [file], text });
-                            return; // 성공 시 여기서 종료
+                            await copyText(); // 공유 시트 열기 전에 클립보드 복사
+                            showToast("텍스트 복사됨 ✓  이미지 전송 후 채팅창에 붙여넣기 하세요!");
+                            await navigator.share({ files: [file] });
+                            return;
                         }
                     } catch (e) {
-                        if (e.name !== 'AbortError') {
-                            console.warn("파일 공유 실패, 폴백 실행:", e);
-                        } else {
-                            return; // 사용자가 직접 취소한 경우
-                        }
+                        if (e.name === 'AbortError') return; // 사용자가 취소
+                        console.warn("파일 공유 실패, 폴백 실행:", e);
                     }
                 }
 
@@ -862,18 +874,7 @@
                     a.click();
                     document.body.removeChild(a);
                 }
-
-                try {
-                    await navigator.clipboard.writeText(text);
-                } catch {
-                    const dummy = document.createElement("textarea");
-                    dummy.value = text;
-                    document.body.appendChild(dummy);
-                    dummy.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(dummy);
-                }
-
+                await copyText();
                 showToast(hasImage ? "이미지 저장 + 텍스트 복사 완료! 카톡에 붙여넣기 하세요." : "텍스트가 복사되었습니다!");
             };
 
