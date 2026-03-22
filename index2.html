@@ -661,14 +661,14 @@
                                     const isTodayCell = isCurrentMonth && day === todayD;
                                     const dow = (firstDay + day - 1) % 7;
                                     return (
-                                        <div key={day} className={`flex flex-col items-center px-0.5 pt-1.5 pb-2 rounded-xl min-h-[58px] transition-all ${hasBd ? 'bg-pink-50 border border-pink-100' : 'border border-transparent'} ${isTodayCell ? 'ring-2 ring-[#193278]' : ''}`}>
+                                        <div key={day} className={`flex flex-col items-center px-0 pt-1 pb-1 rounded-xl min-h-[52px] transition-all ${hasBd ? 'bg-pink-50 border border-pink-100' : 'border border-transparent'} ${isTodayCell ? 'ring-2 ring-[#193278]' : ''}`}>
                                             <span className={`text-sm font-black leading-none mb-0.5 ${isTodayCell?'text-[#193278]':dow===0?'text-red-400':dow===6?'text-blue-500':'text-gray-500'}`}>{day}</span>
                                             {hasBd && <span className="text-xs leading-none mb-1">🎂</span>}
                                             <div className="flex flex-col items-center gap-0.5 w-full">
                                                 {bds.map((b, bi) => (
                                                     <div key={bi} className="flex items-center gap-0.5 w-full justify-center">
                                                         <PartIcon part={b.part} role={b.role} />
-                                                        <span className="text-[10px] font-bold text-gray-800 leading-none truncate">{b.name}</span>
+                                                        <span className="text-[9px] font-bold text-gray-800 leading-none" style={{wordBreak:"keep-all",overflowWrap:"normal",whiteSpace:"nowrap",fontSize:"9px"}}>{b.name}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -843,6 +843,7 @@
             const [selectedPart, setSelectedPart] = useState('');
             const [showBdCalendar, setShowBdCalendar] = useState(false);
             const [showAttendStats, setShowAttendStats] = useState(false);
+            const [showMemberModal, setShowMemberModal] = useState(false);
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
             
@@ -937,9 +938,9 @@
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-4 text-left">
-                        {/* 평균/최다 통합 카드 */}
+                        {/* 평균/최다 출석 카드 */}
                         <div onClick={() => setShowAttendStats(true)} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-blue-50 transition-colors text-left min-w-0">
-                            <div className="text-gray-400 text-xs font-black mb-1.5 leading-tight">평균/최다</div>
+                            <div className="text-gray-400 text-xs font-black mb-1.5 leading-tight">평균/최다출석</div>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-black text-[#193278] leading-none">{stats.avg}</span>
                                 <span className="text-xs font-bold text-gray-300">/</span>
@@ -949,7 +950,7 @@
                         </div>
                         {/* 생일 팀원 카드 */}
                         <div onClick={() => setShowBdCalendar(true)} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-pink-50 transition-colors group text-left min-w-0">
-                            <div className="text-pink-400 text-xs font-black mb-1.5 leading-tight flex items-center gap-0.5">🎂 생일</div>
+                            <div className="text-pink-400 text-xs font-black mb-1.5 leading-tight flex items-center gap-0.5">🎂 생일팀원</div>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-black text-pink-500 leading-none">{thisMonthBdCount}명</span>
                                 <span className="text-xs font-bold text-pink-400">/{new Date().getMonth()+1}월</span>
@@ -957,8 +958,10 @@
                         </div>
                         {/* 관심 팀원 카드 */}
                         <div onClick={onOpenInterest} className="bg-white p-3 md:p-6 rounded-3xl shadow-sm border border-gray-50 flex flex-col justify-center cursor-pointer hover:bg-orange-50 transition-colors group text-left min-w-0">
-                            <div className="text-orange-500 text-xs font-black mb-1.5 leading-tight flex items-center gap-0.5"><LucideIcon name="alert-circle" className="w-3 h-3 shrink-0" /> 관심</div>
-                            <div className="text-xl font-black text-orange-600 leading-none">{stats.attention}<span className="text-xs font-normal text-orange-300 ml-0.5">명</span></div>
+                            <div className="text-orange-500 text-xs font-black mb-1.5 leading-tight flex items-center gap-0.5"><LucideIcon name="alert-circle" className="w-3 h-3 shrink-0" /> 관심팀원</div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-black text-orange-600 leading-none">{stats.attention}명</span>
+                            </div>
                         </div>
                     </div>
 
@@ -988,8 +991,8 @@
                                         {activeMembers.filter(m => m.part === selectedPart).map(m => (
                                             <button
                                                 key={m.name}
-                                                onClick={() => setSelectedMember(m.name === selectedMember ? '' : m.name)}
-                                                className={`py-2 px-1 rounded-xl text-xs font-bold border-2 transition-all text-center ${selectedMember === m.name ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-600'}`}
+                                                onClick={() => { setSelectedMember(m.name); setShowMemberModal(true); }}
+                                                className="py-2 px-1 rounded-xl text-xs font-bold border-2 transition-all text-center bg-gray-50 border-gray-100 text-gray-600 active:scale-95 hover:border-[#193278] hover:text-[#193278]"
                                             >{m.name}</button>
                                         ))}
                                     </div>
@@ -999,27 +1002,7 @@
                                         <p className="text-sm font-bold">파트를 먼저 선택하세요</p>
                                     </div>
                                 )}
-                                {selectedMember ? (
-                                    <div className="w-full space-y-4 text-left">
-                                        <div className="flex items-center justify-between px-2 text-left">
-                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">최근 10회 출석 이력</span>
-                                            <span className="text-xs font-bold text-[#193278] bg-blue-50 px-2 py-1 rounded-lg">출석률 {Math.round((individualHistory.filter(i=>i.isPresent).length / Math.max(1, individualHistory.length)) * 100)}%</span>
-                                        </div>
-                                        <div className="flex flex-col gap-2">
-                                            {individualHistory.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-2xl group transition-all hover:bg-white border border-transparent hover:border-gray-100">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 text-[#193278]' : 'bg-red-100 text-red-400'}`}>
-                                                        <LucideIcon name={item.isPresent ? "check" : "x"} className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="flex-1 flex justify-between items-center text-left">
-                                                        <span className="font-bold text-gray-700 text-sm">{item.date}</span>
-                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.isPresent ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>{item.isPresent ? "ATTENDED" : "ABSENT"}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : null}
+
                             </div>
                         )}
                     </div>
@@ -1095,6 +1078,37 @@
                             })}
                         </div>
                     </div>
+                    {showMemberModal && selectedMember && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                            <div className="bg-white w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[85vh]">
+                                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+                                    <div>
+                                        <h3 className="font-black text-gray-800 text-lg">{selectedMember}</h3>
+                                        <p className="text-sm text-gray-400 font-bold mt-0.5">최근 {individualHistory.length}회 출석 이력</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm font-black text-[#193278] bg-blue-50 px-3 py-1.5 rounded-xl">
+                                            출석률 {Math.round((individualHistory.filter(i=>i.isPresent).length / Math.max(1, individualHistory.length)) * 100)}%
+                                        </span>
+                                        <button onClick={() => setShowMemberModal(false)} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
+                                    </div>
+                                </div>
+                                <div className="overflow-y-auto hide-scrollbar flex-1 px-5 py-4 space-y-2">
+                                    {individualHistory.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-2xl">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 text-[#193278]' : 'bg-red-50 text-red-400'}`}>
+                                                <LucideIcon name={item.isPresent ? "check" : "x"} className="w-4 h-4" />
+                                            </div>
+                                            <span className="font-bold text-gray-700 text-sm flex-1">{item.date}</span>
+                                            <span className={`text-xs font-black px-3 py-1 rounded-full ${item.isPresent ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>
+                                                {item.isPresent ? "출석" : "결석"}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {showBdCalendar && <BirthdayCalendarModal members={safeMembers} onClose={() => setShowBdCalendar(false)} />}
                     {showAttendStats && <AttendStatsModal history={history} members={safeMembers} memberPartMap={memberPartMap} onClose={() => setShowAttendStats(false)} />}
                 </div>
