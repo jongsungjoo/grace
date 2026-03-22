@@ -516,7 +516,7 @@
                                                             <button key={m.name}
                                                                 onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }}
                                                                 disabled={!isEditable}
-                                                                className={`min-h-[48px] px-2 py-2.5 rounded-2xl border-2 transition-all flex items-center justify-center gap-1 ${checked ? 'border-[#193278] bg-gray-50 shadow-sm' : 'border-gray-100 bg-white'} ${!isEditable ? '' : 'active:scale-95'}`}
+                                                                className={`min-h-[48px] px-2 py-2.5 rounded-2xl border transition-all flex items-center justify-center gap-1 ${checked ? 'border-gray-100 bg-gray-50' : 'border-gray-100 bg-white'} ${!isEditable ? '' : 'active:scale-95'}`}
                                                             >
                                                                 {pi_h && <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
                                                                     style={{ backgroundColor: pi_h.color, fontSize:'10px', opacity: checked ? 1 : 0.3 }}>{pi_h.abbr}</span>}
@@ -933,7 +933,12 @@
 
             const individualHistory = useMemo(() => {
                 if (!selectedMember || !history || history.length === 0) return [];
-                return history.slice(0, 10).map(h => ({
+                return history.filter(h => {
+                    const parts = (h.date || '').split('. ');
+                    if (parts.length < 2) return false;
+                    const y = parseInt(parts[0]), m = parseInt(parts[1]);
+                    return y > 2026 || (y === 2026 && m >= 1);
+                }).map(h => ({
                     date: h.date,
                     isPresent: (h.members || []).includes(selectedMember)
                 }));
@@ -1088,7 +1093,7 @@
                                 <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
                                     <div>
                                         <h3 className="font-black text-gray-800 text-lg">{selectedMember}</h3>
-                                        <p className="text-sm text-gray-400 font-bold mt-0.5">최근 {individualHistory.length}회 출석 이력</p>
+                                        <p className="text-sm text-gray-400 font-bold mt-0.5">2026년 1월~ · {individualHistory.length}회</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="text-sm font-black text-[#193278] bg-blue-50 px-3 py-1.5 rounded-xl">
@@ -1655,7 +1660,7 @@
             );
         };
 
-        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey }) => {
+        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [editingMember, setEditingMember] = useState(null);
@@ -1663,8 +1668,9 @@
             const [showPwdSetting, setShowPwdSetting] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
-            // 찬양팀명단 전용 로컬 관리자 모드 (전역 isAdmin과 분리)
-            const [localAdmin, setLocalAdmin] = useState(false);
+            // 찬양팀명단 전용 로컬 관리자 모드 — 전역 isAdmin이면 자동 활성
+            const [localAdmin, setLocalAdmin] = useState(isAdmin || false);
+            useEffect(() => { if (isAdmin) setLocalAdmin(true); }, [isAdmin]);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [showAdminModal, setShowAdminModal] = useState(false);
             const [adminPwInput, setAdminPwInput] = useState('');
@@ -2142,7 +2148,7 @@
                                                 return (
                                                     <button key={m.name}
                                                         onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }}
-                                                        className={`min-h-[48px] px-2 py-2.5 rounded-2xl border-2 transition-all flex items-center justify-center gap-1 active:scale-95 ${checked ? 'border-[#193278] bg-gray-50 shadow-sm' : 'border-gray-100 bg-white'}`}
+                                                        className={`min-h-[48px] px-2 py-2.5 rounded-2xl border transition-all flex items-center justify-center gap-1 active:scale-95 ${checked ? 'border-gray-100 bg-gray-50' : 'border-gray-100 bg-white'}`}
                                                     >
                                                         {pi_a && <span className="inline-flex items-center justify-center w-5 h-5 rounded text-white font-black shrink-0"
                                                             style={{ backgroundColor: pi_a.color, fontSize:'10px', opacity: checked ? 1 : 0.3 }}>{pi_a.abbr}</span>}
@@ -2325,7 +2331,7 @@
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
