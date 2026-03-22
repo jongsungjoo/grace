@@ -196,7 +196,7 @@
             }
 
             // 공식 안정화 버전인 1.5-flash 모델로 고정 호출
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
             const base64Data = base64Image.split(',')[1];
             
             const payload = {
@@ -808,9 +808,9 @@
                 });
             });
 
-            const handleCopyText = () => {
+            const handleShareAll = async () => {
                 if (!form.title) return showToast("성가 곡명을 먼저 입력해주세요.");
-                
+
                 let dateStr = "날짜 미지정";
                 if (form.date) {
                     const [y, m, d] = form.date.split('-');
@@ -823,15 +823,58 @@
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
                 if (form.links?.b) text += `- 베이스\n${form.links.b}\n`;
                 if (form.links?.chorus) text += `- 합창\n${form.links.chorus}\n`;
+                text = text.trim();
 
-                const dummy = document.createElement("textarea");
-                dummy.value = text.trim();
-                document.body.appendChild(dummy);
-                dummy.select();
-                document.execCommand('copy');
-                document.body.removeChild(dummy);
-                
-                showToast("게시물 텍스트가 복사되었습니다!");
+                const hasImage = !!(form.file || form.image);
+
+                // ① 모바일 Web Share API로 이미지+텍스트 통합 공유 시도
+                if (hasImage && navigator.share) {
+                    try {
+                        let file;
+                        if (form.file) {
+                            file = form.file;
+                        } else {
+                            // base64 dataURL → Blob → File 변환
+                            const res = await fetch(form.image);
+                            const blob = await res.blob();
+                            const ext = blob.type.includes('png') ? 'png' : 'jpg';
+                            file = new File([blob], `thumbnail.${ext}`, { type: blob.type });
+                        }
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({ files: [file], text });
+                            return; // 성공 시 여기서 종료
+                        }
+                    } catch (e) {
+                        if (e.name !== 'AbortError') {
+                            console.warn("파일 공유 실패, 폴백 실행:", e);
+                        } else {
+                            return; // 사용자가 직접 취소한 경우
+                        }
+                    }
+                }
+
+                // ② 폴백: 이미지 자동 다운로드 + 텍스트 클립보드 복사
+                if (hasImage) {
+                    const a = document.createElement('a');
+                    a.href = form.file ? URL.createObjectURL(form.file) : form.image;
+                    a.download = `찬양썸네일_${form.title}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch {
+                    const dummy = document.createElement("textarea");
+                    dummy.value = text;
+                    document.body.appendChild(dummy);
+                    dummy.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(dummy);
+                }
+
+                showToast(hasImage ? "이미지 저장 + 텍스트 복사 완료! 카톡에 붙여넣기 하세요." : "텍스트가 복사되었습니다!");
             };
 
             const synthesizeThumbnail = (bgBase64, title) => {
@@ -1030,9 +1073,9 @@
 
                             <div className="flex gap-2 text-left">
                                 <input type="date" className="flex-[2] bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-                                <button onClick={handleCopyText} className="flex-[1] bg-blue-50 text-blue-600 p-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center gap-1 hover:bg-blue-100 border border-blue-100">
-                                    <LucideIcon name="copy" className="w-4 h-4 shrink-0" />
-                                    <span className="truncate text-xs sm:text-sm">텍스트 복사</span>
+                                <button onClick={handleShareAll} className="flex-[1] bg-yellow-50 text-yellow-700 p-4 rounded-2xl font-black transition-transform active:scale-95 flex items-center justify-center gap-1 hover:bg-yellow-100 border border-yellow-200">
+                                    <LucideIcon name="share-2" className="w-4 h-4 shrink-0" />
+                                    <span className="truncate text-xs sm:text-sm">카톡 공유</span>
                                 </button>
                             </div>
                             
