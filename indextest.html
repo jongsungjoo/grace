@@ -1507,6 +1507,7 @@
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
             // 찬양팀명단 전용 로컬 관리자 모드 (전역 isAdmin과 분리)
             const [localAdmin, setLocalAdmin] = useState(false);
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
             const [showAdminModal, setShowAdminModal] = useState(false);
             const [adminPwInput, setAdminPwInput] = useState('');
             const [adminPwError, setAdminPwError] = useState(false);
@@ -1675,8 +1676,8 @@
                         <div className="flex gap-2 items-center">
                             {localAdmin ? (
                                 <>
-                                    <button onClick={() => setShowSettings(!showSettings)}
-                                        className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                                    <button onClick={() => setShowSettingsModal(true)}
+                                        className="p-3 rounded-2xl transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200 active:scale-95">
                                         <LucideIcon name="settings" className="w-5 h-5" />
                                     </button>
                                     <button onClick={() => setEditingMember(false)}
@@ -1763,35 +1764,47 @@
                         ))}
                     </div>
 
-                    {/* 시스템 설정 */}
-                    {showSettings && (
-                        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6 scale-in">
-                            <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2"><LucideIcon name="settings" className="w-3.5 h-3.5" /> 시스템 설정</h3>
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
-                                        <p className="text-sm font-bold text-gray-800">매니저 비밀번호 변경</p>
-                                        <p className="text-xs text-gray-400">인증용 비밀번호를 변경합니다.</p>
+                    {/* 설정 모달 */}
+                    {showSettingsModal && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                            <div className="bg-white w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[90vh]">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <LucideIcon name="settings" className="w-5 h-5 text-[#193278]" />
+                                        <h3 className="font-black text-gray-800 text-lg">시스템 설정</h3>
                                     </div>
-                                    <button onClick={() => setShowPwdSetting(!showPwdSetting)} className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors">
-                                        {showPwdSetting ? "숨기기" : "변경하기"}
-                                    </button>
+                                    <button onClick={() => setShowSettingsModal(false)} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
                                 </div>
-                                {showPwdSetting && (
-                                    <div className="space-y-3 scale-in">
-                                        <input type="password" placeholder="현재 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.current} onChange={e=>setPwdForm({...pwdForm, current:e.target.value})} />
-                                        <input type="password" placeholder="새 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.next} onChange={e=>setPwdForm({...pwdForm, next:e.target.value})} />
-                                        <input type="password" placeholder="새 비밀번호 확인" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} />
-                                        <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">비밀번호 저장</button>
+                                <div className="overflow-y-auto hide-scrollbar p-6 space-y-6">
+                                    {/* 비밀번호 변경 */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-800">매니저 비밀번호 변경</p>
+                                                <p className="text-xs text-gray-400">인증용 비밀번호를 변경합니다.</p>
+                                            </div>
+                                            <button onClick={() => setShowPwdSetting(!showPwdSetting)} className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors">
+                                                {showPwdSetting ? "숨기기" : "변경하기"}
+                                            </button>
+                                        </div>
+                                        {showPwdSetting && (
+                                            <div className="space-y-3 scale-in">
+                                                <input type="password" placeholder="현재 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.current} onChange={e=>setPwdForm({...pwdForm, current:e.target.value})} />
+                                                <input type="password" placeholder="새 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.next} onChange={e=>setPwdForm({...pwdForm, next:e.target.value})} />
+                                                <input type="password" placeholder="새 비밀번호 확인" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} />
+                                                <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">비밀번호 저장</button>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                            <div className="border-t border-gray-100 pt-6">
-                                <p className="text-sm font-bold text-gray-800 mb-1">AI 출석 인식 (Gemini API)</p>
-                                <p className="text-xs text-blue-500 font-bold mb-3">★ 구글 AI Studio에서 발급받은 API 키를 입력하세요.</p>
-                                <div className="space-y-3">
-                                    <input type="password" placeholder="Gemini API Key" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
-                                    <button onClick={() => onSaveGeminiKey(apiForm)} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">API 키 저장</button>
+                                    {/* Gemini API */}
+                                    <div className="border-t border-gray-100 pt-6">
+                                        <p className="text-sm font-bold text-gray-800 mb-1">AI 출석 인식 (Gemini API)</p>
+                                        <p className="text-xs text-blue-500 font-bold mb-3">★ 구글 AI Studio에서 발급받은 API 키를 입력하세요.</p>
+                                        <div className="space-y-3">
+                                            <input type="password" placeholder="Gemini API Key" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
+                                            <button onClick={() => { onSaveGeminiKey(apiForm); showToast("저장되었습니다."); }} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">API 키 저장</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2055,7 +2068,7 @@
             
             const handleTabChange = (id) => { 
                 setIsNavVisible(true);
-                if (id === 'manage') { requestAuth(() => setActiveTab(id)); } else { setActiveTab(id); } 
+                setActiveTab(id);
             };
             
             const handleSaveGeminiKey = (key) => {
