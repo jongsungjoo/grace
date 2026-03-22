@@ -1226,144 +1226,281 @@
             );
         };
 
+        const PART_OPTIONS = [
+            { id: 'staff',   name: '성가사',   color: '#193278' },
+            { id: 'soprano', name: '소프라노', color: '#e91e63' },
+            { id: 'alto',    name: '알토',     color: '#ff9800' },
+            { id: 'tenor',   name: '테너',     color: '#2196f3' },
+            { id: 'bass',    name: '베이스',   color: '#37474f' },
+        ];
+        const STATUS_OPTIONS = [
+            { id: 'active',        label: '활동중',   color: 'bg-green-100 text-green-700',  dot: 'bg-green-400' },
+            { id: 'short_absence', label: '단기부재', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' },
+            { id: 'sabbatical',    label: '안식중',   color: 'bg-gray-100 text-gray-500',    dot: 'bg-gray-400' },
+        ];
+
+        const MemberEditModal = ({ member, onClose, onSave, onDelete }) => {
+            const [form, setForm] = useState({ name: member ? member.name : '', part: member ? member.part : 'soprano', status: member ? (member.status === 'inactive' ? 'sabbatical' : member.status) : 'active' });
+            const isNew = !member;
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                    <div className="bg-white w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col">
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+                            <h3 className="font-black text-gray-800 text-lg">{isNew ? '새 팀원 추가' : '팀원 정보 수정'}</h3>
+                            <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">이름</label>
+                                <input
+                                    type="text" placeholder="팀원 이름"
+                                    className="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+                                    autoFocus={isNew}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">파트</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {PART_OPTIONS.map(p => (
+                                        <button key={p.id} onClick={() => setForm({...form, part: p.id})}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all ${form.part === p.id ? 'text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+                                            style={form.part === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
+                                        >{p.name}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">상태</label>
+                                <div className="flex gap-2">
+                                    {STATUS_OPTIONS.map(s => (
+                                        <button key={s.id} onClick={() => setForm({...form, status: s.id})}
+                                            className={`flex-1 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${form.status === s.id ? 'border-[#193278] bg-[#193278] text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+                                        >{s.label}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 px-6 pb-6 pt-2">
+                            {!isNew && <button onClick={onDelete} className="p-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><LucideIcon name="trash-2" className="w-5 h-5" /></button>}
+                            <button onClick={onClose} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black active:scale-95 transition-transform">취소</button>
+                            <button onClick={() => { if (!form.name.trim()) return; onSave(form); }} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform">저장</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey }) => {
             const [partFilter, setPartFilter] = useState('all');
+            const [statusFilter, setStatusFilter] = useState('active');
+            const [editingMember, setEditingMember] = useState(null);  // null=closed, false=new, obj=edit
             const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
             const [showPwdSetting, setShowPwdSetting] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
 
-            const changeStatus = (name, newStatus) => requestAuth(async () => {
-                const newList = members.map(m => m.name === name ? { ...m, status: newStatus } : m);
-                const { db, doc, setDoc } = window.MyFirebase; await setDoc(doc(db, 'roster', 'current'), { list: newList }); showToast("업데이트 되었습니다.");
+            const saveRoster = async (newList) => {
+                const { db, doc, setDoc } = window.MyFirebase;
+                await setDoc(doc(db, 'roster', 'current'), { list: newList });
+            };
+
+            const handleSaveMember = (form) => requestAuth(async () => {
+                let newList;
+                if (!editingMember) {
+                    // 신규 추가
+                    newList = [...members, { name: form.name.trim(), part: form.part, status: form.status }];
+                } else {
+                    // 수정
+                    newList = members.map(m => m.name === editingMember.name
+                        ? { ...m, name: form.name.trim(), part: form.part, status: form.status }
+                        : m
+                    );
+                }
+                await saveRoster(newList);
+                showToast(editingMember ? "수정되었습니다." : "팀원이 추가되었습니다.");
+                setEditingMember(null);
+            });
+
+            const handleDeleteMember = (name) => requestAuth(async () => {
+                const newList = members.filter(m => m.name !== name);
+                await saveRoster(newList);
+                showToast("삭제되었습니다.");
+                setEditingMember(null);
             });
 
             const handleUpdatePassword = async () => {
                 if (pwdForm.current !== currentPassword) return showToast("현재 비밀번호가 일치하지 않습니다.");
                 if (pwdForm.next.length < 4) return showToast("비밀번호는 4자리 이상이어야 합니다.");
                 if (pwdForm.next !== pwdForm.confirm) return showToast("새 비밀번호 확인이 일치하지 않습니다.");
-
                 const { db, doc, setDoc } = window.MyFirebase;
                 try {
                     await setDoc(doc(db, 'settings', 'admin'), { password: pwdForm.next });
                     showToast("비밀번호가 변경되었습니다.");
                     setPwdForm({ current: '', next: '', confirm: '' });
                     setShowPwdSetting(false);
-                } catch (e) {
-                    showToast("변경 중 오류가 발생했습니다.");
-                }
+                } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            const activeMembers = members.filter(m => m.status === 'active');
-            const shortAbsenceMembers = members.filter(m => m.status === 'short_absence');
-            const sabbaticalMembers = members.filter(m => m.status === 'inactive' || m.status === 'sabbatical');
-            
-            const groupedByPart = { staff: [], soprano: [], alto: [], tenor: [], bass: [] };
-            activeMembers.forEach(m => { if (groupedByPart[m.part]) groupedByPart[m.part].push(m); else groupedByPart.staff.push(m); });
-            const filterOptions = [{ id: 'all', name: '전체' }, { id: 'staff', name: '성가사/반주자' }, ...PARTS];
-            
-            const filteredShortAbsence = partFilter === 'all' ? shortAbsenceMembers : shortAbsenceMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
-            const filteredSabbatical = partFilter === 'all' ? sabbaticalMembers : sabbaticalMembers.filter(m => (partFilter === 'staff' ? (m.part === 'staff' || !PARTS.some(p=>p.id===m.part)) : m.part === partFilter));
-            
+            const allParts = [{ id: 'all', name: '전체', color: '#193278' }, ...PART_OPTIONS];
+            const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
+
+            const filtered = members.filter(m => {
+                const partOk = partFilter === 'all' || m.part === partFilter;
+                const statusOk = statusNorm(m) === statusFilter;
+                return partOk && statusOk;
+            });
+
+            // 파트 순서대로 그룹핑
+            const grouped = PART_OPTIONS.map(p => ({
+                ...p,
+                members: filtered.filter(m => m.part === p.id)
+            })).filter(g => partFilter === 'all' ? g.members.length > 0 : g.id === partFilter && g.members.length > 0);
+            if (partFilter !== 'all' && grouped.length === 0 && filtered.length > 0) {
+                // partFilter에 해당하지만 grouped에 안잡힐 경우 fallback
+            }
+
+            const counts = {
+                active:        members.filter(m => statusNorm(m) === 'active').length,
+                short_absence: members.filter(m => statusNorm(m) === 'short_absence').length,
+                sabbatical:    members.filter(m => statusNorm(m) === 'sabbatical').length,
+            };
+
             return (
                 <div className="space-y-6 fade-in text-left">
-                    <div className="text-left">
-                        <h2 className="text-3xl font-black text-gray-800 text-left">명단관리</h2>
-                        <p className="text-sm text-gray-400 font-bold text-left">활동 팀원 현황</p>
+                    {/* 헤더 */}
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <h2 className="text-3xl font-black text-gray-800">명단관리</h2>
+                            <p className="text-sm text-gray-400 font-bold mt-0.5">총 {members.length}명 · 활동 {counts.active}명</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setShowSettings(!showSettings)} className={`p-3 rounded-2xl transition-colors ${showSettings ? 'bg-[#193278] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                                <LucideIcon name="settings" className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => requestAuth(() => setEditingMember(false))} className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
+                                <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar text-left">
-                        {filterOptions.map(opt => (
-                            <button key={opt.id} onClick={() => setPartFilter(opt.id)} className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border ${partFilter === opt.id ? 'bg-[#193278] border-[#193278] text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}>{opt.name}</button>
+
+                    {/* 상태 탭 */}
+                    <div className="flex gap-2">
+                        {STATUS_OPTIONS.map(s => (
+                            <button key={s.id} onClick={() => setStatusFilter(s.id)}
+                                className={`flex-1 py-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center gap-1 ${statusFilter === s.id ? 'bg-[#193278] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}
+                            >
+                                <span className="text-base font-black">{counts[s.id]}</span>
+                                <span>{s.label}</span>
+                            </button>
                         ))}
                     </div>
-                    <div className="space-y-10 mt-6 text-left">
-                        {filteredShortAbsence.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-black text-yellow-500 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-yellow-400 text-left"></div>단기부재 팀원 ({filteredShortAbsence.length})</h3>
-                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-80 w-full text-left">
-                                    {filteredShortAbsence.map(m => (
-                                        <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
-                                            <div className="font-bold text-gray-500 line-through text-left">{m.name}</div>
-                                            <button onClick={() => changeStatus(m.name, 'active')} className="px-4 py-2 rounded-xl text-[10px] font-black bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-center">활동 복귀</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {filteredSabbatical.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-black text-gray-400 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full bg-gray-300 text-left"></div>안식 중인 팀원 ({filteredSabbatical.length})</h3>
-                                <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 opacity-60 w-full text-left">
-                                    {filteredSabbatical.map(m => (
-                                        <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
-                                            <div className="font-bold text-gray-400 line-through text-left">{m.name}</div>
-                                            <button onClick={() => changeStatus(m.name, 'active')} className="px-4 py-2 rounded-xl text-[10px] font-black bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-colors text-center">활동 복귀</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
-                        {filterOptions.filter(o => o.id !== 'all').map(opt => {
-                            if (partFilter !== 'all' && partFilter !== opt.id) return null;
-                            const list = groupedByPart[opt.id];
-                            if (!list || list.length === 0) return null;
-                            return (
-                                <div key={opt.id} className="space-y-4 text-left">
-                                    <h3 className="font-black text-gray-800 px-1 flex items-center gap-2 text-left"><div className="w-1.5 h-4 rounded-full text-left" style={{backgroundColor: opt.color || '#193278'}}></div>{opt.name} ({list.length})</h3>
-                                    <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-50 transition-shadow hover:shadow-md w-full text-left">
-                                        {list.map(m => (
-                                            <div key={m.name} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0 text-left">
-                                                <div className="font-bold text-gray-800 text-left">{m.name}</div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => changeStatus(m.name, 'short_absence')} className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors text-center">단기부재</button>
-                                                    <button onClick={() => changeStatus(m.name, 'sabbatical')} className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors text-center">안식중</button>
+                    {/* 파트 필터 */}
+                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                        {allParts.map(p => (
+                            <button key={p.id} onClick={() => setPartFilter(p.id)}
+                                className={`px-4 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all border-2 flex-shrink-0 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}
+                                style={partFilter === p.id ? { backgroundColor: p.color || '#193278', borderColor: p.color || '#193278' } : {}}
+                            >
+                                {p.name}
+                                {p.id !== 'all' && <span className="ml-1.5 opacity-70">{members.filter(m => m.part === p.id && statusNorm(m) === statusFilter).length}</span>}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 멤버 목록 */}
+                    {grouped.length === 0 ? (
+                        <div className="text-center py-16 text-gray-300">
+                            <LucideIcon name="users" className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                            <p className="font-bold text-sm">해당 팀원이 없습니다.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {grouped.map(group => (
+                                <div key={group.id}>
+                                    {partFilter === 'all' && (
+                                        <div className="flex items-center gap-2 mb-3 px-1">
+                                            <span className="w-2 h-5 rounded-full" style={{backgroundColor: group.color}}></span>
+                                            <span className="text-xs font-black text-gray-500 uppercase tracking-wider">{group.name}</span>
+                                            <span className="text-xs font-bold text-gray-300">{group.members.length}명</span>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {group.members.map(m => {
+                                            const st = STATUS_OPTIONS.find(s => s.id === statusNorm(m)) || STATUS_OPTIONS[0];
+                                            const pt = PART_OPTIONS.find(p => p.id === m.part);
+                                            return (
+                                                <div key={m.name} onClick={() => requestAuth(() => setEditingMember(m))}
+                                                    className="bg-white rounded-2xl px-5 py-4 flex items-center justify-between border border-gray-50 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-sm" style={{backgroundColor: pt?.color || '#193278'}}>
+                                                            {m.name[0]}
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-black text-gray-800 text-base">{m.name}</span>
+                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                                <span className="text-[10px] font-bold text-gray-400">{pt?.name || m.part}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${st.color}`}>{st.label}</span>
+                                                        <LucideIcon name="chevron-right" className="w-4 h-4 text-gray-200 group-hover:text-gray-400 transition-colors" />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
+                    )}
 
-                        <div className="pt-10 border-t border-gray-100 text-left">
-                            <h3 className="font-black text-gray-400 px-1 flex items-center gap-2 mb-4 text-[10px] uppercase tracking-widest text-left"><LucideIcon name="settings" className="w-3.5 h-3.5" /> 시스템 설정</h3>
-                            <div className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm text-left">
-                                <div className="flex items-center justify-between text-left">
-                                    <div className="text-left">
-                                        <p className="text-sm font-bold text-gray-800 text-left">매니저 비밀번호 변경</p>
-                                        <p className="text-xs text-gray-400 text-left">인증용 비밀번호를 변경합니다.</p>
+                    {/* 시스템 설정 (접이식) */}
+                    {showSettings && (
+                        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6 scale-in">
+                            <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-widest flex items-center gap-2"><LucideIcon name="settings" className="w-3.5 h-3.5" /> 시스템 설정</h3>
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-800">매니저 비밀번호 변경</p>
+                                        <p className="text-xs text-gray-400">인증용 비밀번호를 변경합니다.</p>
                                     </div>
-                                    <button 
-                                        onClick={() => setShowPwdSetting(!showPwdSetting)} 
-                                        className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black transition-colors hover:bg-gray-100 text-center"
-                                    >
+                                    <button onClick={() => setShowPwdSetting(!showPwdSetting)} className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors">
                                         {showPwdSetting ? "숨기기" : "변경하기"}
                                     </button>
                                 </div>
                                 {showPwdSetting && (
-                                    <div className="mt-6 space-y-3 scale-in text-left text-left">
-                                        <input type="password" placeholder="현재 비밀번호" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.current} onChange={e=>setPwdForm({...pwdForm, current:e.target.value})} />
-                                        <input type="password" placeholder="새 비밀번호" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.next} onChange={e=>setPwdForm({...pwdForm, next:e.target.value})} />
-                                        <input type="password" placeholder="새 비밀번호 확인" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} />
-                                        <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform text-center text-center">비밀번호 저장</button>
+                                    <div className="space-y-3 scale-in">
+                                        <input type="password" placeholder="현재 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.current} onChange={e=>setPwdForm({...pwdForm, current:e.target.value})} />
+                                        <input type="password" placeholder="새 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.next} onChange={e=>setPwdForm({...pwdForm, next:e.target.value})} />
+                                        <input type="password" placeholder="새 비밀번호 확인" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} />
+                                        <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">비밀번호 저장</button>
                                     </div>
                                 )}
-
-                                <div className="mt-6 pt-6 border-t border-gray-100">
-                                    <div className="flex items-center justify-between text-left mb-3">
-                                        <div className="text-left">
-                                            <p className="text-sm font-bold text-gray-800 text-left">AI 출석 인식 (Gemini API)</p>
-                                            <p className="text-xs text-blue-500 font-bold text-left">★ 구글 AI Studio에서 발급받은 새 API 키를 입력하세요.</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3 scale-in text-left">
-                                        <input type="password" placeholder="Gemini 전용 API Key 입력 (비우면 캔버스 모드)" className="w-full bg-gray-50 border-0 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
-                                        <button onClick={() => onSaveGeminiKey(apiForm)} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform text-center">API 키 저장</button>
-                                    </div>
+                            </div>
+                            <div className="border-t border-gray-100 pt-6">
+                                <p className="text-sm font-bold text-gray-800 mb-1">AI 출석 인식 (Gemini API)</p>
+                                <p className="text-xs text-blue-500 font-bold mb-3">★ 구글 AI Studio에서 발급받은 API 키를 입력하세요.</p>
+                                <div className="space-y-3">
+                                    <input type="password" placeholder="Gemini API Key" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
+                                    <button onClick={() => onSaveGeminiKey(apiForm)} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">API 키 저장</button>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* 팀원 편집 모달 */}
+                    {editingMember !== null && (
+                        <MemberEditModal
+                            member={editingMember === false ? null : editingMember}
+                            onClose={() => setEditingMember(null)}
+                            onSave={handleSaveMember}
+                            onDelete={() => handleDeleteMember(editingMember.name)}
+                        />
+                    )}
                 </div>
             );
         };
