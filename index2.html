@@ -597,7 +597,7 @@
             // 해당 월 생일자 맵 { solarDay: [{name, part, lunar, lunarMM, lunarDD, solarDD}] }
             const bdMap = useMemo(() => {
                 const map = {};
-                (members || []).forEach(m => {
+                (members || []).filter(m => m.status !== 'sabbatical' && m.status !== 'inactive').forEach(m => {
                     if (!m.birthday) return;
                     const [mm, dd] = m.birthday.split('-').map(Number);
                     if (!mm || !dd) return;
@@ -870,7 +870,7 @@
             const thisMonthBdCount = useMemo(() => {
                 const now = new Date();
                 const thisM = now.getMonth() + 1;
-                return safeMembers.filter(m => {
+                return safeMembers.filter(m => m.status !== 'sabbatical' && m.status !== 'inactive').filter(m => {
                     if (!m.birthday) return false;
                     const [mm] = m.birthday.split('-').map(Number);
                     let displayMM = mm;
