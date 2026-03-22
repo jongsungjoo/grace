@@ -438,8 +438,8 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 text-center">
-                    <div className="bg-white rounded-[32px] w-full max-lg h-[90vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-center">
+                    <div className="bg-white rounded-t-[32px] md:rounded-[32px] w-full md:max-w-xl max-h-[95vh] md:max-h-[85vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100">
                         <header className="p-6 border-b flex justify-between items-center shrink-0 text-left">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 overflow-hidden text-left">
                                 <h3 className="text-xl font-black text-gray-800 shrink-0">{(isEditable ? "기록 편집" : "기록 조회")}</h3>
@@ -455,7 +455,7 @@
                             </div>
                         </header>
                         <div className="flex-1 overflow-y-auto p-6 hide-scrollbar text-left">
-                            <div className="space-y-8">
+                            <div className="md:flex md:gap-6 space-y-8 md:space-y-0">
                                 <section>
                                     <div className="flex items-center justify-between mb-3 text-left">
                                         <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-left">출석 사진</h4>
@@ -473,7 +473,7 @@
                                     <div className={`relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden min-h-[160px] flex items-center justify-center transition-all hover:bg-gray-100 ${isEditable ? 'cursor-pointer' : ''}`}>
                                         {image ? (
                                             <div className={`w-full relative group ${!isEditable ? 'cursor-zoom-in' : ''}`} onClick={() => !isEditable && setIsFullScreen(true)}>
-                                                <img src={image} className="w-full max-h-[70vh] object-contain bg-gray-50" />
+                                                <img src={image} className="w-full max-h-[40vh] md:max-h-[60vh] object-contain bg-gray-50" />
                                                 {ocrStatus === "processing" && (
                                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
                                                         <div className="w-full bg-gray-100 h-1.5 rounded-full mb-2 max-w-[150px]"><div className="bg-[#193278] h-full progress-bar-fill" style={{ width: `${ocrProgress}%` }}></div></div>
@@ -508,7 +508,7 @@
                                                     {partNameLabel}
                                                     <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
                                                 </h5>
-                                                <div className="grid grid-cols-3 gap-1.5">
+                                                <div className="grid grid-cols-3 md:grid-cols-4 gap-1.5">
                                                     {list.map(m => {
                                                         const pi_h = (() => { let p = PART_ICON[m.part] || null; if (m.part==='staff' && p) p={...p, abbr: m.role==='반주자'?'반':'성'}; return p; })();
                                                         const checked = selected.has(m.name);
@@ -1025,7 +1025,7 @@
                                 <LucideIcon name="plus" className="w-3.5 h-3.5" /> 출석체크
                             </button>
                         </div>
-                        <div className="grid gap-3">
+                        <div className="grid gap-3 md:grid-cols-2">
                             {(!history || history.length === 0) ? <div className="text-center py-20 text-gray-300 font-bold">기록이 없습니다.</div> : 
                             history.map(h => {
                                 const countsByPart = (h.members || []).reduce((acc, name) => {
@@ -1035,7 +1035,7 @@
                                 }, { soprano: 0, alto: 0, tenor: 0, bass: 0 });
 
                                 return (
-                                    <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-50 flex flex-col gap-5 group cursor-pointer hover:shadow-md transition-all w-full text-left overflow-hidden">
+                                    <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-4 sm:p-5 rounded-[32px] shadow-sm border border-gray-50 flex flex-col gap-4 group cursor-pointer hover:shadow-md transition-all w-full text-left overflow-hidden">
                                         <div className="flex items-center justify-between border-b border-gray-50 pb-4">
                                             <div className="flex flex-col text-left">
                                                 <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-1">Attendance Date</span>
@@ -1053,28 +1053,28 @@
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col sm:flex-row items-center gap-6 text-left">
-                                            <div className="w-full sm:w-52 h-44 sm:h-52 bg-gray-100 rounded-[32px] overflow-hidden shrink-0 relative shadow-inner text-left">
+                                        <div className="flex items-stretch gap-4 text-left">
+                                            {/* 이미지 — PC에서도 적절한 크기 */}
+                                            <div className="w-28 sm:w-36 flex-shrink-0 bg-gray-100 rounded-2xl overflow-hidden relative">
                                                 {h.image ? (
                                                     <img src={h.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                                 ) : (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-200 bg-gray-50 text-center">
-                                                        <LucideIcon name="image" className="w-12 h-12 opacity-30 mb-2" />
-                                                        <span className="text-[10px] font-bold text-gray-300">NO IMAGE</span>
+                                                    <div className="w-full h-full min-h-[80px] flex flex-col items-center justify-center text-gray-200 bg-gray-50 text-center">
+                                                        <LucideIcon name="image" className="w-8 h-8 opacity-30" />
                                                     </div>
                                                 )}
                                             </div>
-                                            
-                                            <div className="flex-1 w-full flex gap-2">
+                                            {/* 파트별 출석 — 세로로 꽉 채움 */}
+                                            <div className="flex-1 flex gap-2">
                                                 {[
-                                                    { abbr:'S', name:'소프라노', color:'#e91e63', val: countsByPart.soprano },
-                                                    { abbr:'A', name:'알토',     color:'#ff9800', val: countsByPart.alto    },
-                                                    { abbr:'T', name:'테너',     color:'#2196f3', val: countsByPart.tenor   },
-                                                    { abbr:'B', name:'베이스',   color:'#37474f', val: countsByPart.bass    },
+                                                    { abbr:'S', color:'#e91e63', val: countsByPart.soprano },
+                                                    { abbr:'A', color:'#ff9800', val: countsByPart.alto    },
+                                                    { abbr:'T', color:'#2196f3', val: countsByPart.tenor   },
+                                                    { abbr:'B', color:'#37474f', val: countsByPart.bass    },
                                                 ].map(p => (
-                                                    <div key={p.abbr} className="flex-1 flex flex-col items-center justify-center py-3 bg-gray-50 rounded-2xl min-w-0">
-                                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white font-black mb-1.5 text-xs" style={{backgroundColor: p.color}}>{p.abbr}</span>
-                                                        <span className="text-xl font-black leading-none" style={{color: p.color}}>{p.val}</span>
+                                                    <div key={p.abbr} className="flex-1 flex flex-col items-center justify-center py-2 bg-gray-50 rounded-2xl min-w-0">
+                                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white font-black mb-1 text-xs" style={{backgroundColor: p.color}}>{p.abbr}</span>
+                                                        <span className="text-lg font-black leading-none" style={{color: p.color}}>{p.val}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1721,7 +1721,7 @@
             const partTabs = [
                 { id: 'all',     name: '전체',          color: '#193278' },
                 ...PART_OPTIONS,
-                { id: 'officer', name: '임원진',         color: '#7c3aed' },
+                { id: 'officer', name: '임원진', color: '#7c3aed' },
             ];
 
             // 상태 카운트
@@ -1885,8 +1885,7 @@
                                     className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 ${partFilter === p.id ? 'text-white shadow-md' : 'bg-white border-gray-100 text-gray-500'}`}
                                     style={partFilter === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
                                 >
-                                    {p.id === 'officer' && <span>👑</span>}
-                                    {p.name}
+                                    {p.id === 'officer' ? '임원진' : p.name}
                                     <span className={`text-[10px] font-black ml-0.5 ${partFilter === p.id ? 'opacity-60' : 'text-gray-300'}`}>{partCounts[p.id]}</span>
                                 </button>
                             ))}
