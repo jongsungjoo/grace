@@ -1350,11 +1350,11 @@
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            // 레벨 2 필터탭 목록
+            // 레벨 2 필터탭 목록 (성가사/반주자 먼저, 임원진 다음)
             const partTabs = [
-                { id: 'all',     name: '전체',         color: '#193278' },
-                { id: 'officer', name: '임원진',        color: '#7c3aed' },
+                { id: 'all',     name: '전체',          color: '#193278' },
                 ...PART_OPTIONS,
+                { id: 'officer', name: '임원진',         color: '#7c3aed' },
             ];
 
             // 상태 카운트
@@ -1373,11 +1373,52 @@
             else if (partFilter === 'officer') filtered = byStatus.filter(m => m.role && m.role.trim());
             else                               filtered = byStatus.filter(m => m.part === partFilter);
 
-            // 파트별 그룹핑
+            // 파트별 그룹핑 (일반 모드)
             const grouped = PART_OPTIONS.map(p => ({
                 ...p,
                 members: filtered.filter(m => m.part === p.id),
             })).filter(g => g.members.length > 0);
+
+            // 임원진 모드 전용 그룹핑
+            // 파트 약자 맵
+            const PART_ABBR = { staff: '성', soprano: '소', alto: '알', tenor: '테', bass: '베' };
+            // 직책 카테고리 분류
+            const getRoleCategory = (role) => {
+                if (!role) return 4;
+                const r = role.trim();
+                if (['팀장','총무','회계'].includes(r)) return 1;
+                if (r === '파트장') return 2;
+                return 3; // 담당부장 및 기타
+            };
+            const officerGroups = (() => {
+                const officers = filtered; // 이미 임원진 필터 적용됨
+                // 그룹1: 성가사/반주자
+                const staffGroup = {
+                    id: 'staff_off', name: '성가사/반주자', color: '#193278',
+                    members: officers.filter(m => m.part === 'staff'),
+                };
+                // 그룹2: 팀장/총무/회계 (파트 무관)
+                const leadGroup = {
+                    id: 'lead', name: '팀장 · 총무 · 회계', color: '#7c3aed',
+                    members: officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 1),
+                };
+                // 그룹3: 파트장 (파트 순서 유지, 파트 약자 표시)
+                const partLeaderGroup = {
+                    id: 'partleader', name: '파트장', color: '#0ea5e9',
+                    members: (() => {
+                        const pl = officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 2);
+                        const partOrder = ['soprano','alto','tenor','bass'];
+                        return [...pl].sort((a,b) => partOrder.indexOf(a.part) - partOrder.indexOf(b.part));
+                    })(),
+                    showPartAbbr: true,
+                };
+                // 그룹4: 나머지 임원 (부장 등)
+                const etcGroup = {
+                    id: 'etc', name: '담당 부장', color: '#f59e0b',
+                    members: officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 3),
+                };
+                return [staffGroup, leadGroup, partLeaderGroup, etcGroup].filter(g => g.members.length > 0);
+            })();
 
             // 레벨2 탭별 카운트
             const partCounts = partTabs.reduce((acc, p) => {
@@ -1387,23 +1428,31 @@
                 return acc;
             }, {});
 
-            // 칩 컴포넌트 — 임원이면 직책, 아니면 파트명 없음
-            const MemberChip = ({ m, showPartLabel }) => {
+            // 칩 컴포넌트 — 크기 통일, 임원이면 직책 배지
+            const MemberChip = ({ m, showPartAbbr }) => {
                 const hasRole = m.role && m.role.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
+                const abbr = showPartAbbr ? PART_ABBR[m.part] : null;
+                const pt = PART_OPTIONS.find(p => p.id === m.part);
                 return (
                     <button
                         onClick={() => requestAuth(() => setEditingMember(m))}
                         className="relative flex flex-col items-center justify-center px-2 py-3 bg-white border-2 rounded-2xl transition-all active:scale-95 hover:shadow-md text-center w-full"
-                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9' }}
+                        style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', minHeight: '76px' }}
                     >
                         <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
                         {hasRole && <span className="absolute top-1.5 left-2 text-[10px]">👑</span>}
-                        <span className="font-black text-gray-800 text-sm leading-tight mt-1">{m.name}</span>
-                        {hasRole && (
-                            <span className="mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 leading-none">{m.role}</span>
+                        {/* 파트장일 때 파트 약자 아이콘 */}
+                        {abbr && (
+                            <span className="absolute bottom-1.5 left-2 text-[9px] font-black px-1 py-0.5 rounded-md text-white leading-none"
+                                style={{ backgroundColor: pt?.color || '#193278' }}>{abbr}</span>
                         )}
+                        <span className="font-black text-gray-800 text-sm leading-tight">{m.name}</span>
+                        {/* 직책 배지 — 항상 공간 확보해서 칩 높이 통일 */}
+                        <span className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${hasRole ? 'bg-purple-50 text-purple-600' : 'text-transparent'}`}>
+                            {hasRole ? m.role : '—'}
+                        </span>
                     </button>
                 );
             };
@@ -1428,9 +1477,9 @@
                         </div>
                     </div>
 
-                    {/* 레벨 1 — 상태 (활동중 / 단기부재 / 안식중) */}
+                    {/* 레벨 1 — 현황 */}
                     <div>
-                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-0.5">상태</p>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-0.5">현황</p>
                         <div className="flex gap-2">
                             {STATUS_OPTIONS.map(s => (
                                 <button key={s.id}
@@ -1443,7 +1492,7 @@
                         </div>
                     </div>
 
-                    {/* 레벨 2 — 파트 / 임원진 (wrap 그리드, 스크롤 없음) */}
+                    {/* 레벨 2 — 파트 필터 */}
                     <div>
                         <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-0.5">파트</p>
                         <div className="flex flex-wrap gap-2">
@@ -1462,14 +1511,14 @@
                     </div>
 
                     {/* 멤버 칩 그리드 */}
-                    {grouped.length === 0 ? (
+                    {(partFilter === 'officer' ? officerGroups : grouped).length === 0 ? (
                         <div className="text-center py-14 text-gray-300">
                             <LucideIcon name="users" className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold text-sm">해당 팀원이 없습니다.</p>
                         </div>
                     ) : (
                         <div className="space-y-5">
-                            {grouped.map(group => (
+                            {(partFilter === 'officer' ? officerGroups : grouped).map(group => (
                                 <div key={group.id}>
                                     <div className="flex items-center gap-2 mb-2 px-0.5">
                                         <span className="w-2 h-4 rounded-full shrink-0" style={{backgroundColor: group.color}}></span>
@@ -1477,7 +1526,7 @@
                                         <span className="text-xs font-bold text-gray-300">{group.members.length}명</span>
                                     </div>
                                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                                        {group.members.map(m => <MemberChip key={m.name} m={m} />)}
+                                        {group.members.map(m => <MemberChip key={m.name} m={m} showPartAbbr={group.showPartAbbr} />)}
                                     </div>
                                 </div>
                             ))}
