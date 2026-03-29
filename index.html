@@ -1640,7 +1640,50 @@
                 birthdayType: member ? (member.birthdayType || 'solar') : 'solar',
                 photo:       member ? (member.photo || null) : null,
             });
+            const [photoFullscreen, setPhotoFullscreen] = useState(false);
+
+            const handleDownloadPhoto = (e) => {
+                e.stopPropagation();
+                if (!form.photo) return;
+                const a = document.createElement('a');
+                a.href = form.photo;
+                a.download = (form.name ? form.name : 'photo') + '.jpg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
             return (
+                <>
+                {photoFullscreen && form.photo && (
+                    <div
+                        className="fixed inset-0 z-[500] bg-black/95 flex items-center justify-center fade-in"
+                        onClick={() => setPhotoFullscreen(false)}
+                    >
+                        <div className="absolute top-4 right-4 flex gap-2 z-10">
+                            <button
+                                onClick={handleDownloadPhoto}
+                                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-3 py-2 rounded-xl text-xs font-black transition-all active:scale-90"
+                                title="사진 다운로드"
+                            >
+                                <LucideIcon name="download" className="w-4 h-4" />
+                                <span>저장</span>
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setPhotoFullscreen(false); }}
+                                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-xl transition-all active:scale-90"
+                            >
+                                <LucideIcon name="x" className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <img
+                            src={form.photo}
+                            className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-xs font-bold">화면을 눌러 닫기</p>
+                    </div>
+                )}
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="bg-white w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
                         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
@@ -1652,7 +1695,7 @@
                             <div className="flex flex-col items-center">
                                 <div className="relative w-24 h-24 mb-1">
                                     {form.photo ? (
-                                        <img src={form.photo} className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow-md" />
+                                        <img src={form.photo} className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow-md cursor-zoom-in active:scale-95 transition-transform" onClick={() => setPhotoFullscreen(true)} title="사진 전체보기" />
                                     ) : (
                                         <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-4 border-dashed border-gray-200">
                                             <LucideIcon name="user" className="w-8 h-8 text-gray-300" />
@@ -1739,6 +1782,7 @@
                         </div>
                     </div>
                 </div>
+                </>
             );
         };
 
@@ -2453,4 +2497,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+    </html>
