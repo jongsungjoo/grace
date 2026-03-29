@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>찬양팀 사진 자동 크롭 및 일괄 업데이트</title>
+<title>주은혜 찬양 사역팀 - 단체 사진 자동 크롭 및 일괄 업데이트</title>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -27,6 +27,7 @@
   window.getDoc = getDoc;
   window.setDoc = setDoc;
 </script>
+
 <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
 <style>
@@ -77,28 +78,35 @@
   window.onload = async () => {
     log('⏳ Face API AI 모델 로드 중...');
     try {
-      // CDN을 통해 빠르고 가벼운 TinyFaceDetector 가중치 로드
-      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@0.22.2/weights');
+      // 🚨 수정된 부분: 가장 안정적인 vladmandic 공식 CDN 모델 경로 사용
+      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      
       log('✅ AI 모델 로드 완료!');
       document.getElementById('processBtn').disabled = false;
       document.getElementById('processBtn').innerText = '단체 사진에서 얼굴 찾기';
       
       // Firebase에서 명단(Roster) 불러오기 (매칭용 드롭다운 구성)
-      setTimeout(loadRoster, 1500); // DB 객체 초기화 대기
+      setTimeout(loadRoster, 1500); 
     } catch (e) {
       log('❌ 초기화 오류: ' + e.message);
+      console.error("Model Load Error:", e);
     }
   };
 
   async function loadRoster() {
     log('⏳ Firebase에서 명단 로드 중...');
-    const rosterRef = window.doc(window.db, 'roster', 'current');
-    const snap = await window.getDoc(rosterRef);
-    if (snap.exists()) {
-      teamRoster = snap.data().list;
-      log(`✅ 명단 로드 완료: 총 ${teamRoster.length}명`);
-    } else {
-      log('❌ 명단을 찾을 수 없습니다.');
+    try {
+      const rosterRef = window.doc(window.db, 'roster', 'current');
+      const snap = await window.getDoc(rosterRef);
+      if (snap.exists()) {
+        teamRoster = snap.data().list;
+        log(`✅ 명단 로드 완료: 총 ${teamRoster.length}명`);
+      } else {
+        log('❌ 명단을 찾을 수 없습니다.');
+      }
+    } catch (e) {
+      log('❌ Firebase 통신 오류: 설정값을 확인해주세요. (' + e.message + ')');
     }
   }
 
