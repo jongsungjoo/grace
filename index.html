@@ -118,6 +118,29 @@
         ];
         const LOGO_URL = "https://jongsungjoo.github.io/grace/logo.png"; 
 
+        // ★ Cloudinary 설정 (본인 계정으로 변경 필요)
+        // 1. https://cloudinary.com 에서 무료 계정 생성
+        // 2. Dashboard > Settings > Upload > Add upload preset (Signing Mode: Unsigned)
+        const CLOUDINARY_CLOUD_NAME = "dov08cs8q";
+        const CLOUDINARY_UPLOAD_PRESET = "onnuri";
+
+        const uploadToCloudinary = async (file, folder = 'grace') => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', folder);
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                { method: 'POST', body: formData }
+            );
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error?.message || 'Cloudinary 업로드 실패');
+            }
+            const data = await res.json();
+            return data.secure_url; // HTTPS URL 반환
+        };
+
         const getYoutubeId = (url) => {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url?.match(regExp);
@@ -395,6 +418,7 @@
             const [ocrStatus, setOcrStatus] = useState("idle");
             const [ocrProgress, setOcrProgress] = useState(0);
             const [isFullScreen, setIsFullScreen] = useState(false);
+            const [imageFile, setImageFile] = useState(null);
             
             const safeMembers = allMembers || [];
             const activeMembers = safeMembers.filter(m => m && (m.status === 'active' || selected.has(m.name)));
@@ -404,7 +428,8 @@
                 if (!file) return;
                 try {
                     const compressed = await compressImage(file);
-                    setImage(compressed); 
+                    setImage(compressed);
+                    setImageFile(file);
                 } catch (err) {
                     showToast("이미지 업로드에 실패했습니다.");
                 }
@@ -531,10 +556,20 @@
                                 </section>
                             </div>
                         </div>
-                        {isEditable && <footer className="flex gap-2 p-5 border-t border-gray-100 bg-white shrink-0">
+        {isEditable && <footer className="flex gap-2 p-5 border-t border-gray-100 bg-white shrink-0">
                             <button onClick={() => onDelete(record.id)} className="p-3.5 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors active:scale-95"><LucideIcon name="trash-2" className="w-5 h-5" /></button>
                             <button onClick={() => setIsEditable(false)} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black active:scale-95 transition-transform text-sm">취소</button>
-                            <button onClick={() => onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image})} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-sm">저장</button>
+                            <button onClick={async () => {
+                                let finalImage = image;
+                                if (imageFile) {
+                                    try {
+                                        finalImage = await uploadToCloudinary(imageFile, 'grace/attendance');
+                                    } catch(e) {
+                                        console.warn('Cloudinary 업로드 실패, base64 폴백:', e.message);
+                                    }
+                                }
+                                onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image: finalImage});
+                            }} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-sm">저장</button>
                         </footer>}
                     </div>
                     {isFullScreen && image && (
@@ -1188,7 +1223,14 @@
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
                 let finalImage = form.image;
-                if (form.file) { finalImage = await compressImage(form.file, 400, 400); }
+                if (form.file) {
+                    try {
+                        finalImage = await uploadToCloudinary(form.file, 'grace/music');
+                    } catch(e) {
+                        console.warn('Cloudinary 업로드 실패, base64 폴백:', e.message);
+                        finalImage = await compressImage(form.file, 400, 400);
+                    }
+                }
                 const data = { ...form, image: finalImage, updatedAt: new Date().toISOString() };
                 delete data.file;
                 if (form.id) { await setDoc(doc(db, 'music', form.id), data); showToast("수정되었습니다."); }
@@ -1639,6 +1681,7 @@
                 birthday:    member ? (member.birthday || '') : '',
                 birthdayType: member ? (member.birthdayType || 'solar') : 'solar',
                 photo:       member ? (member.photo || null) : null,
+                photoFile:   null,
             });
             const [photoFullscreen, setPhotoFullscreen] = useState(false);
 
@@ -1707,8 +1750,9 @@
                                             const file = e.target.files[0];
                                             if (!file) return;
                                             try {
+                                                // 미리보기는 base64로, 실제 업로드는 저장 시 Cloudinary로
                                                 const compressed = await compressImage(file, 300, 300, 0.82);
-                                                setForm(prev => ({...prev, photo: compressed}));
+                                                setForm(prev => ({...prev, photo: compressed, photoFile: file}));
                                             } catch(err) { alert("사진 업로드 실패"); }
                                         }} />
                                     </label>
@@ -1821,7 +1865,17 @@
 
             const handleSaveMember = async (form) => {
                 let newList;
-                const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim(), birthday: form.birthday.trim(), birthdayType: form.birthdayType || 'solar', photo: form.photo || null };
+                let photoUrl = form.photo;
+                // 새 파일이 있으면 Cloudinary에 업로드
+                if (form.photoFile) {
+                    try {
+                        photoUrl = await uploadToCloudinary(form.photoFile, 'grace/members');
+                    } catch(e) {
+                        console.warn('Cloudinary 업로드 실패, base64 저장:', e.message);
+                        // 폴백: 이미 form.photo에 base64가 들어있으므로 그대로 사용
+                    }
+                }
+                const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim(), birthday: form.birthday.trim(), birthdayType: form.birthdayType || 'solar', photo: photoUrl || null };
                 if (!editingMember) {
                     newList = [...members, data];
                 } else {
