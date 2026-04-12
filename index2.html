@@ -364,9 +364,9 @@
             );
             
             return (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
+                <div className="fixed inset-0 bg-black/65 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
@@ -745,9 +745,9 @@
                 .flatMap(([d, bds]) => bds.map(b => ({ ...b, displayD: Number(d) })));
 
             return (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
+                <div className="fixed inset-0 bg-black/65 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
@@ -889,9 +889,9 @@
             );
 
             return (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
+                <div className="fixed inset-0 bg-black/65 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
@@ -1078,12 +1078,12 @@
                                 <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-200 group-hover:text-blue-300 transition-colors" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-black text-gray-400 mb-1 leading-tight">평균 / 최다</p>
+                                <p className="text-[11px] font-bold text-gray-400 mb-1 leading-tight">평균 / 최다</p>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className="text-lg font-black text-[#193278] leading-none">{stats.avg}</span>
                                     <span className="text-[10px] text-gray-300">/</span>
                                     <span className="text-lg font-black text-green-500 leading-none">{stats.max}</span>
-                                    <span className="text-[9px] font-bold text-gray-300 ml-0.5">명</span>
+                                    <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
                                 </div>
                             </div>
                         </div>
@@ -1096,10 +1096,10 @@
                                 <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-200 group-hover:text-pink-300 transition-colors" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-black text-gray-400 mb-1 leading-tight">{new Date().getMonth()+1}월 생일</p>
+                                <p className="text-[11px] font-bold text-gray-400 mb-1 leading-tight">{new Date().getMonth()+1}월 생일</p>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className="text-lg font-black text-pink-500 leading-none">{thisMonthBdCount}</span>
-                                    <span className="text-[9px] font-bold text-gray-300 ml-0.5">명</span>
+                                    <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
                                 </div>
                             </div>
                         </div>
@@ -1112,10 +1112,10 @@
                                 <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-200 group-hover:text-orange-300 transition-colors" />
                             </div>
                             <div>
-                                <p className="text-[9px] font-black text-gray-400 mb-1 leading-tight">관심 팀원</p>
+                                <p className="text-[11px] font-bold text-gray-400 mb-1 leading-tight">관심 팀원</p>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className={`text-lg font-black leading-none ${stats.attention > 0 ? 'text-orange-500' : 'text-gray-300'}`}>{stats.attention}</span>
-                                    <span className="text-[9px] font-bold text-gray-300 ml-0.5">명</span>
+                                    <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
                                 </div>
                             </div>
                         </div>
@@ -1181,55 +1181,44 @@
 
                                 return (
                                     <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-4 sm:p-5 rounded-[28px] shadow-sm border border-gray-100 flex flex-col gap-3 group cursor-pointer hover:shadow-md hover:border-blue-100 transition-all w-full text-left overflow-hidden">
-                                        {/* 날짜 / 총인원 */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex flex-col text-left">
-                                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">출석 날짜</span>
-                                                <span className="font-black text-[#193278] text-lg tracking-tight leading-none">{h.date}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-right">
-                                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-0.5">총 출석</p>
-                                                    <p className="font-black text-gray-700 text-xl leading-none">{h.count}<span className="text-xs font-normal text-gray-300 ml-0.5">명</span></p>
-                                                </div>
-                                                <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-200 group-hover:translate-x-0.5 group-hover:text-blue-300 transition-all" />
-                                            </div>
-                                        </div>
-
-                                        {/* 이미지 + 파트별 */}
+                                        {/* 날짜 / 이미지 / 총인원 */}
                                         <div className="flex items-stretch gap-3">
-                                            <div className="w-24 sm:w-32 flex-shrink-0 bg-gray-50 rounded-2xl overflow-hidden relative">
+                                            <div className="w-20 sm:w-24 flex-shrink-0 bg-gray-50 rounded-xl overflow-hidden relative">
                                                 {h.image ? (
                                                     <img src={h.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                                 ) : (
-                                                    <div className="w-full h-full min-h-[72px] flex items-center justify-center">
-                                                        <LucideIcon name="image" className="w-6 h-6 text-gray-200" />
+                                                    <div className="w-full h-full min-h-[56px] flex items-center justify-center">
+                                                        <LucideIcon name="image" className="w-5 h-5 text-gray-200" />
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 flex flex-col gap-1.5">
-                                                {/* 상단: S A / 하단: T B */}
-                                                {[
-                                                    [
-                                                        { abbr:'S', color:'#db2777', light:'#fdf2f8', val: countsByPart.soprano },
-                                                        { abbr:'A', color:'#d97706', light:'#fffbeb', val: countsByPart.alto    },
-                                                    ],
-                                                    [
-                                                        { abbr:'T', color:'#2563eb', light:'#eff6ff', val: countsByPart.tenor   },
-                                                        { abbr:'B', color:'#7c3aed', light:'#f5f3ff', val: countsByPart.bass    },
-                                                    ]
-                                                ].map((row, ri) => (
-                                                    <div key={ri} className="flex gap-1.5 flex-1">
-                                                        {row.map(p => (
-                                                            <div key={p.abbr} className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-xl min-w-0" style={{backgroundColor: p.light}}>
-                                                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-lg font-black shrink-0 text-[10px]" style={{backgroundColor: p.light, color: p.color, border: `1.5px solid ${p.color}26`}}>{p.abbr}</span>
-                                                                <span className="font-black text-sm leading-none shrink-0" style={{color: p.color}}>{p.val}</span>
-                                                                <span className="text-[9px] font-medium text-gray-400 shrink-0">명</span>
-                                                            </div>
-                                                        ))}
+                                            <div className="flex-1 flex flex-col justify-between min-w-0">
+                                                <div>
+                                                    <span className="text-[9px] font-black text-blue-400 tracking-widest block mb-0.5">출석 날짜</span>
+                                                    <span className="font-black text-[#193278] text-base sm:text-lg tracking-tight leading-none">{h.date}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <span className="text-[9px] font-black text-gray-300 tracking-widest block mb-0.5">총 출석</span>
+                                                        <span className="font-black text-gray-700 text-xl leading-none">{h.count}<span className="text-xs font-normal text-gray-300 ml-0.5">명</span></span>
                                                     </div>
-                                                ))}
+                                                    <LucideIcon name="chevron-right" className="w-4 h-4 text-gray-200 group-hover:translate-x-0.5 group-hover:text-blue-300 transition-all" />
+                                                </div>
                                             </div>
+                                        </div>
+                                        {/* SATB — 전체 너비 4칸 1줄 */}
+                                        <div className="grid grid-cols-4 gap-1.5">
+                                            {[
+                                                { abbr:'S', color:'#db2777', light:'#fdf2f8', val: countsByPart.soprano },
+                                                { abbr:'A', color:'#d97706', light:'#fffbeb', val: countsByPart.alto    },
+                                                { abbr:'T', color:'#2563eb', light:'#eff6ff', val: countsByPart.tenor   },
+                                                { abbr:'B', color:'#7c3aed', light:'#f5f3ff', val: countsByPart.bass    },
+                                            ].map(p => (
+                                                <div key={p.abbr} className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl" style={{backgroundColor: p.light}}>
+                                                    <span className="inline-flex items-center justify-center w-4 h-4 rounded font-black shrink-0 text-[9px]" style={{backgroundColor: p.light, color: p.color, border:`1.5px solid ${p.color}26`}}>{p.abbr}</span>
+                                                    <span className="font-black text-sm leading-none" style={{color: p.color}}>{p.val}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 );
