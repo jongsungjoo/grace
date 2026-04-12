@@ -959,12 +959,10 @@
             );
         };
 
-        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onDetail, requestAuth, askConfirm, showToast }) => {
+        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onDetail, requestAuth, askConfirm, showToast }) => {
             const [subTab, setSubTab] = useState('part'); 
             const [selectedMember, setSelectedMember] = useState('');
             const [selectedPart, setSelectedPart] = useState('');
-            const [showBdCalendar, setShowBdCalendar] = useState(false);
-            const [showAttendStats, setShowAttendStats] = useState(false);
             const [showMemberModal, setShowMemberModal] = useState(false);
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -1070,7 +1068,7 @@
 
                     <div className="grid grid-cols-3 gap-2 md:gap-3 text-left">
                         {/* 평균/최다 출석 카드 */}
-                        <div onClick={() => setShowAttendStats(true)} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-blue-100 transition-all active:scale-95 min-w-0 group">
+                        <div onClick={() => onOpenAttendStats()} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-blue-100 transition-all active:scale-95 min-w-0 group">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="w-7 h-7 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                                     <LucideIcon name="bar-chart-2" className="w-3.5 h-3.5 text-[#193278]" />
@@ -1088,7 +1086,7 @@
                             </div>
                         </div>
                         {/* 생일 팀원 카드 */}
-                        <div onClick={() => setShowBdCalendar(true)} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-pink-100 transition-all active:scale-95 group min-w-0">
+                        <div onClick={() => onOpenBdCalendar()} className="bg-white p-3 md:p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-pink-100 transition-all active:scale-95 group min-w-0">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="w-7 h-7 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
                                     <span className="text-sm">🎂</span>
@@ -1256,8 +1254,6 @@
                             </div>
                         </div>
                     )}
-                    {showBdCalendar && <BirthdayCalendarModal members={safeMembers} onClose={() => setShowBdCalendar(false)} />}
-                    {showAttendStats && <AttendStatsModal history={history} members={safeMembers} memberPartMap={memberPartMap} onClose={() => setShowAttendStats(false)} />}
                 </div>
             );
         };
@@ -2549,6 +2545,8 @@
             const [songs, setSongs] = useState([]);
             const [videos, setVideos] = useState([]);
             const [showInterestModal, setShowInterestModal] = useState(false);
+            const [showBdCalendar, setShowBdCalendar] = useState(false);
+            const [showAttendStats, setShowAttendStats] = useState(false);
             const [editingHistory, setEditingHistory] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [user, setUser] = useState(null);
@@ -2703,7 +2701,7 @@
 
                         <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left">
-                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
+                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} />}
@@ -2719,6 +2717,8 @@
                     </main>
 
                     {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
+                    {showBdCalendar && <BirthdayCalendarModal members={sortedMembers} onClose={() => setShowBdCalendar(false)} />}
+                    {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((acc,m)=>{if(m&&m.name)acc[m.name]=m.part;return acc;},{})} onClose={() => setShowAttendStats(false)} />}
                     {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} geminiApiKey={geminiApiKey} onSave={async (updated) => { 
                         const { db, doc, setDoc } = window.MyFirebase;
                         await setDoc(doc(db, 'history', updated.id), updated);
