@@ -376,7 +376,7 @@
                                         <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{list.length}명</span>
                                     </div>
                                     {list.length > 0 ? (
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                             {list.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} bgColor={bgColor} borderColor={borderColor} nameColor={nameColor} />)}
                                         </div>
                                     ) : (
@@ -393,7 +393,7 @@
                                     <LucideIcon name={showSabbatical?"chevron-up":"chevron-down"} className="w-4 h-4 text-gray-400 ml-auto" />
                                 </button>
                                 {showSabbatical && (
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                         {sabbaticalOnes.length > 0
                                             ? sabbaticalOnes.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} bgColor="bg-gray-50" borderColor="border-gray-100" nameColor="text-gray-500" />)
                                             : <p className="text-sm text-gray-300 font-bold pl-1 col-span-3">안식 중인 팀원이 없습니다.</p>}
@@ -533,7 +533,7 @@
                                                     {partNameLabel}
                                                     <span className="ml-1 text-[#193278] bg-blue-50 px-2 py-0.5 rounded-full text-[9px] font-black">({checkedCount}/{list.length})</span>
                                                 </h5>
-                                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5">
+                                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
                                                     {list.map(m => {
                                                         const pi_h = (() => { let p = PART_ICON[m.part] || null; if (m.part==='staff' && p) p={...p, abbr: m.role==='반주자'?'반':'성'}; return p; })();
                                                         const checked = selected.has(m.name);
@@ -652,7 +652,7 @@
                 pi = { ...pi, abbr: role === '반주자' ? '반' : '성' };
             }
             return (
-                <div className={`flex items-center justify-center gap-1.5 px-2 py-3 ${bgColor} border ${borderColor} rounded-2xl min-h-[48px]`}>
+                <div className={`flex items-center justify-center gap-1.5 px-2 py-3 ${bgColor} border ${borderColor} rounded-2xl`} style={{minHeight: '48px'}}>
                     {pi && (
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0"
                             style={{ backgroundColor: pi.light, color: pi.color, fontSize: '10px', border: `1.5px solid ${pi.color}26` }}>{pi.abbr}</span>
@@ -911,7 +911,7 @@
 
                             {/* 개근 — 은은한 단색 칩 */}
                             <Section icon="🏆" title={`개근 — ${totalSessions}회 전부 출석`} color="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                     {sortedPerfect.map(m => (
                                         <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-gray-50" borderColor="border-gray-100" nameColor="text-gray-800" />
                                     ))}
@@ -920,7 +920,7 @@
 
                             {/* 아쉽게 1회 결석 — 동일 은은한 칩 */}
                             <Section icon="😢" title="아쉽게 1회 결석" color="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                     {sortedOneAbsence.map(m => (
                                         <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-gray-50" borderColor="border-gray-100" nameColor="text-gray-800" />
                                     ))}
@@ -1183,13 +1183,13 @@
                                             </div>
                                             <div className="flex-1 grid grid-cols-2 gap-1.5">
                                                 {[
-                                                    { abbr:'S', label:'소프라노', color:'#db2777', val: countsByPart.soprano },
-                                                    { abbr:'A', label:'알토',    color:'#d97706', val: countsByPart.alto    },
-                                                    { abbr:'T', label:'테너',    color:'#2563eb', val: countsByPart.tenor   },
-                                                    { abbr:'B', label:'베이스',  color:'#7c3aed', val: countsByPart.bass    },
+                                                    { abbr:'S', color:'#db2777', light:'#fdf2f8', val: countsByPart.soprano },
+                                                    { abbr:'A', color:'#d97706', light:'#fffbeb', val: countsByPart.alto    },
+                                                    { abbr:'T', color:'#2563eb', light:'#eff6ff', val: countsByPart.tenor   },
+                                                    { abbr:'B', color:'#7c3aed', light:'#f5f3ff', val: countsByPart.bass    },
                                                 ].map(p => (
-                                                    <div key={p.abbr} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl" style={{backgroundColor: p.color + '12'}}>
-                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-lg text-white font-black shrink-0 text-[10px]" style={{backgroundColor: p.color}}>{p.abbr}</span>
+                                                    <div key={p.abbr} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl" style={{backgroundColor: p.light}}>
+                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-lg font-black shrink-0 text-[10px]" style={{backgroundColor: p.light, color: p.color, border: `1.5px solid ${p.color}26`}}>{p.abbr}</span>
                                                         <span className="font-black text-base leading-none" style={{color: p.color}}>{p.val}</span>
                                                         <span className="text-[9px] font-bold text-gray-400">명</span>
                                                     </div>
@@ -2466,7 +2466,7 @@
                                             <div className="h-1 rounded-full transition-all duration-500" style={{width: `${rate}%`, backgroundColor: partColor}}></div>
                                         </div>
                                         {/* 팀원 그리드 */}
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                             {list.map(m => {
                                                 const pi_a = (() => { let p = PART_ICON[m.part] || null; if (m.part==='staff' && p) p={...p, abbr: m.role==='반주자'?'반':'성'}; return p; })();
                                                 const checked = !!attendanceMap[m.name];
