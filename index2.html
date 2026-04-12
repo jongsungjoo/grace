@@ -366,8 +366,8 @@
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
-                        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-                            <div className="w-10 h-1 bg-gray-200 rounded-full"></div>
+                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                            <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -480,7 +480,7 @@
                     <div className="bg-white rounded-t-[20px] md:rounded-[28px] w-full md:max-w-2xl max-h-[95vh] md:max-h-[88vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100">
                         {/* 모바일 드래그 핸들 */}
                         <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-                            <div className="w-10 h-1 bg-gray-200 rounded-full"></div>
+                            <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <header className="px-5 pt-3 pb-4 border-b border-gray-100 flex justify-between items-center shrink-0 text-left">
                             <div className="flex items-center gap-2.5 overflow-hidden text-left min-w-0">
@@ -747,8 +747,8 @@
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
-                        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-                            <div className="w-10 h-1 bg-gray-200 rounded-full"></div>
+                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                            <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -891,8 +891,8 @@
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
                     <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
-                        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-                            <div className="w-10 h-1 bg-gray-200 rounded-full"></div>
+                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                            <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -922,14 +922,14 @@
                             <Section title="파트별 출석률" accent="#193278">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
-                                        <div key={p.id} className={`flex items-center gap-3 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-gray-50' : ''}`}>
-                                            <span className="text-sm font-black w-4 shrink-0" style={{color: i===0?'#f59e0b':'#d1d5db'}}>{i===0?'🥇':i+1}</span>
-                                            <span className="text-sm font-medium text-gray-700 w-12 shrink-0">{p.name}</span>
-                                            <span className="text-xs font-bold text-gray-400 w-12 shrink-0">{p.avg}명</span>
-                                            <div className="flex-1 bg-gray-100 rounded-full h-1.5 min-w-0">
+                                        <div key={p.id} className={`flex items-center gap-2 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-gray-50' : ''}`}>
+                                            <span className="text-sm font-black w-5 shrink-0 text-center" style={{color: i===0?'#f59e0b':'#d1d5db'}}>{i===0?'🥇':i+1}</span>
+                                            <span className="text-sm font-medium text-gray-700 w-[72px] shrink-0 whitespace-nowrap">{p.name}</span>
+                                            <div className="flex-1 bg-gray-100 rounded-full h-1.5 min-w-[30px]">
                                                 <div className="h-1.5 rounded-full transition-all" style={{width:`${p.rate}%`, backgroundColor:p.color}}></div>
                                             </div>
-                                            <span className="text-sm font-black w-8 text-right shrink-0" style={{color:p.color}}>{p.rate}%</span>
+                                            <span className="text-xs font-medium text-gray-400 shrink-0 whitespace-nowrap w-[44px] text-right">{p.avg}명</span>
+                                            <span className="text-sm font-black w-9 text-right shrink-0" style={{color:p.color}}>{p.rate}%</span>
                                         </div>
                                     ))}
                                 </div>
