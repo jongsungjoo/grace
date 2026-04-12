@@ -904,7 +904,7 @@
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-5 space-y-6">
 
                             {/* 최다 출석 날짜 */}
-                            <Section title="최다 출석 날짜" accent="#22c55e">
+                            <Section title="최다 출석" accent="#22c55e">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {top3dates.map((h, i) => (
                                         <div key={h.id||i} className={`flex items-center gap-3 px-4 py-3 ${i < top3dates.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -917,7 +917,7 @@
                             </Section>
 
                             {/* 파트별 출석률 */}
-                            <Section title="파트별 출석률" accent="#193278">
+                            <Section title="파트 순위" accent="#193278">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
                                         <div key={p.id} className={`flex items-center gap-2 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -934,7 +934,7 @@
                             </Section>
 
                             {/* 개근 */}
-                            <Section title={`개근 — ${totalSessions}회 전부 출석`} accent="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
+                            <Section title={`개근상 후보 (무결 참석)`} accent="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
                                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
                                     {sortedPerfect.map(m => (
                                         <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-800" />
@@ -943,7 +943,7 @@
                             </Section>
 
                             {/* 1회 결석 */}
-                            <Section title="아쉽게 1회 결석" accent="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
+                            <Section title="아차상 후보 (1회 결석)" accent="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
                                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
                                     {sortedOneAbsence.map(m => (
                                         <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-800" />
