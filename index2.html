@@ -365,7 +365,7 @@
             
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
+                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1 shrink-0">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
@@ -746,7 +746,7 @@
 
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
+                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1 shrink-0">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
@@ -890,7 +890,7 @@
 
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-5">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
+                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1 shrink-0">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
@@ -1207,17 +1207,26 @@
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 grid grid-cols-2 gap-1.5">
+                                            <div className="flex-1 flex flex-col gap-1.5">
+                                                {/* 상단: S A / 하단: T B */}
                                                 {[
-                                                    { abbr:'S', color:'#db2777', light:'#fdf2f8', val: countsByPart.soprano },
-                                                    { abbr:'A', color:'#d97706', light:'#fffbeb', val: countsByPart.alto    },
-                                                    { abbr:'T', color:'#2563eb', light:'#eff6ff', val: countsByPart.tenor   },
-                                                    { abbr:'B', color:'#7c3aed', light:'#f5f3ff', val: countsByPart.bass    },
-                                                ].map(p => (
-                                                    <div key={p.abbr} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl" style={{backgroundColor: p.light}}>
-                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-lg font-black shrink-0 text-[10px]" style={{backgroundColor: p.light, color: p.color, border: `1.5px solid ${p.color}26`}}>{p.abbr}</span>
-                                                        <span className="font-black text-base leading-none" style={{color: p.color}}>{p.val}</span>
-                                                        <span className="text-[9px] font-bold text-gray-400">명</span>
+                                                    [
+                                                        { abbr:'S', color:'#db2777', light:'#fdf2f8', val: countsByPart.soprano },
+                                                        { abbr:'A', color:'#d97706', light:'#fffbeb', val: countsByPart.alto    },
+                                                    ],
+                                                    [
+                                                        { abbr:'T', color:'#2563eb', light:'#eff6ff', val: countsByPart.tenor   },
+                                                        { abbr:'B', color:'#7c3aed', light:'#f5f3ff', val: countsByPart.bass    },
+                                                    ]
+                                                ].map((row, ri) => (
+                                                    <div key={ri} className="flex gap-1.5 flex-1">
+                                                        {row.map(p => (
+                                                            <div key={p.abbr} className="flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-xl min-w-0" style={{backgroundColor: p.light}}>
+                                                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-lg font-black shrink-0 text-[10px]" style={{backgroundColor: p.light, color: p.color, border: `1.5px solid ${p.color}26`}}>{p.abbr}</span>
+                                                                <span className="font-black text-sm leading-none shrink-0" style={{color: p.color}}>{p.val}</span>
+                                                                <span className="text-[9px] font-medium text-gray-400 shrink-0">명</span>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 ))}
                                             </div>
@@ -2168,23 +2177,21 @@
                                 })}
                             </div>
 
-                            {/* 파트 필터 — 가로 스크롤 한 줄 */}
-                            <div className="overflow-x-auto hide-scrollbar -mx-1 px-1 pb-1">
-                                <div className="flex gap-2 w-max">
-                                    {partTabs.map(p => (
-                                        <button key={p.id}
-                                            onClick={() => setPartFilter(p.id)}
-                                            className="px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 whitespace-nowrap"
-                                            style={partFilter === p.id
-                                                ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' }
-                                                : { backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#64748b' }}>
-                                            {p.id === 'officer' ? '임원진' : p.name}
-                                            <span className="text-[10px] font-black ml-0.5" style={{ opacity: partFilter === p.id ? 0.6 : 1, color: partFilter === p.id ? '#fff' : '#9ca3af' }}>
-                                                {partCounts[p.id]}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
+                            {/* 파트 필터 — 2줄 flex-wrap */}
+                            <div className="flex flex-wrap gap-2">
+                                {partTabs.map(p => (
+                                    <button key={p.id}
+                                        onClick={() => setPartFilter(p.id)}
+                                        className="px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 whitespace-nowrap"
+                                        style={partFilter === p.id
+                                            ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' }
+                                            : { backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#64748b' }}>
+                                        {p.id === 'officer' ? '임원진' : p.name}
+                                        <span className="text-[10px] font-black ml-0.5" style={{ opacity: partFilter === p.id ? 0.6 : 1, color: partFilter === p.id ? '#fff' : '#9ca3af' }}>
+                                            {partCounts[p.id]}
+                                        </span>
+                                    </button>
+                                ))}
                             </div>
 
                             {/* 멤버 칩 그리드 */}
