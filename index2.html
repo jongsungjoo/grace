@@ -904,7 +904,7 @@
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-5 space-y-6">
 
                             {/* 최다 출석 날짜 */}
-                            <Section title="최다 출석" accent="#22c55e">
+                            <Section title="최다 출석 (Top 3)" accent="#22c55e">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {top3dates.map((h, i) => (
                                         <div key={h.id||i} className={`flex items-center gap-3 px-4 py-3 ${i < top3dates.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -917,7 +917,7 @@
                             </Section>
 
                             {/* 파트별 출석률 */}
-                            <Section title="파트 순위" accent="#193278">
+                            <Section title="파트 출석률 순위" accent="#193278">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
                                         <div key={p.id} className={`flex items-center gap-2 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -1060,7 +1060,7 @@
             return (
                 <div className="space-y-6 fade-in text-left">
                     <div className="flex flex-col sm:flex-row sm:items-end gap-1 mb-2 text-left">
-                        <h2 className="text-3xl font-black text-gray-800">출석현황판</h2>
+                        <h2 className="text-2xl font-black text-gray-800">출석현황</h2>
                         <p className="text-xs text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {safeMembers.length}명)</span></p>
                     </div>
 
@@ -1076,7 +1076,7 @@
                                 </div>
                             </div>
                             <div className="px-3 pb-3">
-                                <p className="text-xs font-semibold text-gray-400 mb-1 leading-tight">최다 출석</p>
+                                <p className="text-xs font-semibold text-gray-400 mb-1 leading-tight">최다 출석 (Top 3)</p>
                                 <div className="flex items-baseline gap-0.5">
                                     <span className="text-2xl font-black text-green-500 leading-none">{stats.max}</span>
                                     <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
@@ -1170,7 +1170,7 @@
                         <div className="flex items-center justify-between px-1">
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-left">
                                 <LucideIcon name="history" className="w-5 h-5 text-blue-500" />
-                                출석이력
+                                출석기록
                                 <span className="text-sm font-bold text-gray-400">
                                     (평균출석 <span className="text-[#193278]">{stats.avg}</span> 명)
                                 </span>
@@ -1533,7 +1533,7 @@
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left text-left">
-                            <h2 className="text-3xl font-black text-gray-800">성가음원&악보</h2>
+                            <h2 className="text-2xl font-black text-gray-800">음원·악보</h2>
                             <p className="text-xs text-gray-400 font-bold">연습용 음원 링크</p>
                         </div>
                         <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 text-center"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
@@ -1666,7 +1666,7 @@
             return (
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
-                        <div className="text-left"><h2 className="text-3xl font-black text-gray-800 text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div>
+                        <div className="text-left"><h2 className="text-2xl font-black text-gray-800 text-left">찬양영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div>
                         <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 text-center text-center"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
                     <div className="relative w-full text-left">
@@ -2092,7 +2092,7 @@
                     {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
-                            <h2 className="text-3xl font-black text-gray-800">찬양팀명단</h2>
+                            <h2 className="text-2xl font-black text-gray-800">찬양팀명단</h2>
                             <p className="text-sm text-gray-400 font-bold mt-0.5">총 {members.length}명 · 활동 {counts.active}명</p>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -2669,7 +2669,7 @@
                         <div className="mb-10 flex items-center gap-3 text-left text-left text-left text-left">
                             <AppLogo className="w-10 h-10 text-left text-left text-left text-left" />
                             <div className="text-left text-left text-left text-left">
-                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
+                                <h1 onClick={() => setActiveTab('music')} className="text-2xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
                                 <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left">
                                     <span className={`w-2 h-2 rounded-full text-left text-left text-left text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
                                     {isAdmin ? '관리자 모드' : '온라인'}
@@ -2677,9 +2677,9 @@
                             </div>
                         </div>
                         <nav className="flex-1 space-y-2 text-left text-left text-left">
-                            <NavBtn id="music" label="성가음원&악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
-                            <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
-                            <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
+                            <NavBtn id="music" label="음원·악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
+                            <NavBtn id="videos" label="찬양영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
+                            <NavBtn id="stats" label="출석현황" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
                             <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
                             <NavBtn id="manage" label="찬양팀명단" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
@@ -2697,7 +2697,7 @@
                         <header className={`md:hidden absolute top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                             <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
                                 <AppLogo className="w-8 h-8 text-left text-left text-left text-left" />
-                                <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
+                                <span className="font-black text-xl text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
                             </div>
                             <div className="flex items-center gap-2 text-left text-left text-left text-left">
                                 <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
