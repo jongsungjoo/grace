@@ -2634,7 +2634,9 @@
                         clearInterval(waitFirebase); initApp(); 
                     } 
                 }, 100);
-                return () => clearInterval(waitFirebase);
+                // 10초 내 Firebase 미연결 시 강제 로드
+                const fallback = setTimeout(() => { clearInterval(waitFirebase); setReady(true); }, 10000);
+                return () => { clearInterval(waitFirebase); clearTimeout(fallback); };
             }, []);
 
             const initApp = async () => {
@@ -2645,6 +2647,7 @@
                     } else { await signInAnonymously(auth); }
 
                     onAuthStateChanged(auth, (u) => {
+                        try {
                         setUser(u);
                         if (u) {
                             onSnapshot(doc(db, 'settings', 'admin'), (s) => {
@@ -2671,8 +2674,9 @@
                             });
                             setReady(true);
                         }
+                        } catch(err) { console.error('onAuthStateChanged error:', err); setReady(true); }
                     });
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error('initApp error:', e); setReady(true); }
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
