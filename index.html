@@ -982,6 +982,18 @@
             const [pStep, setPStep] = useState('list');
             const [pMember, setPMember] = useState('');
             const activeMembers = (members || []).filter(m => m && m.status === 'active');
+
+            const memberAttendCount = useMemo(() => {
+                const map = {};
+                (history || []).filter(h => {
+                    const parts = (h.date || '').split('. ');
+                    return parts.length >= 2 && parseInt(parts[0]) > 2025;
+                }).forEach(h => {
+                    (h.members || []).forEach(name => { map[name] = (map[name] || 0) + 1; });
+                });
+                return map;
+            }, [history]);
+
             const pHistory = useMemo(() => {
                 if (!pMember || !history || history.length === 0) return [];
                 return history.filter(h => {
@@ -1004,7 +1016,7 @@
                                     </button>
                                 )}
                                 <div className="min-w-0">
-                                    <h3 className="text-lg font-black text-gray-900 truncate">{pStep === 'list' ? '출석 확인' : pMember}</h3>
+                                    <h3 className="text-lg font-black text-gray-900 truncate">{pStep === 'list' ? '개인 출석' : pMember}</h3>
                                     <p className="text-xs text-gray-400 font-medium mt-0.5">
                                         {pStep === 'list' && `2026년 찬양 ${(history||[]).length}회`}
                                         {pStep === 'history' && `2026년 1월~ · ${pHistory.length}회 · 출석률 ${pAttendRate}%`}
@@ -1035,12 +1047,15 @@
                                                         const pi = (() => { let pt = PART_ICON[m.part]||null; if(m.part==='staff'&&pt) pt={...pt,abbr:m.role==='반주자'?'반':'성'}; return pt; })();
                                                         return (
                                                             <button key={m.name} onClick={() => { setPMember(m.name); setPStep('history'); }}
-                                                                className="flex items-center justify-between gap-1 px-2 py-2.5 bg-white border border-gray-100 rounded-xl active:scale-95 hover:border-blue-200 hover:bg-blue-50 transition-all" style={{minHeight:'40px'}}>
-                                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                                    {pi && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'10px',border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span>}
-                                                                    <span className="font-bold text-xs text-gray-800 whitespace-nowrap truncate">{m.name}</span>
+                                                                className="flex items-center gap-2 px-2 pt-2.5 pb-2 bg-white border border-gray-100 rounded-xl active:scale-95 hover:border-blue-200 hover:bg-blue-50 transition-all w-full">
+                                                                {pi && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0 mt-0.5" style={{backgroundColor:pi.light,color:pi.color,fontSize:'10px',border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span>}
+                                                                <div className="flex flex-col min-w-0 flex-1">
+                                                                    <span className="font-bold text-xs text-gray-800 whitespace-nowrap truncate leading-tight">{m.name}</span>
+                                                                    <div className="flex items-center justify-end gap-0.5 mt-0.5">
+                                                                        <span className="text-[10px] font-bold text-gray-400">{memberAttendCount[m.name] || 0}회</span>
+                                                                        <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-200 shrink-0" />
+                                                                    </div>
                                                                 </div>
-                                                                <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-200 shrink-0" />
                                                             </button>
                                                         );
                                                     })}
