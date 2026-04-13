@@ -109,7 +109,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        const SHARE_LINK = "https://cutt.ly/onnuri";
+        const SHARE_LINK = "https://teamgrace.netlify.app";
         const PARTS = [
             { id: 'soprano', name: '소프라노', color: '#db2777', light: '#fdf2f8' },
             { id: 'alto',    name: '알토',     color: '#d97706', light: '#fffbeb' },
@@ -364,14 +364,14 @@
             );
             
             return (
-                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end sm:items-start sm:pt-6 justify-center">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
-                                <h3 className="text-lg font-black text-gray-900">관심 팀원 관리</h3>
+                                <h3 className="text-lg font-black text-gray-900">관심 팀원</h3>
                                 <p className="text-xs text-gray-400 font-medium mt-0.5">최근 출석 이력 기준</p>
                             </div>
                             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90">
@@ -382,7 +382,7 @@
                             {[
                                 { list: attentionList,    label: '관심 필요', sub: '3주 미출석',  accent: '#f97316', color: '#ea580c' },
                                 { list: confirmationList, label: '확인 필요', sub: '4주+ 미출석', accent: '#ef4444', color: '#dc2626' },
-                                { list: shortAbsenceOnes, label: '단기부재',  sub: '',            accent: '#eab308', color: '#ca8a04' },
+                                { list: shortAbsenceOnes, label: '단기 부재',  sub: '',            accent: '#eab308', color: '#ca8a04' },
                             ].map(({ list, label, sub, accent, color }) => (
                                 <section key={label}>
                                     <div className="flex items-center gap-2 mb-3">
@@ -392,8 +392,8 @@
                                         <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-auto">{list.length}명</span>
                                     </div>
                                     {list.length > 0 ? (
-                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-                                            {list.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-800" />)}
+                                        <div className="grid grid-cols-4 gap-1.5">
+                                            {list.map(m => <MemberChipAttended key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} />)}
                                         </div>
                                     ) : (
                                         <p className="text-xs text-gray-300 font-medium pl-3">해당하는 팀원이 없습니다.</p>
@@ -404,15 +404,15 @@
                                 <button onClick={() => setShowSabbatical(!showSabbatical)}
                                     className="w-full flex items-center gap-2 py-1 text-left">
                                     <span className="w-1 h-4 rounded-full bg-gray-300 shrink-0"></span>
-                                    <span className="text-sm font-bold text-gray-500">안식 중인 팀원</span>
+                                    <span className="text-sm font-bold text-gray-500">안식 팀원</span>
                                     <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-auto">{sabbaticalOnes.length}명</span>
                                     <LucideIcon name={showSabbatical ? "chevron-up" : "chevron-down"} className="w-4 h-4 text-gray-300 ml-1" />
                                 </button>
                                 {showSabbatical && (
-                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 mt-3">
+                                    <div className="grid grid-cols-4 gap-1.5 mt-3">
                                         {sabbaticalOnes.length > 0
-                                            ? sabbaticalOnes.map(m => <MemberChipWithPart key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-400" />)
-                                            : <p className="text-xs text-gray-300 font-medium col-span-4">안식 중인 팀원이 없습니다.</p>}
+                                            ? sabbaticalOnes.map(m => <MemberChipAttended key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} />)
+                                            : <p className="text-xs text-gray-300 font-medium col-span-4">안식 팀원이 없습니다.</p>}
                                     </div>
                                 )}
                             </section>
@@ -681,6 +681,26 @@
             );
         };
 
+        /* 출석체크 체크 상태 스타일 칩 — 파트 light 배경 */
+        const MemberChipAttended = ({ name, partMap, partOverride, roleOverride }) => {
+            const part = partOverride || (partMap ? partMap[name] : null);
+            let pi = PART_ICON[part] || null;
+            if (part === 'staff' && pi) {
+                const role = roleOverride || '';
+                pi = { ...pi, abbr: role === '반주자' ? '반' : '성' };
+            }
+            return (
+                <div className="flex items-center justify-center gap-1.5 px-2 py-2.5 bg-white border border-gray-100 rounded-xl"
+                    style={{minHeight:'40px'}}>
+                    {pi && (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0"
+                            style={{backgroundColor:pi.light, color:pi.color, fontSize:'10px', border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span>
+                    )}
+                    <span className="font-bold text-xs text-gray-800 whitespace-nowrap leading-tight">{name}</span>
+                </div>
+            );
+        };
+
         const BirthdayCalendarModal = ({ members, onClose }) => {
             const today = new Date();
             const [calYear, setCalYear] = useState(today.getFullYear());
@@ -743,8 +763,8 @@
                 .flatMap(([d, bds]) => bds.map(b => ({ ...b, displayD: Number(d) })));
 
             return (
-                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end sm:items-start sm:pt-6 justify-center">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
                             <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                         </div>
@@ -887,10 +907,10 @@
             );
 
             return (
-                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end sm:items-start sm:pt-6 justify-center">
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
-                            <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
+                        <div className="flex justify-center pt-3 pb-1 shrink-0 md:hidden">
+                            <div className="w-10 h-1 rounded-full bg-gray-200"></div>
                         </div>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -904,7 +924,7 @@
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-5 space-y-6">
 
                             {/* 최다 출석 날짜 */}
-                            <Section title="최다 출석" accent="#22c55e">
+                            <Section title="최다 출석 (Top 3)" accent="#22c55e">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {top3dates.map((h, i) => (
                                         <div key={h.id||i} className={`flex items-center gap-3 px-4 py-3 ${i < top3dates.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -917,7 +937,7 @@
                             </Section>
 
                             {/* 파트별 출석률 */}
-                            <Section title="파트 순위" accent="#193278">
+                            <Section title="파트 출석률 순위" accent="#193278">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
                                         <div key={p.id} className={`flex items-center gap-2 px-4 py-3 ${i < partStats.length-1 ? 'border-b border-gray-50' : ''}`}>
@@ -935,18 +955,18 @@
 
                             {/* 개근 */}
                             <Section title={`개근상 후보 (무결 참석)`} accent="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                                <div className="grid grid-cols-4 gap-1.5">
                                     {sortedPerfect.map(m => (
-                                        <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-800" />
+                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} />
                                     ))}
                                 </div>
                             </Section>
 
                             {/* 1회 결석 */}
                             <Section title="아차상 후보 (1회 결석)" accent="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                                <div className="grid grid-cols-4 gap-1.5">
                                     {sortedOneAbsence.map(m => (
-                                        <MemberChipWithPart key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} bgColor="bg-white" borderColor="border-gray-100" nameColor="text-gray-800" />
+                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} />
                                     ))}
                                 </div>
                             </Section>
@@ -957,11 +977,98 @@
             );
         };
 
-        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onDetail, requestAuth, askConfirm, showToast }) => {
-            const [subTab, setSubTab] = useState('part'); 
-            const [selectedMember, setSelectedMember] = useState('');
-            const [selectedPart, setSelectedPart] = useState('');
-            const [showMemberModal, setShowMemberModal] = useState(false);
+        const PersonalAttendModal = ({ history, members, onClose }) => {
+            const [pStep, setPStep] = useState('list');
+            const [pMember, setPMember] = useState('');
+            const activeMembers = (members || []).filter(m => m && m.status === 'active');
+            const pHistory = useMemo(() => {
+                if (!pMember || !history || history.length === 0) return [];
+                return history.filter(h => {
+                    const parts = (h.date || '').split('. ');
+                    if (parts.length < 2) return false;
+                    const y = parseInt(parts[0]), m2 = parseInt(parts[1]);
+                    return y > 2025;
+                }).map(h => ({ date: h.date, isPresent: (h.members || []).includes(pMember) }));
+            }, [pMember, history]);
+            const pAttendRate = pHistory.length > 0 ? Math.round(pHistory.filter(i=>i.isPresent).length / pHistory.length * 100) : 0;
+            return (
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
+                        <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0"><div className="w-10 h-1 bg-gray-200 rounded-full"></div></div>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                                {pStep === 'history' && (
+                                    <button onClick={() => { setPStep('list'); setPMember(''); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90 shrink-0">
+                                        <LucideIcon name="chevron-left" className="w-4 h-4" />
+                                    </button>
+                                )}
+                                <div className="min-w-0">
+                                    <h3 className="text-lg font-black text-gray-900 truncate">{pStep === 'list' ? '출석 확인' : pMember}</h3>
+                                    <p className="text-xs text-gray-400 font-medium mt-0.5">
+                                        {pStep === 'list' && `2026년 찬양 ${(history||[]).length}회`}
+                                        {pStep === 'history' && `2026년 1월~ · ${pHistory.length}회 · 출석률 ${pAttendRate}%`}
+                                    </p>
+                                </div>
+                            </div>
+                            {pStep === 'list' && (
+                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90 shrink-0">
+                                    <LucideIcon name="x" className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-4">
+                            {pStep === 'list' && (
+                                <div className="space-y-5">
+                                    {[{id:'staff',name:'성가사 & 반주자',color:'#193278',light:'#eff6ff'}, ...PARTS].map(p => {
+                                        const partMembers = activeMembers.filter(m => m.part === p.id);
+                                        if (partMembers.length === 0) return null;
+                                        return (
+                                            <div key={p.id}>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="w-1 h-4 rounded-full shrink-0" style={{backgroundColor: p.color}}></span>
+                                                    <span className="text-sm font-bold" style={{color: p.color}}>{p.name}</span>
+                                                    <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{partMembers.length}명</span>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-1.5">
+                                                    {partMembers.map(m => {
+                                                        const pi = (() => { let pt = PART_ICON[m.part]||null; if(m.part==='staff'&&pt) pt={...pt,abbr:m.role==='반주자'?'반':'성'}; return pt; })();
+                                                        return (
+                                                            <button key={m.name} onClick={() => { setPMember(m.name); setPStep('history'); }}
+                                                                className="flex items-center justify-center gap-1.5 px-2 py-2.5 bg-white border border-gray-100 rounded-xl active:scale-95 hover:border-blue-200 hover:bg-blue-50 transition-all" style={{minHeight:'40px'}}>
+                                                                {pi && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'10px',border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span>}
+                                                                <span className="font-bold text-xs text-gray-800 whitespace-nowrap">{m.name}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            {pStep === 'history' && (
+                                <div className="space-y-2">
+                                    {pHistory.length === 0 ? (
+                                        <div className="text-center py-10 text-gray-300"><LucideIcon name="calendar" className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm font-bold">기록이 없습니다.</p></div>
+                                    ) : pHistory.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-2xl">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 text-[#193278]' : 'bg-red-50 text-red-400'}`}>
+                                                <LucideIcon name={item.isPresent ? "check" : "x"} className="w-4 h-4" />
+                                            </div>
+                                            <span className="font-bold text-gray-700 text-sm flex-1">{item.date}</span>
+                                            <span className={`text-xs font-black px-3 py-1 rounded-full ${item.isPresent ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>{item.isPresent ? '출석' : '결석'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onOpenPersonal, onDetail, requestAuth, askConfirm, showToast }) => {
+            const [subTab, setSubTab] = useState('part');
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
             
@@ -1044,35 +1151,41 @@
                 }
             }, [history, subTab, memberPartMap]);
 
-            const individualHistory = useMemo(() => {
-                if (!selectedMember || !history || history.length === 0) return [];
-                return history.filter(h => {
-                    const parts = (h.date || '').split('. ');
-                    if (parts.length < 2) return false;
-                    const y = parseInt(parts[0]), m = parseInt(parts[1]);
-                    return y > 2026 || (y === 2026 && m >= 1);
-                }).map(h => ({
-                    date: h.date,
-                    isPresent: (h.members || []).includes(selectedMember)
-                }));
-            }, [selectedMember, history]);
-
             return (
                 <div className="space-y-6 fade-in text-left">
                     <div className="flex flex-col sm:flex-row sm:items-end gap-1 mb-2 text-left">
-                        <h2 className="text-3xl font-black text-gray-800">출석현황판</h2>
+                        <h2 className="text-2xl font-black text-gray-800">출석현황</h2>
                         <p className="text-xs text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {safeMembers.length}명)</span></p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-3 text-left">
-                        {/* 평균/최다 출석 카드 */}
-                        <div onClick={() => onOpenAttendStats()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-blue-100 transition-all active:scale-95 overflow-hidden group">
+                        {/* 개인출석 카드 */}
+                        <div onClick={() => onOpenPersonal()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-blue-100 transition-all active:scale-95 overflow-hidden group">
                             <div className="px-3 pt-3 pb-2 flex items-center justify-between">
                                 <div className="w-7 h-7 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
-                                    <LucideIcon name="bar-chart-2" className="w-3.5 h-3.5 text-[#193278]" />
+                                    <LucideIcon name="user" className="w-3.5 h-3.5 text-[#193278]" />
                                 </div>
                                 <div className="w-5 h-5 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                                     <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                                </div>
+                            </div>
+                            <div className="px-3 pb-3">
+                                <p className="text-xs font-semibold text-gray-400 mb-1 leading-tight">2026 찬양</p>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className="text-2xl font-black text-[#193278] leading-none">{(history||[]).filter(h=>{const p=(h.date||'').split('. ');return p.length>=2&&(parseInt(p[0])>2026||(parseInt(p[0])===2026&&parseInt(p[1])>=1));}).length}</span>
+                                    <span className="text-xs font-medium text-gray-300 ml-0.5">회</span>
+                                </div>
+                            </div>
+                            <div className="h-0.5 bg-gradient-to-r from-blue-100 to-blue-50"></div>
+                        </div>
+                        {/* 최다 출석 카드 */}
+                        <div onClick={() => onOpenAttendStats()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-green-100 transition-all active:scale-95 overflow-hidden group">
+                            <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+                                <div className="w-7 h-7 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors shrink-0">
+                                    <LucideIcon name="bar-chart-2" className="w-3.5 h-3.5 text-green-600" />
+                                </div>
+                                <div className="w-5 h-5 rounded-full bg-gray-100 group-hover:bg-green-100 flex items-center justify-center transition-colors">
+                                    <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-500 group-hover:text-green-500 transition-colors" />
                                 </div>
                             </div>
                             <div className="px-3 pb-3">
@@ -1082,26 +1195,7 @@
                                     <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
                                 </div>
                             </div>
-                            <div className="h-0.5 bg-gradient-to-r from-blue-100 to-blue-50"></div>
-                        </div>
-                        {/* 생일 팀원 카드 */}
-                        <div onClick={() => onOpenBdCalendar()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-pink-100 transition-all active:scale-95 overflow-hidden group">
-                            <div className="px-3 pt-3 pb-2 flex items-center justify-between">
-                                <div className="w-7 h-7 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors shrink-0">
-                                    <span className="text-sm leading-none">🎂</span>
-                                </div>
-                                <div className="w-5 h-5 rounded-full bg-gray-100 group-hover:bg-pink-100 flex items-center justify-center transition-colors">
-                                    <LucideIcon name="chevron-right" className="w-3 h-3 text-gray-500 group-hover:text-pink-500 transition-colors" />
-                                </div>
-                            </div>
-                            <div className="px-3 pb-3">
-                                <p className="text-xs font-semibold text-gray-400 mb-1 leading-tight">{new Date().getMonth()+1}월 생일</p>
-                                <div className="flex items-baseline gap-0.5">
-                                    <span className="text-2xl font-black text-pink-500 leading-none">{thisMonthBdCount}</span>
-                                    <span className="text-xs font-medium text-gray-300 ml-0.5">명</span>
-                                </div>
-                            </div>
-                            <div className="h-0.5 bg-gradient-to-r from-pink-100 to-pink-50"></div>
+                            <div className="h-0.5 bg-gradient-to-r from-green-100 to-green-50"></div>
                         </div>
                         {/* 관심 팀원 카드 */}
                         <div onClick={onOpenInterest} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-orange-100 transition-all active:scale-95 overflow-hidden group">
@@ -1125,52 +1219,20 @@
                     </div>
 
                     <div className="bg-white p-5 rounded-[28px] shadow-sm border border-gray-50 relative flex flex-col min-h-[240px]">
-                        <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl w-fit mb-3 self-center md:self-start">
-                            <button onClick={() => setSubTab('total')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'total' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>전체</button>
-                            <button onClick={() => setSubTab('part')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'part' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>파트별</button>
-                            <button onClick={() => setSubTab('individual')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'individual' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>개인별</button>
-                        </div>
-
-                        {subTab !== 'individual' ? (
-                            <div className="flex-1 min-h-[160px] text-left"><canvas ref={chartRef}></canvas></div>
-                        ) : (
-                            <div className="flex-1 flex flex-col py-4 space-y-4 animate-fadeIn text-left">
-                                <div className="flex flex-wrap gap-2">
-                                    {[{ id: 'staff', name: '성가사/반주자', color: '#193278' }, ...PARTS].map(p => (
-                                        <button
-                                            key={p.id}
-                                            onClick={() => { setSelectedPart(p.id === selectedPart ? '' : p.id); setSelectedMember(''); }}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 ${selectedPart === p.id ? 'text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
-                                            style={selectedPart === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
-                                        >{p.name}</button>
-                                    ))}
-                                </div>
-                                {selectedPart ? (
-                                    <div className="grid grid-cols-4 gap-1.5">
-                                        {activeMembers.filter(m => m.part === selectedPart).map(m => (
-                                            <button
-                                                key={m.name}
-                                                onClick={() => { setSelectedMember(m.name); setShowMemberModal(true); }}
-                                                className="py-2 px-1 rounded-xl text-xs font-bold border-2 transition-all text-center bg-gray-50 border-gray-100 text-gray-600 active:scale-95 hover:border-[#193278] hover:text-[#193278]"
-                                            >{m.name}</button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-gray-300 py-6 text-center">
-                                        <LucideIcon name="users" className="w-10 h-10 mb-2 opacity-20" />
-                                        <p className="text-sm font-bold">파트를 먼저 선택하세요</p>
-                                    </div>
-                                )}
-
+                        <div className="flex justify-center mb-3">
+                            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-2xl">
+                                <button onClick={() => setSubTab('total')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'total' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>전체</button>
+                                <button onClick={() => setSubTab('part')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'part' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>파트별</button>
                             </div>
-                        )}
+                        </div>
+                        <div className="flex-1 min-h-[160px] text-left"><canvas ref={chartRef}></canvas></div>
                     </div>
 
                     <div className="space-y-4 mt-8">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="font-black text-gray-800 flex items-center gap-2 text-left">
                                 <LucideIcon name="history" className="w-5 h-5 text-blue-500" />
-                                출석이력
+                                출석기록
                                 <span className="text-sm font-bold text-gray-400">
                                     (평균출석 <span className="text-[#193278]">{stats.avg}</span> 명)
                                 </span>
@@ -1237,37 +1299,7 @@
                             })}
                         </div>
                     </div>
-                    {showMemberModal && selectedMember && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
-                            <div className="bg-white w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[85vh]">
-                                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                                    <div>
-                                        <h3 className="font-black text-gray-800 text-lg">{selectedMember}</h3>
-                                        <p className="text-sm text-gray-400 font-bold mt-0.5">2026년 1월~ · {individualHistory.length}회</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-[#193278] bg-blue-50 px-3 py-1.5 rounded-xl">
-                                            출석률 {Math.round((individualHistory.filter(i=>i.isPresent).length / Math.max(1, individualHistory.length)) * 100)}%
-                                        </span>
-                                        <button onClick={() => setShowMemberModal(false)} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
-                                    </div>
-                                </div>
-                                <div className="overflow-y-auto hide-scrollbar flex-1 px-5 py-4 space-y-2">
-                                    {individualHistory.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-2xl">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 text-[#193278]' : 'bg-red-50 text-red-400'}`}>
-                                                <LucideIcon name={item.isPresent ? "check" : "x"} className="w-4 h-4" />
-                                            </div>
-                                            <span className="font-bold text-gray-700 text-sm flex-1">{item.date}</span>
-                                            <span className={`text-xs font-black px-3 py-1 rounded-full ${item.isPresent ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-400'}`}>
-                                                {item.isPresent ? "출석" : "결석"}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* 개인출석 확인 팝업 — App 레벨에서 렌더링 */}
                 </div>
             );
         };
@@ -1533,7 +1565,7 @@
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left text-left">
-                            <h2 className="text-3xl font-black text-gray-800">성가음원&악보</h2>
+                            <h2 className="text-2xl font-black text-gray-800">성가음원</h2>
                             <p className="text-xs text-gray-400 font-bold">연습용 음원 링크</p>
                         </div>
                         <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 text-center"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
@@ -1666,7 +1698,7 @@
             return (
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
-                        <div className="text-left"><h2 className="text-3xl font-black text-gray-800 text-left">찬양팀영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div>
+                        <div className="text-left"><h2 className="text-2xl font-black text-gray-800 text-left">찬양영상</h2><p className="text-xs text-gray-400 font-bold text-left">유튜브 영상 아카이브</p></div>
                         <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 text-center text-center"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
                     <div className="relative w-full text-left">
@@ -1889,7 +1921,7 @@
             );
         };
 
-        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin }) => {
+        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [editingMember, setEditingMember] = useState(null);
@@ -1915,6 +1947,21 @@
                     setAdminPwError(true); setTimeout(() => setAdminPwError(false), 600);
                 }
             };
+
+            const thisMonthBdCount = useMemo(() => {
+                const now = new Date();
+                const thisM = now.getMonth() + 1;
+                const thisY = now.getFullYear();
+                return members.filter(m => m && m.status !== 'sabbatical' && m.status !== 'inactive').filter(m => {
+                    if (!m.birthday) return false;
+                    const [mm, dd] = m.birthday.split('-').map(Number);
+                    if (!mm || !dd) return false;
+                    if (m.birthdayType !== 'lunar') return mm === thisM;
+                    let solar = lunarToSolar(thisY, mm, dd);
+                    if (!solar || solar.year !== thisY) solar = lunarToSolar(thisY - 1, mm, dd);
+                    return solar && solar.year === thisY && solar.month === thisM;
+                }).length;
+            }, [members]);
 
             const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
 
@@ -1943,12 +1990,12 @@
                 }
                 await saveRoster(newList);
                 showToast(editingMember ? "수정되었습니다." : "팀원이 추가되었습니다.");
-                setEditingMember(null);
+                setEditingMember(null); onOpenEditModal(null);
             };
 
             const handleDeleteMember = async (name) => {
                 await saveRoster(members.filter(m => m.name !== name));
-                showToast("삭제되었습니다."); setEditingMember(null);
+                showToast("삭제되었습니다."); setEditingMember(null); onOpenEditModal(null);
             };
 
             const handleUpdatePassword = async () => {
@@ -2051,7 +2098,7 @@
                 if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
                 return (
                     <button
-                        onClick={() => localAdmin && setEditingMember(m)}
+                        onClick={() => localAdmin && (setEditingMember(m), onOpenEditModal({ member: m, onSave: handleSaveMember, onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) }))}
                         className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
                         style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', height: '72px', boxSizing: 'border-box' }}
                     >
@@ -2092,8 +2139,8 @@
                     {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
-                            <h2 className="text-3xl font-black text-gray-800">찬양팀명단</h2>
-                            <p className="text-sm text-gray-400 font-bold mt-0.5">총 {members.length}명 · 활동 {counts.active}명</p>
+                            <h2 className="text-2xl font-black text-gray-800">찬양팀명단</h2>
+                            <p className="text-xs text-gray-400 font-bold mt-0.5">등록팀원 총 {members.length}명</p>
                         </div>
                         <div className="flex gap-2 items-center">
                             {localAdmin ? (
@@ -2102,7 +2149,7 @@
                                         className="p-3 rounded-2xl transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200 active:scale-95">
                                         <LucideIcon name="settings" className="w-5 h-5" />
                                     </button>
-                                    <button onClick={() => setEditingMember(false)}
+                                    <button onClick={() => { setEditingMember(false); onOpenEditModal({ member: null, onSave: handleSaveMember, onDelete: null, onClose: () => setEditingMember(null) }); }}
                                         className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
                                         <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
                                     </button>
@@ -2135,6 +2182,20 @@
                             </button>
                         )}
                     </div>
+
+                    {/* 생일 배너 (C안 디자인 + B안 위치) */}
+                    {!isSearching && (
+                        <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-pink-100 bg-[#fdf2f8] active:scale-95 transition-all">
+                            <span className="text-base leading-none shrink-0">🎂</span>
+                            <span className="text-sm font-bold text-[#db2777] flex-1 text-left">
+                                {new Date().getMonth()+1}월 생일 팀원
+                                {thisMonthBdCount > 0
+                                    ? <strong className="ml-1 text-[#db2777]">{thisMonthBdCount}명</strong>
+                                    : <span className="ml-1 text-pink-300 font-medium">없음</span>}
+                            </span>
+                            <span className="text-pink-300 text-sm">›</span>
+                        </button>
+                    )}
 
                     {/* 검색 결과 */}
                     {isSearching ? (
@@ -2178,19 +2239,25 @@
 
                             {/* 파트 필터 — 2줄 flex-wrap */}
                             <div className="flex flex-wrap gap-2">
-                                {partTabs.map(p => (
-                                    <button key={p.id}
-                                        onClick={() => setPartFilter(p.id)}
-                                        className="px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 whitespace-nowrap"
-                                        style={partFilter === p.id
-                                            ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' }
-                                            : { backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#64748b' }}>
-                                        {p.id === 'officer' ? '임원진' : p.name}
-                                        <span className="text-[10px] font-black ml-0.5" style={{ opacity: partFilter === p.id ? 0.6 : 1, color: partFilter === p.id ? '#fff' : '#9ca3af' }}>
-                                            {partCounts[p.id]}
-                                        </span>
-                                    </button>
-                                ))}
+                                {partTabs.map(p => {
+                                    const sel = partFilter === p.id;
+                                    const sc = STATUS_OPTIONS.find(s => s.id === statusFilter);
+                                    const activeColor = sc?.dot || '#193278';
+                                    const activeBg = sc?.light || '#eff6ff';
+                                    return (
+                                        <button key={p.id}
+                                            onClick={() => setPartFilter(p.id)}
+                                            className="px-3 py-1.5 rounded-xl text-xs font-black transition-all border-2 flex items-center gap-1 whitespace-nowrap"
+                                            style={sel
+                                                ? { backgroundColor: activeBg, borderColor: activeColor + '80', color: activeColor }
+                                                : { backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#64748b' }}>
+                                            {p.id === 'officer' ? '임원진' : p.name}
+                                            <span className="text-[10px] font-black ml-0.5" style={{ opacity: sel ? 0.7 : 1, color: sel ? activeColor : '#9ca3af' }}>
+                                                {partCounts[p.id]}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {/* 멤버 칩 그리드 */}
@@ -2274,16 +2341,6 @@
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    {/* 팀원 편집 모달 (관리자 모드만) */}
-                    {localAdmin && editingMember !== null && (
-                        <MemberEditModal
-                            member={editingMember === false ? null : editingMember}
-                            onClose={() => setEditingMember(null)}
-                            onSave={handleSaveMember}
-                            onDelete={() => handleDeleteMember(editingMember.name)}
-                        />
                     )}
 
                     {/* 관리자 모드 진입 모달 */}
@@ -2556,6 +2613,8 @@
             const [showInterestModal, setShowInterestModal] = useState(false);
             const [showBdCalendar, setShowBdCalendar] = useState(false);
             const [showAttendStats, setShowAttendStats] = useState(false);
+            const [showPersonalModal, setShowPersonalModal] = useState(false);
+            const [editMemberConfig, setEditMemberConfig] = useState(null);
             const [editingHistory, setEditingHistory] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [user, setUser] = useState(null);
@@ -2574,7 +2633,9 @@
                         clearInterval(waitFirebase); initApp(); 
                     } 
                 }, 100);
-                return () => clearInterval(waitFirebase);
+                // 10초 내 Firebase 미연결 시 강제 로드
+                const fallback = setTimeout(() => { clearInterval(waitFirebase); setReady(true); }, 10000);
+                return () => { clearInterval(waitFirebase); clearTimeout(fallback); };
             }, []);
 
             const initApp = async () => {
@@ -2585,6 +2646,7 @@
                     } else { await signInAnonymously(auth); }
 
                     onAuthStateChanged(auth, (u) => {
+                        try {
                         setUser(u);
                         if (u) {
                             onSnapshot(doc(db, 'settings', 'admin'), (s) => {
@@ -2611,8 +2673,9 @@
                             });
                             setReady(true);
                         }
+                        } catch(err) { console.error('onAuthStateChanged error:', err); setReady(true); }
                     });
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error('initApp error:', e); setReady(true); }
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
@@ -2668,8 +2731,8 @@
                     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left text-left text-left">
                         <div className="mb-10 flex items-center gap-3 text-left text-left text-left text-left">
                             <AppLogo className="w-10 h-10 text-left text-left text-left text-left" />
-                            <div className="text-left text-left text-left text-left">
-                                <h1 onClick={() => setActiveTab('music')} className="text-xl font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity">주은혜 찬양사역팀</h1>
+                            <div className="text-left text-left text-left text-left min-w-0">
+                                <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap">주은혜 찬양사역팀</h1>
                                 <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left">
                                     <span className={`w-2 h-2 rounded-full text-left text-left text-left text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
                                     {isAdmin ? '관리자 모드' : '온라인'}
@@ -2677,9 +2740,9 @@
                             </div>
                         </div>
                         <nav className="flex-1 space-y-2 text-left text-left text-left">
-                            <NavBtn id="music" label="성가음원&악보" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
-                            <NavBtn id="videos" label="찬양팀영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
-                            <NavBtn id="stats" label="출석현황판" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
+                            <NavBtn id="music" label="성가음원" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
+                            <NavBtn id="videos" label="찬양영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
+                            <NavBtn id="stats" label="출석현황" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
                             <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
                             <NavBtn id="manage" label="찬양팀명단" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
@@ -2697,7 +2760,7 @@
                         <header className={`md:hidden absolute top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                             <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
                                 <AppLogo className="w-8 h-8 text-left text-left text-left text-left" />
-                                <span className="font-black text-lg text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
+                                <span className="font-black text-xl text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
                             </div>
                             <div className="flex items-center gap-2 text-left text-left text-left text-left">
                                 <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
@@ -2710,10 +2773,10 @@
 
                         <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left">
-                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
+                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
@@ -2728,6 +2791,8 @@
                     {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
                     {showBdCalendar && <BirthdayCalendarModal members={sortedMembers} onClose={() => setShowBdCalendar(false)} />}
                     {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((acc,m)=>{if(m&&m.name)acc[m.name]=m.part;return acc;},{})} onClose={() => setShowAttendStats(false)} />}
+                    {showPersonalModal && <PersonalAttendModal history={history} members={sortedMembers} onClose={() => setShowPersonalModal(false)} />}
+                    {editMemberConfig && <MemberEditModal member={editMemberConfig.member} onClose={() => { setEditMemberConfig(null); editMemberConfig.onClose(); }} onSave={editMemberConfig.onSave} onDelete={editMemberConfig.onDelete} />}
                     {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} geminiApiKey={geminiApiKey} onSave={async (updated) => { 
                         const { db, doc, setDoc } = window.MyFirebase;
                         await setDoc(doc(db, 'history', updated.id), updated);
