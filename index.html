@@ -543,7 +543,7 @@
                                         const partObj = PARTS.find(p => p.id === partId);
                                         const partColor = partId === 'staff' ? '#193278' : (partObj ? partObj.color : '#ccc');
                                         const partLight = partId === 'staff' ? '#eff6ff' : (partObj ? partObj.light : '#f1f5f9');
-                                        const partNameLabel = partId === 'staff' ? '성가사 & 반주자' : (partObj ? partObj.name : '');
+                                        const partNameLabel = partId === 'staff' ? '성가사 · 반주자' : (partObj ? partObj.name : '');
                                         
                                         return (
                                             <div key={partId} className="mb-5 text-left">
@@ -772,7 +772,7 @@
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
                             <div>
                                 <h3 className="text-lg font-black text-gray-900">생일 달력</h3>
-                                <p className="text-xs text-gray-400 font-medium mt-0.5">{calYear}년 팀원 생일 현황</p>
+                                <p className="text-xs text-gray-400 font-medium mt-0.5">팀원 생일 현황</p>
                             </div>
                             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90">
                                 <LucideIcon name="x" className="w-4 h-4" />
@@ -1020,7 +1020,7 @@
                         <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-4">
                             {pStep === 'list' && (
                                 <div className="space-y-5">
-                                    {[{id:'staff',name:'성가사 & 반주자',color:'#193278',light:'#eff6ff'}, ...PARTS].map(p => {
+                                    {[{id:'staff',name:'성가사 · 반주자',color:'#193278',light:'#eff6ff'}, ...PARTS].map(p => {
                                         const partMembers = activeMembers.filter(m => m.part === p.id);
                                         if (partMembers.length === 0) return null;
                                         return (
@@ -1120,7 +1120,7 @@
                         if (parts.length >= 3) {
                             const month = parseInt(parts[1]);
                             const day = parseInt(parts[2]);
-                            return `${month}.${day}`;
+                            return `${month}/${day}`;
                         }
                         return h.date || "";
                     });
@@ -1144,19 +1144,31 @@
                         data: { labels, datasets },
                         options: { 
                             responsive: true, 
-                            maintainAspectRatio: false, 
-                            plugins: { legend: { display: subTab === 'part', position: 'top', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } } }, 
-                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { display: false } }, x: { grid: { display: false } } } 
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: subTab === 'part', position: 'top', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } },
+                            }, 
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { stepSize: 1, font: { size: 9 }, callback: v => v === 0 ? '(명)' : v },
+                                    grid: { display: false }
+                                },
+                                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                            }
                         }
                     });
                 }
             }, [history, subTab, memberPartMap]);
 
             return (
-                <div className="space-y-6 fade-in text-left">
-                    <div className="flex flex-col sm:flex-row sm:items-end gap-1 mb-2 text-left">
-                        <h2 className="text-2xl font-black text-gray-800">출석현황</h2>
-                        <p className="text-xs text-gray-400 font-bold sm:mb-1">활동 팀원 {activeMembers.length}명 기준 <span className="font-medium text-gray-300 ml-1">(전체팀원 {safeMembers.length}명)</span></p>
+                <div className="fade-in space-y-6 text-left">
+                    <div className="flex justify-between items-center text-left">
+                        <div className="text-left">
+                            <h2 className="text-2xl font-black text-gray-800">출석현황</h2>
+                            <p className="text-xs text-gray-400 font-bold">활동과 관련된 출석정보</p>
+                        </div>
+                        <div className="w-12 h-12 shrink-0"></div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-3 text-left">
@@ -1226,7 +1238,9 @@
                                 <button onClick={() => setSubTab('part')} className={`px-4 py-1.5 rounded-xl text-[11px] font-black transition-all ${subTab === 'part' ? 'bg-white text-[#193278] shadow-sm' : 'text-gray-400'}`}>파트별</button>
                             </div>
                         </div>
-                        <div className="flex-1 min-h-[160px] text-left"><canvas ref={chartRef}></canvas></div>
+                        <div className="flex-1 min-h-[160px] text-left relative">
+                            <canvas ref={chartRef}></canvas>
+                        </div>
                     </div>
 
                     <div className="space-y-4 mt-8">
@@ -1752,7 +1766,7 @@
         };
 
         const PART_OPTIONS = [
-            { id: 'staff',   name: '성가사/반주자', color: '#193278', light: '#eff6ff' },
+            { id: 'staff',   name: '성가사 · 반주자', color: '#193278', light: '#eff6ff' },
             { id: 'soprano', name: '소프라노',      color: '#db2777', light: '#fdf2f8' },
             { id: 'alto',    name: '알토',          color: '#d97706', light: '#fffbeb' },
             { id: 'tenor',   name: '테너',          color: '#2563eb', light: '#eff6ff' },
@@ -2012,7 +2026,7 @@
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            // 레벨 2 필터탭 목록 (성가사/반주자 먼저, 임원진 다음)
+            // 레벨 2 필터탭 목록 (성가사 · 반주자 먼저, 임원진 다음)
             const partTabs = [
                 { id: 'all',     name: '전체',          color: '#193278' },
                 ...PART_OPTIONS,
@@ -2056,7 +2070,7 @@
                 const officers = filtered;
                 const partOrder = ['soprano','alto','tenor','bass'];
                 const staffGroup = {
-                    id: 'staff_off', name: '성가사/반주자', color: '#193278', light: '#eff6ff',
+                    id: 'staff_off', name: '성가사 · 반주자', color: '#193278', light: '#eff6ff',
                     members: officers.filter(m => m.part === 'staff'),
                 };
                 const leadGroup = {
@@ -2166,16 +2180,16 @@
                     </div>
 
                     {/* 이름 검색 */}
-                    <div className="relative">
+                    <div className="relative w-full">
                         <input
                             type="text"
-                            placeholder="이름으로 검색..."
+                            placeholder="팀원 이름 검색"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-10 pr-10 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-200 transition-all"
+                            className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500 text-left"
                         />
-                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300">
-                            <LucideIcon name="search" className="w-4 h-4" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300">
+                            <LucideIcon name="search" className="w-5 h-5" />
                         </div>
                         {isSearching && (
                             <button onClick={() => setSearchQuery('')}
@@ -2187,15 +2201,15 @@
 
                     {/* 생일 배너 (C안 디자인 + B안 위치) */}
                     {!isSearching && (
-                        <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-pink-100 bg-[#fdf2f8] active:scale-95 transition-all">
-                            <span className="text-base leading-none shrink-0">🎂</span>
-                            <span className="text-sm font-bold text-[#db2777] flex-1 text-left">
-                                {new Date().getMonth()+1}월 생일 팀원
-                                {thisMonthBdCount > 0
-                                    ? <strong className="ml-1 text-[#db2777]">{thisMonthBdCount}명</strong>
-                                    : <span className="ml-1 text-pink-300 font-medium">없음</span>}
+                        <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50 to-[#fdf2f8] active:scale-95 transition-all shadow-sm">
+                            <span className="text-xl leading-none shrink-0">🎂</span>
+                            <span className="text-sm font-bold text-[#db2777] flex-1 text-left">{new Date().getMonth()+1}월 생일 팀원</span>
+                            <span className="text-base font-black text-[#db2777] shrink-0">
+                                {thisMonthBdCount > 0 ? `${thisMonthBdCount}명` : <span className="text-pink-300 font-medium text-sm">없음</span>}
                             </span>
-                            <span className="text-pink-300 text-sm">›</span>
+                            <div className="w-7 h-7 rounded-full bg-white border border-pink-200 flex items-center justify-center shrink-0">
+                                <LucideIcon name="chevron-right" className="w-3.5 h-3.5 text-pink-400" />
+                            </div>
                         </button>
                     )}
 
@@ -2534,7 +2548,7 @@
                                 const checkedCount = list.filter(m => attendanceMap[m.name]).length;
                                 const partObj = PARTS.find(p => p.id === partId);
                                 const partColor = partId === 'staff' ? '#193278' : (partObj?.color || '#ccc');
-                                const partName = partId === 'staff' ? '성가사 & 반주자' : (partObj?.name || '');
+                                const partName = partId === 'staff' ? '성가사 · 반주자' : (partObj?.name || '');
                                 const rate = Math.round(checkedCount / list.length * 100);
 
                                 return (
