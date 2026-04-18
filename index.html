@@ -2032,26 +2032,31 @@
                 await setDoc(doc(db, 'roster', 'current'), { list: newList });
             };
 
-            const handleSaveMember = async (form) => {
-                let newList;
+            // 저장 시 Firebase에서 최신 명단을 직접 읽어 stale closure 완전 방지
+            const handleSaveMember = async (form, originalName) => {
+                const { db, doc, setDoc, getDoc } = window.MyFirebase;
                 let photoUrl = form.photo;
-                // 새 파일이 있으면 Cloudinary에 업로드
                 if (form.photoFile) {
-                    try {
-                        photoUrl = await uploadToCloudinary(form.photoFile, 'grace/members');
-                    } catch(e) {
-                        console.warn('Cloudinary 업로드 실패, base64 저장:', e.message);
-                        // 폴백: 이미 form.photo에 base64가 들어있으므로 그대로 사용
-                    }
+                    try { photoUrl = await uploadToCloudinary(form.photoFile, 'grace/members'); }
+                    catch(e) { console.warn('Cloudinary 업로드 실패, base64 저장:', e.message); }
                 }
                 const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim(), birthday: form.birthday.trim(), birthdayType: form.birthdayType || 'solar', photo: photoUrl || null };
-                if (!editingMember) {
-                    newList = [...members, data];
+
+                // 항상 Firebase 최신값 기준으로 처리
+                const snap = await getDoc(doc(db, 'roster', 'current'));
+                const latest = snap.exists() ? (snap.data().list || []) : [];
+
+                let newList;
+                if (!originalName) {
+                    newList = [...latest, data];
                 } else {
-                    newList = members.map(m => m.name === editingMember.name ? { ...m, ...data } : m);
+                    const found = latest.some(m => m.name === originalName);
+                    newList = found
+                        ? latest.map(m => m.name === originalName ? { ...m, ...data } : m)
+                        : [...latest, data]; // 혹시라도 못 찾으면 추가
                 }
-                await saveRoster(newList);
-                showToast(editingMember ? "수정되었습니다." : "팀원이 추가되었습니다.");
+                await setDoc(doc(db, 'roster', 'current'), { list: newList });
+                showToast(originalName ? "수정되었습니다." : "팀원이 추가되었습니다.");
                 setEditingMember(null); onOpenEditModal(null);
             };
 
@@ -2160,7 +2165,7 @@
                 if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
                 return (
                     <button
-                        onClick={() => localAdmin && (setEditingMember(m), onOpenEditModal({ member: m, onSave: handleSaveMember, onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) }))}
+                        onClick={() => localAdmin && (setEditingMember(m), onOpenEditModal({ member: m, onSave: (form) => handleSaveMember(form, m.name), onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) }))}
                         className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
                         style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', height: '72px', boxSizing: 'border-box' }}
                     >
@@ -2211,7 +2216,7 @@
                                         className="p-3 rounded-2xl transition-colors bg-gray-100 text-gray-400 hover:bg-gray-200 active:scale-95">
                                         <LucideIcon name="settings" className="w-5 h-5" />
                                     </button>
-                                    <button onClick={() => { setEditingMember(false); onOpenEditModal({ member: null, onSave: handleSaveMember, onDelete: null, onClose: () => setEditingMember(null) }); }}
+                                    <button onClick={() => { setEditingMember(false); onOpenEditModal({ member: null, onSave: (form) => handleSaveMember(form, null), onDelete: null, onClose: () => setEditingMember(null) }); }}
                                         className="flex items-center gap-2 bg-[#193278] text-white px-4 py-3 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-transform">
                                         <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
                                     </button>
