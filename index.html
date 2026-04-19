@@ -2018,7 +2018,7 @@
             );
         };
 
-        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal }) => {
+        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal, onOpenSelfPhoto }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [editingMember, setEditingMember] = useState(null);
@@ -2191,23 +2191,6 @@
                 return acc;
             }, {});
 
-            const [selfPhotoMember, setSelfPhotoMember] = useState(null); // 비관리자 본인 사진 수정용
-
-            const handleSelfPhotoSave = async (memberName, file) => {
-                try {
-                    let photoUrl;
-                    try { photoUrl = await uploadToCloudinary(file, 'grace/members'); }
-                    catch(e) { photoUrl = await compressImage(file, 400, 400, 0.85); }
-                    const { db, doc, setDoc, getDoc } = window.MyFirebase;
-                    const snap = await getDoc(doc(db, 'roster', 'current'));
-                    const latest = snap.exists() ? (snap.data().list || []) : [];
-                    const newList = latest.map(m => m.name === memberName ? { ...m, photo: photoUrl } : m);
-                    await setDoc(doc(db, 'roster', 'current'), { list: newList });
-                    showToast("사진이 업데이트되었습니다.");
-                    setSelfPhotoMember(null);
-                } catch(e) { showToast("업로드에 실패했습니다."); }
-            };
-
             // 칩 컴포넌트 — 높이 통일, 왕관 제거, 직책은 하단 고정 공간
             const MemberChip = ({ m, showPartAbbr }) => {
                 const hasRole = m.role && m.role.trim();
@@ -2222,7 +2205,7 @@
                                 setEditingMember(m);
                                 onOpenEditModal({ member: m, onSave: (form) => handleSaveMember(form, m.name), onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) });
                             } else {
-                                setSelfPhotoMember(m);
+                                onOpenSelfPhoto(m);
                             }
                         }}
                         className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full active:scale-95 cursor-pointer hover:shadow-sm`}
@@ -2493,14 +2476,6 @@
                         </div>
                     )}
 
-                    {/* 비관리자 본인 사진 수정 모달 */}
-                    {selfPhotoMember && (
-                        <SelfPhotoModal
-                            member={selfPhotoMember}
-                            onClose={() => setSelfPhotoMember(null)}
-                            onSave={handleSelfPhotoSave}
-                        />
-                    )}
                 </div>
             );
         };
@@ -2754,6 +2729,7 @@
             const [showAttendStats, setShowAttendStats] = useState(false);
             const [showPersonalModal, setShowPersonalModal] = useState(false);
             const [editMemberConfig, setEditMemberConfig] = useState(null);
+            const [selfPhotoMember, setSelfPhotoMember] = useState(null);
             const [editingHistory, setEditingHistory] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [user, setUser] = useState(null);
@@ -2846,6 +2822,21 @@
                 setActiveTab(id);
             };
             
+            const handleSelfPhotoSave = async (memberName, file) => {
+                try {
+                    let photoUrl;
+                    try { photoUrl = await uploadToCloudinary(file, 'grace/members'); }
+                    catch(e) { photoUrl = await compressImage(file, 400, 400, 0.85); }
+                    const { db, doc, setDoc, getDoc } = window.MyFirebase;
+                    const snap = await getDoc(doc(db, 'roster', 'current'));
+                    const latest = snap.exists() ? (snap.data().list || []) : [];
+                    const newList = latest.map(m => m.name === memberName ? { ...m, photo: photoUrl } : m);
+                    await setDoc(doc(db, 'roster', 'current'), { list: newList });
+                    showToast("사진이 업데이트되었습니다.");
+                    setSelfPhotoMember(null);
+                } catch(e) { showToast("업로드에 실패했습니다."); }
+            };
+
             const handleSaveGeminiKey = async (key) => {
                 const cleanKey = key.trim();
                 const { db, doc, setDoc } = window.MyFirebase;
@@ -2931,7 +2922,7 @@
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} onOpenSelfPhoto={(m) => setSelfPhotoMember(m)} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
@@ -2948,6 +2939,7 @@
                     {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((acc,m)=>{if(m&&m.name)acc[m.name]=m.part;return acc;},{})} onClose={() => setShowAttendStats(false)} />}
                     {showPersonalModal && <PersonalAttendModal history={history} members={sortedMembers} onClose={() => setShowPersonalModal(false)} />}
                     {editMemberConfig && <MemberEditModal member={editMemberConfig.member} onClose={() => { setEditMemberConfig(null); editMemberConfig.onClose(); }} onSave={editMemberConfig.onSave} onDelete={editMemberConfig.onDelete} />}
+                    {selfPhotoMember && <SelfPhotoModal member={selfPhotoMember} onClose={() => setSelfPhotoMember(null)} onSave={handleSelfPhotoSave} />}
                     {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} geminiApiKey={geminiApiKey} onSave={async (updated) => { 
                         const { db, doc, setDoc } = window.MyFirebase;
                         await setDoc(doc(db, 'history', updated.id), updated);
@@ -2969,4 +2961,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+    </html>
