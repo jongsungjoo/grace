@@ -1414,7 +1414,7 @@
                     dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
                 }
 
-                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \ncutt.ly/onnuri\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
+                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
                 if (form.links?.s) text += `- 소프라노\n${form.links.s}\n`;
                 if (form.links?.a) text += `- 알토\n${form.links.a}\n`;
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
@@ -1983,6 +1983,41 @@
             );
         };
 
+        const SelfPhotoModal = ({ member, onClose, onSave }) => {
+            const [uploading, setUploading] = useState(false);
+            return (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[500] flex flex-col items-center justify-center fade-in" onClick={() => !uploading && onClose()}>
+                    <div className="flex flex-col items-center gap-5 p-6" onClick={e => e.stopPropagation()}>
+                        {member.photo
+                            ? <img src={member.photo} className="w-44 h-44 rounded-full object-cover border-4 border-white/20 shadow-2xl" />
+                            : <div className="w-44 h-44 rounded-full bg-white/10 border-4 border-white/20 flex items-center justify-center">
+                                <LucideIcon name="user" className="w-20 h-20 text-white/40" />
+                              </div>
+                        }
+                        <p className="text-white font-black text-xl">{member.name}</p>
+                        <p className="text-white/50 text-xs font-medium -mt-3">본인 프로필 사진만 변경할 수 있습니다</p>
+                        <label className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-black text-sm cursor-pointer transition-all active:scale-95 shadow-lg ${uploading ? 'bg-white/20 text-white/50 pointer-events-none' : 'bg-white text-[#193278]'}`}>
+                            {uploading
+                                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin"></div> 업로드 중...</>
+                                : <><LucideIcon name="camera" className="w-4 h-4" /> 사진 변경</>
+                            }
+                            <input type="file" accept="image/*" className="hidden"
+                                onChange={async (e) => {
+                                    const file = e.target.files[0];
+                                    if (!file || uploading) return;
+                                    setUploading(true);
+                                    await onSave(member.name, file);
+                                    setUploading(false);
+                                }}
+                                disabled={uploading}
+                            />
+                        </label>
+                        <button onClick={onClose} className="text-white/40 text-xs font-bold mt-1 active:text-white/70 transition-colors">닫기</button>
+                    </div>
+                </div>
+            );
+        };
+
         const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
@@ -2156,6 +2191,23 @@
                 return acc;
             }, {});
 
+            const [selfPhotoMember, setSelfPhotoMember] = useState(null); // 비관리자 본인 사진 수정용
+
+            const handleSelfPhotoSave = async (memberName, file) => {
+                try {
+                    let photoUrl;
+                    try { photoUrl = await uploadToCloudinary(file, 'grace/members'); }
+                    catch(e) { photoUrl = await compressImage(file, 400, 400, 0.85); }
+                    const { db, doc, setDoc, getDoc } = window.MyFirebase;
+                    const snap = await getDoc(doc(db, 'roster', 'current'));
+                    const latest = snap.exists() ? (snap.data().list || []) : [];
+                    const newList = latest.map(m => m.name === memberName ? { ...m, photo: photoUrl } : m);
+                    await setDoc(doc(db, 'roster', 'current'), { list: newList });
+                    showToast("사진이 업데이트되었습니다.");
+                    setSelfPhotoMember(null);
+                } catch(e) { showToast("업로드에 실패했습니다."); }
+            };
+
             // 칩 컴포넌트 — 높이 통일, 왕관 제거, 직책은 하단 고정 공간
             const MemberChip = ({ m, showPartAbbr }) => {
                 const hasRole = m.role && m.role.trim();
@@ -2165,8 +2217,15 @@
                 if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
                 return (
                     <button
-                        onClick={() => localAdmin && (setEditingMember(m), onOpenEditModal({ member: m, onSave: (form) => handleSaveMember(form, m.name), onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) }))}
-                        className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full ${localAdmin ? 'active:scale-95 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
+                        onClick={() => {
+                            if (localAdmin) {
+                                setEditingMember(m);
+                                onOpenEditModal({ member: m, onSave: (form) => handleSaveMember(form, m.name), onDelete: () => handleDeleteMember(m.name), onClose: () => setEditingMember(null) });
+                            } else {
+                                setSelfPhotoMember(m);
+                            }
+                        }}
+                        className={`relative flex flex-col items-center justify-center px-1.5 bg-white border rounded-2xl transition-all text-center w-full active:scale-95 cursor-pointer hover:shadow-sm`}
                         style={{ borderColor: hasRole ? '#ede9fe' : '#f1f5f9', height: '72px', boxSizing: 'border-box' }}
                     >
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dot }}></span>
@@ -2432,6 +2491,15 @@
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* 비관리자 본인 사진 수정 모달 */}
+                    {selfPhotoMember && (
+                        <SelfPhotoModal
+                            member={selfPhotoMember}
+                            onClose={() => setSelfPhotoMember(null)}
+                            onSave={handleSelfPhotoSave}
+                        />
                     )}
                 </div>
             );
@@ -2901,4 +2969,4 @@
         root.render(<App />);
     </script>
 </body>
-    </html>
+</html>
