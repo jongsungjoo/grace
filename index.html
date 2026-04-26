@@ -441,6 +441,95 @@
             );
         };
 
+        // 핀치 줌 가능한 풀스크린 이미지 뷰어 (간단 버전: useState만 사용)
+        const PinchZoomImg = ({ src, onClose }) => {
+            const [scale, setScale] = useState(1);
+            const [tx, setTx] = useState(0);
+            const [ty, setTy] = useState(0);
+            // 제스처 상태는 일반 변수로 보관 (closure로 핸들러간 공유)
+            const [gesture, setGesture] = useState({ active: false });
+
+            const onTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    const t0 = e.touches[0], t1 = e.touches[1];
+                    const d = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+                    setGesture({ active: true, mode: 'pinch', startDist: d, startScale: scale, startTx: tx, startTy: ty,
+                                 startMidX: (t0.clientX + t1.clientX) / 2, startMidY: (t0.clientY + t1.clientY) / 2 });
+                } else if (e.touches.length === 1) {
+                    const t = e.touches[0];
+                    if (scale > 1.01) {
+                        setGesture({ active: true, mode: 'pan', startX: t.clientX, startY: t.clientY, startTx: tx, startTy: ty });
+                    }
+                }
+            };
+
+            const onTouchMove = (e) => {
+                if (!gesture.active) return;
+                if (gesture.mode === 'pinch' && e.touches.length === 2) {
+                    e.preventDefault();
+                    const t0 = e.touches[0], t1 = e.touches[1];
+                    const d = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+                    const factor = d / (gesture.startDist || 1);
+                    const newScale = Math.max(1, Math.min(gesture.startScale * factor, 6));
+                    setScale(newScale);
+                    const midX = (t0.clientX + t1.clientX) / 2;
+                    const midY = (t0.clientY + t1.clientY) / 2;
+                    setTx(gesture.startTx + (midX - gesture.startMidX));
+                    setTy(gesture.startTy + (midY - gesture.startMidY));
+                } else if (gesture.mode === 'pan' && e.touches.length === 1) {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    setTx(gesture.startTx + (t.clientX - gesture.startX));
+                    setTy(gesture.startTy + (t.clientY - gesture.startY));
+                }
+            };
+
+            const onTouchEnd = (e) => {
+                if (e.touches.length === 0) {
+                    setGesture({ active: false });
+                    if (scale <= 1.01) { setScale(1); setTx(0); setTy(0); }
+                }
+            };
+
+            const handleReset = (e) => { e.stopPropagation(); setScale(1); setTx(0); setTy(0); };
+
+            return (
+                <div
+                    className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center fade-in overflow-hidden"
+                    style={{ touchAction: 'none' }}
+                    onClick={() => { if (scale <= 1.01) onClose(); }}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onTouchCancel={onTouchEnd}
+                >
+                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-black/20 backdrop-blur-sm transition-all active:scale-90 z-[310]">
+                        <LucideIcon name="x" className="w-8 h-8" />
+                    </button>
+                    {scale > 1.05 && (
+                        <button onClick={handleReset} className="absolute top-6 left-6 text-white/80 hover:text-white px-4 py-2 rounded-full bg-black/20 backdrop-blur-sm transition-all active:scale-90 z-[310] text-xs font-bold flex items-center gap-1.5">
+                            <LucideIcon name="minimize-2" className="w-4 h-4" />
+                            <span>원본</span>
+                        </button>
+                    )}
+                    <img
+                        src={src}
+                        draggable={false}
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none pointer-events-none"
+                        style={{
+                            transform: `translate(${tx}px, ${ty}px) scale(${scale})`,
+                            transformOrigin: 'center center',
+                            transition: gesture.active ? 'none' : 'transform 0.2s ease-out',
+                            willChange: 'transform',
+                        }}
+                    />
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-[11px] font-bold bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full pointer-events-none z-[310]">
+                        두 손가락으로 확대 · 축소
+                    </div>
+                </div>
+            );
+        };
+
         const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, requestAuth, showToast, geminiApiKey }) => {
             const [selected, setSelected] = useState(new Set(record.members || []));
             const [image, setImage] = useState(record.image || null);
@@ -619,10 +708,7 @@
                         </footer>}
                     </div>
                     {isFullScreen && image && (
-                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 fade-in text-center" onClick={() => setIsFullScreen(false)}>
-                            <button onClick={(e) => { e.stopPropagation(); setIsFullScreen(false); }} className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-black/20 backdrop-blur-sm transition-all active:scale-90 z-[310]"><LucideIcon name="x" className="w-8 h-8" /></button>
-                            <img src={image} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl scale-in" onClick={(e) => e.stopPropagation()} />
-                        </div>
+                        <PinchZoomImg src={image} onClose={() => setIsFullScreen(false)} />
                     )}
                 </div>
             );
@@ -1755,6 +1841,40 @@
             });
             const filteredVideos = videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
 
+            const handleShareVideo = async () => {
+                let dateStr = "날짜 미지정";
+                if (form.date) {
+                    const [y, m, d] = form.date.split('-');
+                    if (y && m && d) dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
+                }
+                const text = `★ 주일 성가영상 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title || ''}\n\n[영상링크]\n- ${form.url || ''}`;
+
+                const copyText = async () => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                    } catch (err) {
+                        const dummy = document.createElement("textarea");
+                        dummy.value = text;
+                        document.body.appendChild(dummy);
+                        dummy.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(dummy);
+                    }
+                };
+
+                if (navigator.share) {
+                    try {
+                        await copyText();
+                        await navigator.share({ text });
+                        return;
+                    } catch (e) {
+                        if (e.name === 'AbortError') return;
+                    }
+                }
+                await copyText();
+                showToast("텍스트가 복사되었습니다! 카톡에 붙여넣기 하세요.");
+            };
+
             return (
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
@@ -1772,6 +1892,9 @@
                                     <h3 className="font-black text-gray-800 text-lg shrink-0">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
                                     <div className="flex items-center gap-2 ml-auto">
                                         <input type="date" className="bg-gray-50 border-0 px-3 py-2 rounded-xl font-bold text-sm outline-none text-gray-600" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
+                                        <button onClick={handleShareVideo} className="p-2 rounded-xl bg-yellow-50 text-yellow-600 hover:bg-yellow-100 active:scale-90 transition-all border border-yellow-200" title="카톡 공유">
+                                            <LucideIcon name="share-2" className="w-4 h-4" />
+                                        </button>
                                         <button onClick={resetForm} className="p-2 text-gray-300 hover:text-gray-600 transition-colors"><LucideIcon name="x" className="w-5 h-5" /></button>
                                     </div>
                                 </div>
@@ -2018,12 +2141,14 @@
             );
         };
 
-        const ManageView = ({ members, currentPassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal, onOpenSelfPhoto }) => {
+        const ManageView = ({ members, currentPassword, currentDeletePassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal, onOpenSelfPhoto }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [editingMember, setEditingMember] = useState(null);
             const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
             const [showPwdSetting, setShowPwdSetting] = useState(false);
+            const [delPwdForm, setDelPwdForm] = useState({ current: '', next: '', confirm: '' });
+            const [showDelPwdSetting, setShowDelPwdSetting] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
             // 찬양팀명단 전용 로컬 관리자 모드 — 전역 isAdmin이면 자동 활성
@@ -2034,6 +2159,10 @@
             const [adminPwInput, setAdminPwInput] = useState('');
             const [adminPwError, setAdminPwError] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
+            // 삭제 비밀번호 인증 모달
+            const [delAuthModal, setDelAuthModal] = useState({ isOpen: false, name: null });
+            const [delAuthInput, setDelAuthInput] = useState('');
+            const [delAuthError, setDelAuthError] = useState(false);
 
             const handleLocalAdminLogin = () => {
                 if (adminPwInput === currentPassword) {
@@ -2095,7 +2224,22 @@
                 setEditingMember(null); onOpenEditModal(null);
             };
 
-            const handleDeleteMember = async (name) => {
+            const handleDeleteMember = (name) => {
+                setDelAuthInput('');
+                setDelAuthError(false);
+                setDelAuthModal({ isOpen: true, name: name });
+            };
+
+            const handleConfirmDelete = async () => {
+                if (delAuthInput !== currentDeletePassword) {
+                    setDelAuthError(true);
+                    setTimeout(() => setDelAuthError(false), 600);
+                    return;
+                }
+                const name = delAuthModal.name;
+                setDelAuthModal({ isOpen: false, name: null });
+                setDelAuthInput('');
+                if (!name) return;
                 await saveRoster(members.filter(m => m.name !== name));
                 showToast("삭제되었습니다."); setEditingMember(null); onOpenEditModal(null);
             };
@@ -2106,9 +2250,21 @@
                 if (pwdForm.next !== pwdForm.confirm) return showToast("새 비밀번호 확인이 일치하지 않습니다.");
                 const { db, doc, setDoc } = window.MyFirebase;
                 try {
-                    await setDoc(doc(db, 'settings', 'admin'), { password: pwdForm.next });
+                    await setDoc(doc(db, 'settings', 'admin'), { password: pwdForm.next }, { merge: true });
                     showToast("비밀번호가 변경되었습니다.");
                     setPwdForm({ current: '', next: '', confirm: '' }); setShowPwdSetting(false);
+                } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
+            };
+
+            const handleUpdateDeletePassword = async () => {
+                if (delPwdForm.current !== currentDeletePassword) return showToast("현재 삭제 비밀번호가 일치하지 않습니다.");
+                if (delPwdForm.next.length < 4) return showToast("비밀번호는 4자리 이상이어야 합니다.");
+                if (delPwdForm.next !== delPwdForm.confirm) return showToast("새 비밀번호 확인이 일치하지 않습니다.");
+                const { db, doc, setDoc } = window.MyFirebase;
+                try {
+                    await setDoc(doc(db, 'settings', 'admin'), { deletePassword: delPwdForm.next }, { merge: true });
+                    showToast("삭제 비밀번호가 변경되었습니다.");
+                    setDelPwdForm({ current: '', next: '', confirm: '' }); setShowDelPwdSetting(false);
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
@@ -2437,6 +2593,25 @@
                                                 <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">비밀번호 저장</button>
                                             </div>
                                         )}
+                                        <div className="mt-5 pt-5 border-t border-gray-100">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-800">삭제 비밀번호 변경</p>
+                                                    <p className="text-xs text-gray-400">팀원 삭제 시 사용되는 비밀번호입니다.</p>
+                                                </div>
+                                                <button onClick={() => setShowDelPwdSetting(!showDelPwdSetting)} className="px-4 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors">
+                                                    {showDelPwdSetting ? "숨기기" : "변경하기"}
+                                                </button>
+                                            </div>
+                                            {showDelPwdSetting && (
+                                                <div className="space-y-3 scale-in">
+                                                    <input type="password" placeholder="현재 삭제 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={delPwdForm.current} onChange={e=>setDelPwdForm({...delPwdForm, current:e.target.value})} />
+                                                    <input type="password" placeholder="새 삭제 비밀번호" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={delPwdForm.next} onChange={e=>setDelPwdForm({...delPwdForm, next:e.target.value})} />
+                                                    <input type="password" placeholder="새 삭제 비밀번호 확인" className="w-full bg-gray-50 p-3 rounded-xl font-bold text-sm outline-none text-center" value={delPwdForm.confirm} onChange={e=>setDelPwdForm({...delPwdForm, confirm:e.target.value})} />
+                                                    <button onClick={handleUpdateDeletePassword} className="w-full py-3 bg-[#193278] text-white rounded-xl font-black text-sm shadow-md active:scale-95 transition-transform">삭제 비밀번호 저장</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     {/* Gemini API */}
                                     <div className="border-t border-gray-100 pt-6">
@@ -2471,6 +2646,30 @@
                                 <div className="flex gap-2">
                                     <button onClick={() => { setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false); }} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
                                     <button onClick={handleLocalAdminLogin} className="flex-[2] py-4 bg-[#193278] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">확인</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 삭제 인증 모달 */}
+                    {delAuthModal.isOpen && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[600] flex items-center justify-center p-5 text-center">
+                            <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${delAuthError ? 'shake' : ''}`}>
+                                <h3 className="text-xl font-black text-gray-800 mb-2">삭제 인증</h3>
+                                <p className="text-sm text-gray-400 mb-6">팀원 삭제는 별도 비밀번호가 필요합니다.</p>
+                                <div className="relative mb-4">
+                                    <input type="password" autoFocus
+                                        className={`w-full bg-gray-50 border-2 p-4 rounded-2xl font-bold text-center tracking-widest outline-none transition-all ${delAuthError ? 'border-red-400' : 'border-transparent focus:ring-2 focus:ring-red-500'}`}
+                                        placeholder="삭제 비밀번호"
+                                        value={delAuthInput}
+                                        onChange={e => { setDelAuthInput(e.target.value); setDelAuthError(false); }}
+                                        onKeyDown={e => e.key === 'Enter' && handleConfirmDelete()}
+                                    />
+                                    {delAuthError && <p className="text-red-500 text-[10px] font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => { setDelAuthModal({ isOpen: false, name: null }); setDelAuthInput(''); setDelAuthError(false); }} className="flex-1 py-4 font-bold text-gray-400 active:scale-95 transition-transform">취소</button>
+                                    <button onClick={handleConfirmDelete} className="flex-[2] py-4 bg-red-500 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform">삭제</button>
                                 </div>
                             </div>
                         </div>
@@ -2734,6 +2933,7 @@
             const [isAdmin, setIsAdmin] = useState(false);
             const [user, setUser] = useState(null);
             const [masterPassword, setMasterPassword] = useState("onnurigrace");
+            const [deletePassword, setDeletePassword] = useState("5879");
             const [geminiApiKey, setGeminiApiKey] = useState('');
             const [isNavVisible, setIsNavVisible] = useState(true);
             const lastScrollY = useRef(0);
@@ -2767,6 +2967,7 @@
                             onSnapshot(doc(db, 'settings', 'admin'), (s) => {
                                 if (s.exists()) {
                                     if (s.data().password) setMasterPassword(s.data().password);
+                                    if (s.data().deletePassword) setDeletePassword(s.data().deletePassword);
                                     if (s.data().geminiKey) setGeminiApiKey(s.data().geminiKey);
                                 }
                             });
@@ -2922,7 +3123,7 @@
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} onOpenSelfPhoto={(m) => setSelfPhotoMember(m)} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} currentDeletePassword={deletePassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} onOpenSelfPhoto={(m) => setSelfPhotoMember(m)} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
