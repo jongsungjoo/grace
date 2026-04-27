@@ -1456,7 +1456,7 @@
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
             const [isGenerating, setIsGenerating] = useState(false);
-            const [form, setForm] = useState({ title: '', date: getToday(), image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
+            const [form, setForm] = useState({ title: '', date: getToday(), source: '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
 
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
@@ -1476,10 +1476,10 @@
                 resetForm();
             });
 
-            const resetForm = () => { setForm({ title: '', date: getToday(), image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
+            const resetForm = () => { setForm({ title: '', date: getToday(), source: '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
             const handleEdit = (song) => requestAuth(() => { 
                 setForm({
-                    id: song.id, title: song.title || '', date: song.date || getToday(), image: song.image || '',
+                    id: song.id, title: song.title || '', date: song.date || getToday(), source: song.source || '중앙성가 42권', image: song.image || '',
                     links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '', chorus: song.links?.chorus || '' }
                 });
                 setShowAdd(true); 
@@ -1500,7 +1500,7 @@
                     dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
                 }
 
-                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(중앙성가 42권)\n\n[파트링크]\n`;
+                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(${form.source || '중앙성가 42권'})\n\n[파트링크]\n`;
                 if (form.links?.s) text += `- 소프라노\n${form.links.s}\n`;
                 if (form.links?.a) text += `- 알토\n${form.links.a}\n`;
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
@@ -1561,38 +1561,93 @@
                 showToast(hasImage ? "이미지 저장 + 텍스트 복사 완료! 카톡에 붙여넣기 하세요." : "텍스트가 복사되었습니다!");
             };
 
-            const synthesizeThumbnail = (bgBase64, title) => {
+            const synthesizeThumbnail = (bgBase64, title, source) => {
                 return new Promise((resolve) => {
                     const img = new Image();
                     img.crossOrigin = "Anonymous";
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        canvas.width = 1280;
-                        canvas.height = 720;
+                        // 카드 좌측 이미지 영역 비율(약 3:4 portrait)에 맞춤
+                        canvas.width = 1080;
+                        canvas.height = 1440;
                         const ctx = canvas.getContext('2d');
                         
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        // 배경 이미지를 cover 방식으로 그리기 (가운데 기준 잘림)
+                        const iw = img.naturalWidth || img.width;
+                        const ih = img.naturalHeight || img.height;
+                        const cw = canvas.width, ch = canvas.height;
+                        const scale = Math.max(cw / iw, ch / ih);
+                        const dw = iw * scale, dh = ih * scale;
+                        const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
+                        ctx.drawImage(img, dx, dy, dw, dh);
                         
                         // 텍스트 가독성을 위한 어두운 오버레이
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                         
                         // 그림자 설정
                         ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                        ctx.shadowBlur = 15;
+                        ctx.shadowBlur = 18;
                         ctx.shadowOffsetX = 2;
                         ctx.shadowOffsetY = 2;
                         
-                        // 메인 타이틀
+                        // 메인 타이틀 — 큰 폰트 기본, 길면 2줄 wrap, 안전 영역 내 위치
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.font = '900 85px Pretendard, sans-serif';
-                        ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 30);
+                        const maxTitleWidth = canvas.width - 280; // 양옆 140px씩 안전 영역
+                        const baseFont = 160;
                         
-                        // 서브 타이틀
-                        ctx.font = '700 45px Pretendard, sans-serif';
-                        ctx.fillText("중앙성가 42권", canvas.width / 2, canvas.height / 2 + 80);
+                        // 1줄 또는 2줄 결정 (각 옵션의 최대 가능 폰트 크기 비교)
+                        const widthAt = (text, size) => {
+                            ctx.font = `900 ${size}px Pretendard, sans-serif`;
+                            return ctx.measureText(text).width;
+                        };
+                        const fitFont = (text) => {
+                            let f = baseFont;
+                            while (f > 40 && widthAt(text, f) > maxTitleWidth) f -= 4;
+                            return f;
+                        };
+                        
+                        // 단일 라인 옵션
+                        const singleFont = fitFont(title);
+                        // 2줄 옵션 (콤마 → 공백 → 중앙 분할 순으로 시도)
+                        let twoLines = null;
+                        if (singleFont < baseFont * 0.85) {
+                            let parts;
+                            if (title.includes(',')) {
+                                const idx = title.indexOf(',');
+                                parts = [title.slice(0, idx + 1).trim(), title.slice(idx + 1).trim()];
+                            } else if (title.includes(' ')) {
+                                const words = title.split(/\s+/);
+                                const mid = Math.ceil(words.length / 2);
+                                parts = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+                            } else if (title.length >= 6) {
+                                const mid = Math.ceil(title.length / 2);
+                                parts = [title.slice(0, mid), title.slice(mid)];
+                            }
+                            if (parts && parts.every(p => p.length > 0)) {
+                                const twoFont = Math.min(fitFont(parts[0]), fitFont(parts[1]));
+                                if (twoFont > singleFont) twoLines = { lines: parts, font: twoFont };
+                            }
+                        }
+                        
+                        const titleLines = twoLines ? twoLines.lines : [title];
+                        const titleFont = twoLines ? twoLines.font : singleFont;
+                        const lineHeight = titleFont * 1.15;
+                        const titleBlockHeight = lineHeight * titleLines.length;
+                        // 타이틀 블록을 캔버스 중앙보다 살짝 위로 (서브타이틀, 뱃지를 아래에 배치)
+                        const titleCenterY = canvas.height / 2 - 40;
+                        const titleTopY = titleCenterY - titleBlockHeight / 2;
+                        ctx.font = `900 ${titleFont}px Pretendard, sans-serif`;
+                        titleLines.forEach((line, i) => {
+                            ctx.fillText(line, canvas.width / 2, titleTopY + lineHeight / 2 + i * lineHeight);
+                        });
+                        
+                        // 서브 타이틀 (출처) — 타이틀 블록 아래에 배치
+                        ctx.font = '700 80px Pretendard, sans-serif';
+                        const subtitleY = titleTopY + titleBlockHeight + 80;
+                        ctx.fillText(source || "중앙성가 42권", canvas.width / 2, subtitleY);
                         
                         // 그림자 초기화
                         ctx.shadowColor = 'transparent';
@@ -1600,30 +1655,34 @@
                         ctx.shadowOffsetX = 0;
                         ctx.shadowOffsetY = 0;
                         
-                        // 오른쪽 하단 뱃지
+                        // 오른쪽 하단 뱃지 — 배경은 우측 끝에 anchor, 텍스트는 안쪽으로 들여서 cover 잘림 시에도 보이게
                         const badgeText = "주은혜 찬양사역팀";
-                        ctx.font = '800 32px Pretendard, sans-serif';
+                        ctx.font = '800 60px Pretendard, sans-serif';
                         const textWidth = ctx.measureText(badgeText).width;
-                        const badgeWidth = textWidth + 80;
-                        const badgeHeight = 70;
-                        const badgeX = canvas.width - badgeWidth;
-                        const badgeY = canvas.height - badgeHeight - 40;
+                        const textRightInset = 110;             // cover 잘림 안전 영역
+                        const textRightX = canvas.width - textRightInset;
+                        const badgePadX = 32;
+                        const badgeWidth = textWidth + badgePadX * 2;
+                        const badgeHeight = 110;
+                        const badgeX = textRightX - badgeWidth + badgePadX;
+                        const badgeY = canvas.height - badgeHeight - 80;
                         
-                        // 뱃지 배경 (붉은 갈색 - 첨부파일과 동일한 디자인)
-                        ctx.fillStyle = 'rgba(128, 43, 34, 0.9)'; 
+                        // 뱃지 배경 — 캔버스 우측 끝까지 연장 (탭 형태)
+                        ctx.fillStyle = 'rgba(128, 43, 34, 0.92)'; 
                         ctx.beginPath();
-                        ctx.moveTo(badgeX - 20, badgeY); // 약간 사선으로 디자인
+                        ctx.moveTo(badgeX - 28, badgeY);
                         ctx.lineTo(canvas.width, badgeY);
                         ctx.lineTo(canvas.width, badgeY + badgeHeight);
-                        ctx.lineTo(badgeX - 40, badgeY + badgeHeight); 
+                        ctx.lineTo(badgeX - 56, badgeY + badgeHeight); 
+                        ctx.closePath();
                         ctx.fill();
                         
-                        // 뱃지 텍스트
+                        // 뱃지 텍스트 — 안전 영역 내에 배치
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'right';
-                        ctx.fillText(badgeText, canvas.width - 40, badgeY + badgeHeight / 2 + 2);
+                        ctx.fillText(badgeText, textRightX, badgeY + badgeHeight / 2 + 4);
                         
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
                     };
                     img.src = bgBase64;
                 });
@@ -1665,7 +1724,7 @@
                         img.src = imageUrl;
                     });
 
-                    const finalImage = await synthesizeThumbnail(bgBase64, form.title);
+                    const finalImage = await synthesizeThumbnail(bgBase64, form.title, form.source);
                     setForm(prev => ({ ...prev, image: finalImage, file: null }));
                     showToast("새로운 썸네일이 생성되었습니다.");
                     
@@ -1674,22 +1733,22 @@
                     
                     // Fallback: 외부 서버 접속이 막혀있을 경우 자체적으로 그라데이션 배경 생성
                     const canvas = document.createElement('canvas');
-                    canvas.width = 1280;
-                    canvas.height = 720;
+                    canvas.width = 1080;
+                    canvas.height = 1440;
                     const ctx = canvas.getContext('2d');
                     
                     const hues = [220, 260, 340, 200];
                     const baseHue = hues[Math.floor(Math.random() * hues.length)];
                     
-                    const gradient = ctx.createLinearGradient(0, 0, 1280, 720);
+                    const gradient = ctx.createLinearGradient(0, 0, 1080, 1440);
                     gradient.addColorStop(0, `hsl(${baseHue}, 70%, 15%)`);
                     gradient.addColorStop(1, `hsl(${baseHue + 40}, 60%, 35%)`);
                     
                     ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, 1280, 720);
+                    ctx.fillRect(0, 0, 1080, 1440);
                     
                     const fallbackBg = canvas.toDataURL('image/jpeg', 0.8);
-                    const finalImage = await synthesizeThumbnail(fallbackBg, form.title);
+                    const finalImage = await synthesizeThumbnail(fallbackBg, form.title, form.source);
                     setForm(prev => ({ ...prev, image: finalImage, file: null }));
                     showToast("기본 예배 배경으로 썸네일이 생성되었습니다.");
                 } finally {
@@ -1736,6 +1795,7 @@
                                 </div>
                                 <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-4">
                                     <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                    <input type="text" placeholder="출처 (예: 중앙성가 42권, 피스악보)" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-sm outline-none text-left" value={form.source || ''} onChange={e=>setForm({...form, source:e.target.value})} />
                                     
                                     <div className="flex flex-col gap-2">
                                         <div className="flex flex-col sm:flex-row gap-2">
@@ -1750,7 +1810,7 @@
                                         </div>
                                         
                                         {(form.image || form.file) && (
-                                            <div className="relative w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group">
+                                            <div className="relative w-full max-w-[260px] mx-auto bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-inner group" style={{ aspectRatio: '3 / 4' }}>
                                                 <img src={form.file ? URL.createObjectURL(form.file) : form.image} className="w-full h-full object-cover" />
                                                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {form.image && !form.file && (
@@ -1784,8 +1844,16 @@
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 w-full text-left">
                         {filteredSongs.map(song => (
                             <div key={song.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex min-h-[7.5rem] group transition-all hover:shadow-md text-left w-full text-left">
-                                <div className="w-32 sm:w-40 shrink-0 relative bg-gray-100 text-left">
-                                    {song.image ? <img src={song.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-center"><LucideIcon name="music" className="w-8 h-8" /></div>}
+                                <div className="w-32 sm:w-40 shrink-0 relative bg-gray-900 text-left overflow-hidden">
+                                    {song.image ? (
+                                        <>
+                                            <img src={song.image} className="absolute inset-0 w-full h-full object-cover scale-150 blur-2xl" aria-hidden="true" />
+                                            <div className="absolute inset-0 bg-black/15" aria-hidden="true" />
+                                            <img src={song.image} className="absolute inset-0 w-full h-full object-cover" />
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-center"><LucideIcon name="music" className="w-8 h-8" /></div>
+                                    )}
                                     <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/90 p-1.5 rounded-full text-blue-500 shadow-md active:scale-90 transition-transform text-center"><LucideIcon name="edit-2" className="w-3.5 h-3.5" /></button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-white/90 p-1.5 rounded-full text-red-500 shadow-md active:scale-90 transition-transform text-center"><LucideIcon name="trash-2" className="w-3.5 h-3.5" /></button>
