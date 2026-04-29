@@ -1769,7 +1769,10 @@
                 document.body.removeChild(link);
             };
 
-            const filteredSongs = songs.filter(s => (s.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
+            const filteredSongs = useMemo(
+                () => songs.filter(s => (s.title || "").toLowerCase().includes(searchTerm.toLowerCase())),
+                [songs, searchTerm]
+            );
 
             return (
                 <div className="fade-in space-y-6 text-left">
@@ -1869,9 +1872,9 @@
                                 <div className="w-32 sm:w-40 shrink-0 relative bg-gray-900 text-left overflow-hidden">
                                     {song.image ? (
                                         <>
-                                            <img src={song.image} className="absolute inset-0 w-full h-full object-cover scale-150 blur-2xl" aria-hidden="true" />
+                                            <img src={song.image} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover scale-150 blur-2xl" aria-hidden="true" />
                                             <div className="absolute inset-0 bg-black/15" aria-hidden="true" />
-                                            <img src={song.image} className="absolute inset-0 w-full h-full object-cover" />
+                                            <img src={song.image} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                                         </>
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-center"><LucideIcon name="music" className="w-8 h-8" /></div>
@@ -1968,8 +1971,8 @@
             };
 
             return (
-                <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-                    <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg shadow-2xl scale-in flex flex-col rounded-t-[28px] md:rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)', height: '88dvh', maxHeight: '88dvh' }}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+                    <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg shadow-2xl scale-in flex flex-col min-h-[80vh] max-h-[90vh] rounded-t-[28px] md:rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}>
                         {/* 헤더 — 보라 + 황금 그라디언트 */}
                         <div className="relative shrink-0 px-5 pt-4 pb-3 text-white" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%)' }}>
                             <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.18) 0%, transparent 50%), radial-gradient(circle at 80% 30%, rgba(168,85,247,0.25) 0%, transparent 60%)' }}></div>
@@ -1994,12 +1997,12 @@
                                 const links = song.links || {};
                                 const hasParts = links.s || links.a || links.t || links.b;
                                 return (
-                                    <div key={song.id} className="bg-white rounded-2xl px-3.5 py-3 shadow-sm slide-up" style={{ animationDelay: `${idx * 0.04}s` }}>
-                                        <div className="flex items-center gap-2.5 mb-2.5">
-                                            <div className="w-9 h-9 rounded-full text-white text-sm font-black flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)', boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)' }}>{song.order || idx + 1}</div>
+                                    <div key={song.id} className="bg-white rounded-2xl px-4 py-3 shadow-sm slide-up" style={{ animationDelay: `${idx * 0.04}s` }}>
+                                        <div className="flex items-center gap-3 mb-2.5">
+                                            <div className="w-10 h-10 rounded-full text-white text-base font-black flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)', boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)' }}>{song.order || idx + 1}</div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs sm:text-sm font-black tracking-wider leading-none" style={{ color: '#d97706' }}>{song.kind}</p>
-                                                <h3 className="text-sm sm:text-base font-black text-gray-800 truncate leading-tight mt-1">{song.title}</h3>
+                                                <p className="text-sm sm:text-base font-black tracking-wider leading-none" style={{ color: '#d97706' }}>{song.kind}</p>
+                                                <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight mt-1">{song.title}</h3>
                                             </div>
                                             {isAdmin && (
                                                 <button onClick={() => handleEdit(song)} className="shrink-0 p-1.5 rounded-lg bg-blue-50 text-blue-500 active:scale-90 transition-transform">
@@ -2101,7 +2104,10 @@
                     await deleteDoc(doc(db, 'videos', id)); showToast("삭제되었습니다.");
                 });
             });
-            const filteredVideos = videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
+            const filteredVideos = useMemo(
+                () => videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase())),
+                [videos, searchTerm]
+            );
 
             const handleShareVideo = async () => {
                 let dateStr = "날짜 미지정";
@@ -2177,7 +2183,7 @@
                             return (
                                 <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 flex h-24 sm:h-28 group transition-all hover:shadow-md w-full cursor-pointer relative text-left">
                                     <div className="w-36 sm:w-44 h-full bg-gray-100 shrink-0 relative text-left">
-                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/mqdefault.jpg`} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-center"><LucideIcon name="play" className="w-8 h-8" /></div>}
+                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/mqdefault.jpg`} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-center"><LucideIcon name="play" className="w-8 h-8" /></div>}
                                         <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-center"><div className="w-8 h-8 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white text-center"><LucideIcon name="play" className="w-4 h-4 ml-0.5" /></div></div>
                                     </div>
                                     <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0 pr-10 sm:pr-12 text-left">
@@ -3206,11 +3212,13 @@
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null });
 
             useEffect(() => {
+                // Firebase가 이미 준비됐으면 즉시 시작
+                if (window.FB_READY && window.MyFirebase) { initApp(); return; }
                 const waitFirebase = setInterval(() => { 
                     if (window.FB_READY && window.MyFirebase) { 
                         clearInterval(waitFirebase); initApp(); 
                     } 
-                }, 100);
+                }, 50);
                 // 10초 내 Firebase 미연결 시 강제 로드
                 const fallback = setTimeout(() => { clearInterval(waitFirebase); setReady(true); }, 10000);
                 return () => { clearInterval(waitFirebase); clearTimeout(fallback); };
@@ -3218,6 +3226,86 @@
 
             const initApp = async () => {
                 const { auth, db, doc, collection, onSnapshot, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.MyFirebase;
+
+                // 데이터 구독은 인증과 독립적으로 한 번만 등록 (onAuthStateChanged 외부)
+                // 이렇게 하면 토큰 갱신 시 구독이 누적되지 않음
+                let subscriptionsAttached = false;
+                const attachSubscriptions = () => {
+                    if (subscriptionsAttached) return;
+                    subscriptionsAttached = true;
+                    
+                    onSnapshot(doc(db, 'settings', 'admin'), (s) => {
+                        if (s.exists()) {
+                            if (s.data().password) setMasterPassword(s.data().password);
+                            if (s.data().deletePassword) setDeletePassword(s.data().deletePassword);
+                            if (s.data().geminiKey) setGeminiApiKey(s.data().geminiKey);
+                        }
+                    });
+                    
+                    onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
+                    
+                    onSnapshot(collection(db, 'history'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
+                        setHistory(list);
+                    });
+                    
+                    onSnapshot(collection(db, 'music'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                        setSongs(list);
+                    });
+                    
+                    // worshipSongs 시드는 한 번만 시도하기 위한 플래그
+                    let worshipSeeded = false;
+                    onSnapshot(collection(db, 'worshipSongs'), (s) => {
+                        // 데이터를 먼저 즉시 화면에 반영 (시드와 무관)
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => (a.order || 0) - (b.order || 0));
+                        setWorshipSongs(list);
+                        
+                        // 비어있고 아직 시드 안 했으면, 백그라운드로 fire-and-forget 시드
+                        if (s.empty && !worshipSeeded) {
+                            worshipSeeded = true;
+                            const { setDoc } = window.MyFirebase;
+                            const seed = [
+                                { id: '1-entrance', order: 1, kind: '입례송', title: '빛으로 임하신 주', links: { s: 'https://youtu.be/ZrDN_lM39B8', a: 'https://youtu.be/t8N5cvquuQk', t: 'https://youtu.be/t8N5cvquuQk', b: 'https://youtu.be/bnkpW4YT4z8' } },
+                                { id: '2-blessing', order: 2, kind: '축복송', title: '갓 블레스 유', links: { chorus: 'https://youtu.be/utGfFZOmUF8' } },
+                                { id: '3-offering', order: 3, kind: '봉헌송', title: '다시 한번', links: { chorus: 'https://youtu.be/mK3F-gbcbok' } },
+                                { id: '4-closing', order: 4, kind: '종례송', title: '살아계신 주', links: { chorus: 'https://youtu.be/K3nwTS8Ay9w' } },
+                                { id: '5-sending', order: 5, kind: '파송의 노래', title: '주님 뜻대로 살기로 했네', links: { chorus: 'https://youtu.be/h0LR3ksijX0' } },
+                            ];
+                            seed.forEach(item => {
+                                const { id, ...rest } = item;
+                                setDoc(doc(db, 'worshipSongs', id), rest).catch(e => console.warn('worship seed:', e));
+                            });
+                        }
+                    });
+                    
+                    onSnapshot(collection(db, 'videos'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => {
+                            const dateCmp = (b.date || '').localeCompare(a.date || '');
+                            if (dateCmp !== 0) return dateCmp;
+                            // 동일 날짜: 알파벳 → 숫자 → 기호 순 (기호 최하단)
+                            const typeOf = s => {
+                                const c = (s || '')[0];
+                                if (!c) return 3;
+                                if (/[a-zA-Z가-힣]/.test(c)) return 0;
+                                if (/[0-9]/.test(c)) return 1;
+                                return 2;
+                            };
+                            const ta = typeOf(a.title), tb = typeOf(b.title);
+                            if (ta !== tb) return ta - tb;
+                            return (b.title || '').localeCompare(a.title || '', 'ko');
+                        });
+                        setVideos(list);
+                    });
+                };
+
+                // UI는 인증/구독 끝나길 기다리지 않고 즉시 표시 (데이터는 도착하는 대로 채워짐)
+                setReady(true);
+
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         try { await signInWithCustomToken(auth, __initial_auth_token); } catch (e) { await signInAnonymously(auth); }
@@ -3225,73 +3313,11 @@
 
                     onAuthStateChanged(auth, (u) => {
                         try {
-                        setUser(u);
-                        if (u) {
-                            onSnapshot(doc(db, 'settings', 'admin'), (s) => {
-                                if (s.exists()) {
-                                    if (s.data().password) setMasterPassword(s.data().password);
-                                    if (s.data().deletePassword) setDeletePassword(s.data().deletePassword);
-                                    if (s.data().geminiKey) setGeminiApiKey(s.data().geminiKey);
-                                }
-                            });
-                            
-                            onSnapshot(doc(db, 'roster', 'current'), (s) => s.exists() && setMembers(s.data().list));
-                            onSnapshot(collection(db, 'history'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
-                                setHistory(list);
-                            });
-                            onSnapshot(collection(db, 'music'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                                setSongs(list);
-                            });
-                            onSnapshot(collection(db, 'worshipSongs'), async (s) => {
-                                if (s.empty) {
-                                    // 최초 1회 시드: 기본 5곡 자동 등록
-                                    try {
-                                        const { setDoc } = window.MyFirebase;
-                                        const seed = [
-                                            { id: '1-entrance', order: 1, kind: '입례송', title: '빛으로 임하신 주', links: { s: 'https://youtu.be/ZrDN_lM39B8', a: 'https://youtu.be/t8N5cvquuQk', t: 'https://youtu.be/t8N5cvquuQk', b: 'https://youtu.be/bnkpW4YT4z8' } },
-                                            { id: '2-blessing', order: 2, kind: '축복송', title: '갓 블레스 유', links: { chorus: 'https://youtu.be/utGfFZOmUF8' } },
-                                            { id: '3-offering', order: 3, kind: '봉헌송', title: '다시 한번', links: { chorus: 'https://youtu.be/mK3F-gbcbok' } },
-                                            { id: '4-closing', order: 4, kind: '종례송', title: '살아계신 주', links: { chorus: 'https://youtu.be/K3nwTS8Ay9w' } },
-                                            { id: '5-sending', order: 5, kind: '파송의 노래', title: '주님 뜻대로 살기로 했네', links: { chorus: 'https://youtu.be/h0LR3ksijX0' } },
-                                        ];
-                                        for (const item of seed) {
-                                            const { id, ...rest } = item;
-                                            await setDoc(doc(db, 'worshipSongs', id), rest);
-                                        }
-                                    } catch (e) { console.warn('worshipSongs seed 실패:', e); }
-                                }
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => (a.order || 0) - (b.order || 0));
-                                setWorshipSongs(list);
-                            });
-                            onSnapshot(collection(db, 'videos'), (s) => {
-                                const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
-                                list.sort((a, b) => {
-                                    const dateCmp = (b.date || '').localeCompare(a.date || '');
-                                    if (dateCmp !== 0) return dateCmp;
-                                    // 동일 날짜: 알파벳 → 숫자 → 기호 순 (기호 최하단)
-                                    const typeOf = s => {
-                                        const c = (s || '')[0];
-                                        if (!c) return 3;
-                                        if (/[a-zA-Z가-힣]/.test(c)) return 0;
-                                        if (/[0-9]/.test(c)) return 1;
-                                        return 2;
-                                    };
-                                    const ta = typeOf(a.title), tb = typeOf(b.title);
-                                    if (ta !== tb) return ta - tb;
-                                    return (b.title || '').localeCompare(a.title || '', 'ko');
-                                });
-                                setVideos(list);
-                            });
-                            setReady(true);
-                        }
-                        } catch(err) { console.error('onAuthStateChanged error:', err); setReady(true); }
+                            setUser(u);
+                            if (u) attachSubscriptions();
+                        } catch(err) { console.error('onAuthStateChanged error:', err); }
                     });
-                } catch (e) { console.error('initApp error:', e); setReady(true); }
+                } catch (e) { console.error('initApp error:', e); }
             };
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
