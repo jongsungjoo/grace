@@ -1969,7 +1969,7 @@
 
             return (
                 <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
-                    <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg shadow-2xl scale-in flex flex-col h-[96vh] md:h-auto md:max-h-[92vh] rounded-t-[28px] md:rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}>
+                    <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg shadow-2xl scale-in flex flex-col h-[88vh] md:h-auto md:max-h-[88vh] rounded-t-[28px] md:rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}>
                         {/* 헤더 — 보라 + 황금 그라디언트 */}
                         <div className="relative shrink-0 px-5 pt-4 pb-3 text-white" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%)' }}>
                             <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.18) 0%, transparent 50%), radial-gradient(circle at 80% 30%, rgba(168,85,247,0.25) 0%, transparent 60%)' }}></div>
@@ -1994,12 +1994,12 @@
                                 const links = song.links || {};
                                 const hasParts = links.s || links.a || links.t || links.b;
                                 return (
-                                    <div key={song.id} className="bg-white rounded-2xl p-4 shadow-sm slide-up" style={{ animationDelay: `${idx * 0.04}s` }}>
-                                        <div className="flex items-center gap-3 mb-3">
+                                    <div key={song.id} className="bg-white rounded-2xl px-3.5 py-3 shadow-sm slide-up" style={{ animationDelay: `${idx * 0.04}s` }}>
+                                        <div className="flex items-center gap-2.5 mb-2.5">
                                             <div className="w-9 h-9 rounded-full text-white text-sm font-black flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)', boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)' }}>{song.order || idx + 1}</div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs sm:text-sm font-black tracking-wider leading-none" style={{ color: '#d97706' }}>{song.kind}</p>
-                                                <h3 className="text-base sm:text-lg font-black text-gray-800 truncate leading-tight mt-1">{song.title}</h3>
+                                                <h3 className="text-sm sm:text-base font-black text-gray-800 truncate leading-tight mt-1">{song.title}</h3>
                                             </div>
                                             {isAdmin && (
                                                 <button onClick={() => handleEdit(song)} className="shrink-0 p-1.5 rounded-lg bg-blue-50 text-blue-500 active:scale-90 transition-transform">
@@ -2009,13 +2009,13 @@
                                         </div>
                                         {hasParts ? (
                                             <div className="flex w-full gap-1 text-center">
-                                                <button disabled={!links.s} onClick={() => openLink(links.s)} className={`flex-1 h-10 flex items-center justify-center rounded-xl text-sm font-black transition-colors ${links.s ? 'text-[#db2777] bg-[#fdf2f8]' : 'text-gray-200 bg-gray-50'}`} style={links.s ? {border:'2px solid #db277726'} : {border:'2px solid #f1f5f9'}}>S</button>
-                                                <button disabled={!links.a} onClick={() => openLink(links.a)} className={`flex-1 h-10 flex items-center justify-center rounded-xl text-sm font-black transition-colors ${links.a ? 'text-[#d97706] bg-[#fffbeb]' : 'text-gray-200 bg-gray-50'}`} style={links.a ? {border:'2px solid #d9770626'} : {border:'2px solid #f1f5f9'}}>A</button>
-                                                <button disabled={!links.t} onClick={() => openLink(links.t)} className={`flex-1 h-10 flex items-center justify-center rounded-xl text-sm font-black transition-colors ${links.t ? 'text-[#2563eb] bg-[#eff6ff]' : 'text-gray-200 bg-gray-50'}`} style={links.t ? {border:'2px solid #2563eb26'} : {border:'2px solid #f1f5f9'}}>T</button>
-                                                <button disabled={!links.b} onClick={() => openLink(links.b)} className={`flex-1 h-10 flex items-center justify-center rounded-xl text-sm font-black transition-colors ${links.b ? 'text-[#7c3aed] bg-[#f5f3ff]' : 'text-gray-200 bg-gray-50'}`} style={links.b ? {border:'2px solid #7c3aed26'} : {border:'2px solid #f1f5f9'}}>B</button>
+                                                <button disabled={!links.s} onClick={() => openLink(links.s)} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-xs sm:text-sm font-black transition-colors ${links.s ? 'text-[#db2777] bg-[#fdf2f8]' : 'text-gray-200 bg-gray-50'}`} style={links.s ? {border:'2px solid #db277726'} : {border:'2px solid #f1f5f9'}}>S</button>
+                                                <button disabled={!links.a} onClick={() => openLink(links.a)} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-xs sm:text-sm font-black transition-colors ${links.a ? 'text-[#d97706] bg-[#fffbeb]' : 'text-gray-200 bg-gray-50'}`} style={links.a ? {border:'2px solid #d9770626'} : {border:'2px solid #f1f5f9'}}>A</button>
+                                                <button disabled={!links.t} onClick={() => openLink(links.t)} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-xs sm:text-sm font-black transition-colors ${links.t ? 'text-[#2563eb] bg-[#eff6ff]' : 'text-gray-200 bg-gray-50'}`} style={links.t ? {border:'2px solid #2563eb26'} : {border:'2px solid #f1f5f9'}}>T</button>
+                                                <button disabled={!links.b} onClick={() => openLink(links.b)} className={`flex-1 h-9 flex items-center justify-center rounded-xl text-xs sm:text-sm font-black transition-colors ${links.b ? 'text-[#7c3aed] bg-[#f5f3ff]' : 'text-gray-200 bg-gray-50'}`} style={links.b ? {border:'2px solid #7c3aed26'} : {border:'2px solid #f1f5f9'}}>B</button>
                                             </div>
                                         ) : (
-                                            <button disabled={!links.chorus} onClick={() => openLink(links.chorus)} className={`w-full h-10 flex items-center justify-center gap-1.5 rounded-xl text-sm font-black border transition-colors ${links.chorus ? 'border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-[0.98]' : 'border-gray-100 text-gray-300 bg-gray-50'}`}>
+                                            <button disabled={!links.chorus} onClick={() => openLink(links.chorus)} className={`w-full h-9 flex items-center justify-center gap-1.5 rounded-xl text-xs sm:text-sm font-black border transition-colors ${links.chorus ? 'border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-[0.98]' : 'border-gray-100 text-gray-300 bg-gray-50'}`}>
                                                 <LucideIcon name="play" className="w-3.5 h-3.5" />
                                                 <span>{links.chorus ? '합창 영상 보기' : '링크 없음'}</span>
                                             </button>
