@@ -971,9 +971,9 @@
                                                 {(() => { let pi = PART_ICON[b.part]; if (b.part === 'staff' && pi) pi = {...pi, abbr: b.role === '반주자' ? '반' : '성'}; return pi ? <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'10px',border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span> : null; })()}
                                                 <span className="font-medium text-gray-800 text-sm flex-1">{b.name}</span>
                                                 <span className="text-sm font-semibold text-gray-400">
-                                                    {calMonth}/{b.displayD}
-                                                    {b.lunar && <span className="text-purple-400 ml-1 text-xs">음력</span>}
-                                                </span>
+    {calMonth}/{b.displayD}
+    {b.lunar && <span className="text-purple-400 ml-1 text-xs">(음력 {b.lunarMM}/{b.lunarDD})</span>}
+</span>
                                             </div>
                                         ))}
                                     </div>
