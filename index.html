@@ -156,8 +156,6 @@
         const LOGO_URL = "https://jongsungjoo.github.io/grace/logo.png"; 
 
         // ★ Cloudinary 설정 (본인 계정으로 변경 필요)
-        // 1. https://cloudinary.com 에서 무료 계정 생성
-        // 2. Dashboard > Settings > Upload > Add upload preset (Signing Mode: Unsigned)
         const CLOUDINARY_CLOUD_NAME = "dov08cs8q";
         const CLOUDINARY_UPLOAD_PRESET = "onnuri";
 
@@ -175,7 +173,7 @@
                 throw new Error(err.error?.message || 'Cloudinary 업로드 실패');
             }
             const data = await res.json();
-            return data.secure_url; // HTTPS URL 반환
+            return data.secure_url;
         };
 
         const getYoutubeId = (url) => {
@@ -242,7 +240,6 @@
             });
         };
 
-        // ★ Gemini 2.5 Flash — 서버 BUSY(503) 시 자동 재시도 최대 3회
         const recognizeNamesWithGemini = async (base64Image, apiKey, onRetry) => {
             const cleanKey = apiKey ? apiKey.trim().replace(/[^a-zA-Z0-9_-]/g, '') : "";
 
@@ -257,14 +254,14 @@
             const base64Data = base64Image.split(',')[1];
             const payload = {
                 contents: [{ parts: [
-                    { text: "이 이미지에서 한국어 사람 이름을 모두 찾아 추출해주세요. 이름들은 자석, 스티커, 카드, 명단 등 어떤 형태로든 표기되어 있을 수 있습니다. 규칙: 1) 한국 성명(2~4글자 한글)만 추출하세요. 2) 지명, 단어, 기호는 제외하세요. 3) 출력형식: 오직 이름만 쉼표로 구분, 다른 텍스트 없이. 예시 출력: 홍길동,김철수,이영희,박민준" },
+                    { text: "이 사진은 교회 찬양팀 출석 명단판입니다. 사진 하단의 강대상(나무 단상) 위에 모여 있는 자석/스티커의 이름들만 출석자입니다. 사진 상단 벽면이나 명단판 위쪽에 붙어 있는 이름은 결석자이므로 제외하세요. 규칙: 1) 강대상 위에 놓인 자석들 안의 한국 성명(2~4글자 한글)만 추출하세요. 2) 벽면/스크린/명단판 위쪽 이름, 지명, 단어, 기호는 제외하세요. 3) 출력형식: 오직 이름만 쉼표로 구분, 다른 텍스트 없이. 예시: 홍길동,김철수,이영희,박민준" },
                     { inlineData: { mimeType: "image/jpeg", data: base64Data } }
                 ]}],
                 generationConfig: { temperature: 0.1 }
             };
 
-            const RETRY_DELAYS = [3000, 7000, 15000]; // 3초, 7초, 15초
-            const MAX_ATTEMPTS = 4; // 최초 1회 + 재시도 3회
+            const RETRY_DELAYS = [3000, 7000, 15000];
+            const MAX_ATTEMPTS = 4;
 
             for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
                 try {
@@ -296,7 +293,6 @@
                     return data.candidates[0].content.parts[0].text;
 
                 } catch (e) {
-                    // fetch 자체 실패(네트워크)도 재시도
                     if (attempt < MAX_ATTEMPTS - 1 && !(e.message?.includes('키') || e.message?.includes('API'))) {
                         const waitSec = RETRY_DELAYS[attempt] / 1000;
                         onRetry && onRetry(attempt + 1, waitSec);
@@ -307,8 +303,6 @@
                 }
             }
         };
-
-        // --- 여기서부터 UI 컴포넌트 선언부 (중복 제거됨) ---
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
             const ref = useRef(null);
@@ -408,14 +402,6 @@
             const attentionList = activeOnes.filter(m => !records3.includes(m.name) && records4.includes(m.name));
             const confirmationList = activeOnes.filter(m => !records4.includes(m.name));
 
-            const SectionHeader = ({ dot, label, count, color }) => (
-                <div className="flex items-center gap-2 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{backgroundColor: dot}}></span>
-                    <span className="text-sm font-bold" style={{color}}>{label}</span>
-                    <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-1">{count}명</span>
-                </div>
-            );
-            
             return (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
                     <div className="bg-[#f8faff] w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
@@ -477,12 +463,10 @@
             );
         };
 
-        // 핀치 줌 가능한 풀스크린 이미지 뷰어 (간단 버전: useState만 사용)
         const PinchZoomImg = ({ src, onClose }) => {
             const [scale, setScale] = useState(1);
             const [tx, setTx] = useState(0);
             const [ty, setTy] = useState(0);
-            // 제스처 상태는 일반 변수로 보관 (closure로 핸들러간 공유)
             const [gesture, setGesture] = useState({ active: false });
 
             const onTouchStart = (e) => {
@@ -627,7 +611,6 @@
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-center">
                     <div className="bg-[#f8faff] rounded-t-[20px] md:rounded-[28px] w-full md:max-w-2xl max-h-[95vh] md:max-h-[88vh] flex flex-col shadow-2xl scale-in overflow-hidden border border-gray-100">
                         <div className="bg-white rounded-t-[20px] md:rounded-t-[28px] shrink-0">
-                            {/* 모바일 드래그 핸들 */}
                             <div className="md:hidden flex justify-center pt-3 pb-1">
                                 <div className="w-10 h-1 rounded-full bg-gray-200 sm:opacity-0"></div>
                             </div>
@@ -751,7 +734,6 @@
         };
 
         // ── 음력→양력 정확 변환 (한국천문연구원 기준 월별 날수 데이터 테이블)
-        // 각 항목: { newYear:[양력월,양력일], months:[12개월_날수], leap:윤달위치(0=없음), leapDays:윤달날수 }
         const LUNAR_YEAR_DATA = {
             2020: { newYear:[1,25],  months:[29,29,30,30,30,29,30,30,29,30,30,29], leap:4, leapDays:29 },
             2021: { newYear:[2,12],  months:[29,30,29,30,29,30,29,30,29,30,30,29], leap:0, leapDays:0  },
@@ -766,15 +748,11 @@
             2030: { newYear:[2,3],   months:[29,30,29,30,30,29,30,29,30,29,30,29], leap:0, leapDays:0  },
         };
 
-        // 음력 → 양력 변환 함수
-        // solarYear: 기준 양력 연도, lunarMonth: 음력 월(1~12), lunarDay: 음력 일(1~30)
-        // 반환: { year, month, day } 양력 날짜, 또는 null
         const lunarToSolar = (solarYear, lunarMonth, lunarDay) => {
             const data = LUNAR_YEAR_DATA[solarYear];
             if (!data) return null;
             const [nyMM, nyDD] = data.newYear;
             const { months, leap, leapDays } = data;
-            // 윤달 포함 전체 월 목록 생성
             const fullMonths = [];
             for (let m = 1; m <= 12; m++) {
                 fullMonths.push({ m, isLeap: false, days: months[m - 1] });
@@ -782,7 +760,6 @@
                     fullMonths.push({ m, isLeap: true, days: leapDays });
                 }
             }
-            // 신년부터 목표 음력 날짜까지 일수 계산 (윤달은 건너뜀)
             let offset = 0, found = false;
             for (const fm of fullMonths) {
                 if (fm.m === lunarMonth && !fm.isLeap) {
@@ -798,7 +775,6 @@
             return { year: base.getFullYear(), month: base.getMonth() + 1, day: base.getDate() };
         };
 
-        // 파트 아이콘 — B안: 소프트 파스텔 outlined 스타일
         const PART_ICON = {
             staff:   { abbr: '성', color: '#193278', light: '#eff6ff' },
             soprano: { abbr: 'S',  color: '#db2777', light: '#fdf2f8' },
@@ -806,12 +782,10 @@
             tenor:   { abbr: 'T',  color: '#2563eb', light: '#eff6ff' },
             bass:    { abbr: 'B',  color: '#7c3aed', light: '#f5f3ff' },
         };
-        // 공통 멤버 칩 컴포넌트 (파트 아이콘 + 이름, 3열 그리드 사용)
-        // partMap: {name->part} 맵 OR null, partOverride: 직접 파트 id 전달 시 사용
+
         const MemberChipWithPart = ({ name, partMap, partOverride, roleOverride, bgColor = 'bg-white', borderColor = 'border-gray-100', nameColor = 'text-gray-800', extra }) => {
             const part = partOverride || (partMap ? partMap[name] : null);
             let pi = PART_ICON[part] || null;
-            // staff 파트에서 반주자는 '반', 나머지는 '성'
             if (part === 'staff' && pi) {
                 const role = roleOverride || '';
                 pi = { ...pi, abbr: role === '반주자' ? '반' : '성' };
@@ -828,7 +802,6 @@
             );
         };
 
-        /* 출석체크 체크 상태 스타일 칩 — 파트 light 배경 */
         const MemberChipAttended = ({ name, partMap, partOverride, roleOverride }) => {
             const part = partOverride || (partMap ? partMap[name] : null);
             let pi = PART_ICON[part] || null;
@@ -856,7 +829,6 @@
             const prevMonth = () => { if (calMonth === 1) { setCalYear(y=>y-1); setCalMonth(12); } else setCalMonth(m=>m-1); };
             const nextMonth = () => { if (calMonth === 12) { setCalYear(y=>y+1); setCalMonth(1); } else setCalMonth(m=>m+1); };
 
-            // 해당 월 생일자 맵 { solarDay: [{name, part, lunar, lunarMM, lunarDD, solarDD}] }
             const bdMap = useMemo(() => {
                 const map = {};
                 (members || []).filter(m => m.status !== 'sabbatical' && m.status !== 'inactive').forEach(m => {
@@ -867,9 +839,7 @@
                     let lunarMM = null, lunarDD = null;
                     if (m.birthdayType === 'lunar') {
                         lunarMM = mm; lunarDD = dd;
-                        // 정확한 음력→양력 변환
                         let solar = lunarToSolar(calYear, mm, dd);
-                        // 음력 11~12월처럼 다음 양력 연도로 넘어가는 경우: 이전 음력 연도 기준 재계산
                         if (!solar || solar.year !== calYear) {
                             solar = lunarToSolar(calYear - 1, mm, dd);
                         }
@@ -904,7 +874,6 @@
                 );
             };
 
-            // 이달 생일자 목록 (날짜 순)
             const bdList = Object.entries(bdMap)
                 .sort((a,b) => Number(a[0]) - Number(b[0]))
                 .flatMap(([d, bds]) => bds.map(b => ({ ...b, displayD: Number(d) })));
@@ -925,19 +894,16 @@
                             </button>
                         </div>
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-5 pb-6">
-                            {/* 월 네비 */}
                             <div className="flex items-center justify-between py-4">
                                 <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-90 transition-all"><LucideIcon name="chevron-left" className="w-4 h-4" /></button>
                                 <p className="font-black text-gray-800 text-lg">{calYear}년 {calMonth}월</p>
                                 <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-90 transition-all"><LucideIcon name="chevron-right" className="w-4 h-4" /></button>
                             </div>
-                            {/* 요일 */}
                             <div className="grid grid-cols-7 mb-1">
                                 {['일','월','화','수','목','금','토'].map((d,i) => (
                                     <div key={d} className={`text-center text-xs font-black pb-2 ${i===0?'text-red-400':i===6?'text-blue-500':'text-gray-300'}`}>{d}</div>
                                 ))}
                             </div>
-                            {/* 날짜 셀 */}
                             <div className="grid grid-cols-7 gap-1">
                                 {cells.map((day, idx) => {
                                     if (!day) return <div key={`e${idx}`} className="min-h-[58px]" />;
@@ -961,7 +927,6 @@
                                     );
                                 })}
                             </div>
-                            {/* 이달 생일자 목록 */}
                             {bdList.length > 0 ? (
                                 <div className="mt-5 pt-4 border-t border-gray-100">
                                     <p className="text-xs font-bold text-gray-400 mb-3">이달 생일자 {bdList.length}명</p>
@@ -971,9 +936,9 @@
                                                 {(() => { let pi = PART_ICON[b.part]; if (b.part === 'staff' && pi) pi = {...pi, abbr: b.role === '반주자' ? '반' : '성'}; return pi ? <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'10px',border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span> : null; })()}
                                                 <span className="font-medium text-gray-800 text-sm flex-1">{b.name}</span>
                                                 <span className="text-sm font-semibold text-gray-400">
-    {calMonth}/{b.displayD}
-    {b.lunar && <span className="text-purple-400 ml-1 text-xs">(음력 {b.lunarMM}/{b.lunarDD})</span>}
-</span>
+                                                    {calMonth}/{b.displayD}
+                                                    {b.lunar && <span className="text-purple-400 ml-1 text-xs">(음력 {b.lunarMM}/{b.lunarDD})</span>}
+                                                </span>
                                             </div>
                                         ))}
                                     </div>
@@ -991,7 +956,6 @@
 
         const AttendStatsModal = ({ history, members, memberPartMap, onClose }) => {
             const safeHistory = (history || []).filter(h => {
-                // 2026년 1월 이후 데이터만
                 const parts = (h.date || '').split('. ');
                 if (parts.length < 2) return false;
                 const y = parseInt(parts[0]); const m = parseInt(parts[1]);
@@ -1039,7 +1003,6 @@
                 return { ...p, avg: (total/totalSessions).toFixed(1), rate: Math.round(total/(totalSessions*pm.length)*100), count: pm.length };
             }).filter(p => p.count > 0);
 
-            const topPart = [...partStats].sort((a,b)=>b.rate-a.rate)[0];
             const top3dates = [...safeHistory].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,3);
 
             const Section = ({ title, accent, children, count, empty }) => (
@@ -1072,7 +1035,6 @@
                         </div>
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-5 space-y-6">
 
-                            {/* 최다 출석 날짜 */}
                             <Section title="최다 출석 (Top 3)" accent="#22c55e">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {top3dates.map((h, i) => (
@@ -1085,7 +1047,6 @@
                                 </div>
                             </Section>
 
-                            {/* 파트별 출석률 */}
                             <Section title="파트 출석률 순위" accent="#193278">
                                 <div className="rounded-2xl overflow-hidden border border-gray-100">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
@@ -1102,7 +1063,6 @@
                                 </div>
                             </Section>
 
-                            {/* 개근 */}
                             <Section title={`개근상 후보 (무결 참석)`} accent="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
                                 <div className="grid grid-cols-4 gap-1.5">
                                     {sortedPerfect.map(m => (
@@ -1111,7 +1071,6 @@
                                 </div>
                             </Section>
 
-                            {/* 1회 결석 */}
                             <Section title="아차상 후보 (1회 결석)" accent="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
                                 <div className="grid grid-cols-4 gap-1.5">
                                     {sortedOneAbsence.map(m => (
@@ -1251,7 +1210,6 @@
                 }, {});
             }, [safeMembers]);
 
-            // 이달 생일자 카운트
             const thisMonthBdCount = useMemo(() => {
                 const now = new Date();
                 const thisM = now.getMonth() + 1;
@@ -1261,7 +1219,6 @@
                     const [mm, dd] = m.birthday.split('-').map(Number);
                     if (!mm || !dd) return false;
                     if (m.birthdayType !== 'lunar') return mm === thisM;
-                    // 정확한 음력→양력 변환
                     let solar = lunarToSolar(thisY, mm, dd);
                     if (!solar || solar.year !== thisY) solar = lunarToSolar(thisY - 1, mm, dd);
                     return solar && solar.year === thisY && solar.month === thisM;
@@ -1340,7 +1297,6 @@
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-3 text-left">
-                        {/* 개인출석 카드 */}
                         <div onClick={() => onOpenPersonal()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-blue-100 transition-all active:scale-95 overflow-hidden group">
                             <div className="px-3 pt-3 pb-2 flex items-center justify-between">
                                 <div className="w-7 h-7 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
@@ -1359,7 +1315,6 @@
                             </div>
                             <div className="h-0.5 bg-gradient-to-r from-blue-100 to-blue-50"></div>
                         </div>
-                        {/* 최다 출석 카드 */}
                         <div onClick={() => onOpenAttendStats()} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-green-100 transition-all active:scale-95 overflow-hidden group">
                             <div className="px-3 pt-3 pb-2 flex items-center justify-between">
                                 <div className="w-7 h-7 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors shrink-0">
@@ -1378,7 +1333,6 @@
                             </div>
                             <div className="h-0.5 bg-gradient-to-r from-green-100 to-green-50"></div>
                         </div>
-                        {/* 관심 팀원 카드 */}
                         <div onClick={onOpenInterest} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col cursor-pointer hover:shadow-md hover:border-orange-100 transition-all active:scale-95 overflow-hidden group">
                             <div className="px-3 pt-3 pb-2 flex items-center justify-between">
                                 <div className="w-7 h-7 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-orange-100 transition-colors shrink-0">
@@ -1435,7 +1389,6 @@
 
                                 return (
                                     <div key={h.id} onClick={() => onDetail(h)} className="bg-white p-4 sm:p-5 rounded-[32px] shadow-sm border border-gray-50 flex flex-col gap-4 group cursor-pointer hover:shadow-md transition-all w-full text-left overflow-hidden">
-                                        {/* 날짜 + 총인원 */}
                                         <div className="flex items-center justify-between border-b border-gray-50 pb-4">
                                             <div className="flex flex-col text-left">
                                                 <span className="text-[10px] font-black text-blue-400 tracking-[0.15em] mb-1">출석 날짜</span>
@@ -1452,7 +1405,6 @@
                                                 <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-200 group-hover:translate-x-1 group-hover:text-blue-200 transition-all" />
                                             </div>
                                         </div>
-                                        {/* 이미지 + S/A/T/B 2x2 */}
                                         <div className="flex items-stretch gap-3">
                                             <div className="w-24 sm:w-28 flex-shrink-0 bg-gray-100 rounded-2xl overflow-hidden">
                                                 {h.image ? (
@@ -1482,7 +1434,6 @@
                             })}
                         </div>
                     </div>
-                    {/* 개인출석 확인 팝업 — App 레벨에서 렌더링 */}
                 </div>
             );
         };
@@ -1493,9 +1444,8 @@
             const [searchTerm, setSearchTerm] = useState('');
             const [isGenerating, setIsGenerating] = useState(false);
             const [form, setForm] = useState({ title: '', date: getToday(), source: '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
-            // 예배찬양음원 (Worship Songs) 모달 상태
             const [showWorship, setShowWorship] = useState(false);
-            const [editingWorship, setEditingWorship] = useState(null); // {id, kind, title, links}
+            const [editingWorship, setEditingWorship] = useState(null);
             const [worshipForm, setWorshipForm] = useState(null);
 
             const handleSave = () => requestAuth(async () => {
@@ -1548,7 +1498,6 @@
                 if (form.links?.chorus) text += `- 합창\n${form.links.chorus}\n`;
                 text = text.trim();
 
-                // 텍스트는 항상 클립보드에 먼저 복사 (카톡은 Web Share의 text를 무시함)
                 const copyText = async () => {
                     try {
                         await navigator.clipboard.writeText(text);
@@ -1564,7 +1513,6 @@
 
                 const hasImage = !!(form.file || form.image);
 
-                // ① 모바일 Web Share API로 이미지 공유 + 텍스트는 클립보드
                 if (hasImage && navigator.share) {
                     try {
                         let file;
@@ -1577,18 +1525,17 @@
                             file = new File([blob], `thumbnail.${ext}`, { type: blob.type });
                         }
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await copyText(); // 공유 시트 열기 전에 클립보드 복사
+                            await copyText();
                             showToast("텍스트 복사됨 ✓  이미지 전송 후 채팅창에 붙여넣기 하세요!");
                             await navigator.share({ files: [file] });
                             return;
                         }
                     } catch (e) {
-                        if (e.name === 'AbortError') return; // 사용자가 취소
+                        if (e.name === 'AbortError') return;
                         console.warn("파일 공유 실패, 폴백 실행:", e);
                     }
                 }
 
-                // ② 폴백: 이미지 자동 다운로드 + 텍스트 클립보드 복사
                 if (hasImage) {
                     const a = document.createElement('a');
                     a.href = form.file ? URL.createObjectURL(form.file) : form.image;
@@ -1607,12 +1554,10 @@
                     img.crossOrigin = "Anonymous";
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        // 카드 좌측 이미지 영역 비율(약 3:4 portrait)에 맞춤
                         canvas.width = 1080;
                         canvas.height = 1440;
                         const ctx = canvas.getContext('2d');
                         
-                        // 배경 이미지를 cover 방식으로 그리기 (가운데 기준 잘림)
                         const iw = img.naturalWidth || img.width;
                         const ih = img.naturalHeight || img.height;
                         const cw = canvas.width, ch = canvas.height;
@@ -1621,24 +1566,20 @@
                         const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
                         ctx.drawImage(img, dx, dy, dw, dh);
                         
-                        // 텍스트 가독성을 위한 어두운 오버레이
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                         
-                        // 그림자 설정
                         ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
                         ctx.shadowBlur = 18;
                         ctx.shadowOffsetX = 2;
                         ctx.shadowOffsetY = 2;
                         
-                        // 메인 타이틀 — 큰 폰트 기본, 길면 2줄 wrap, 안전 영역 내 위치
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        const maxTitleWidth = canvas.width - 280; // 양옆 140px씩 안전 영역
+                        const maxTitleWidth = canvas.width - 280;
                         const baseFont = 160;
                         
-                        // 1줄 또는 2줄 결정 (각 옵션의 최대 가능 폰트 크기 비교)
                         const widthAt = (text, size) => {
                             ctx.font = `900 ${size}px Pretendard, sans-serif`;
                             return ctx.measureText(text).width;
@@ -1649,9 +1590,7 @@
                             return f;
                         };
                         
-                        // 단일 라인 옵션
                         const singleFont = fitFont(title);
-                        // 2줄 옵션 (콤마 → 공백 → 중앙 분할 순으로 시도)
                         let twoLines = null;
                         if (singleFont < baseFont * 0.85) {
                             let parts;
@@ -1676,7 +1615,6 @@
                         const titleFont = twoLines ? twoLines.font : singleFont;
                         const lineHeight = titleFont * 1.15;
                         const titleBlockHeight = lineHeight * titleLines.length;
-                        // 타이틀 블록을 캔버스 중앙보다 살짝 위로 (서브타이틀, 뱃지를 아래에 배치)
                         const titleCenterY = canvas.height / 2 - 40;
                         const titleTopY = titleCenterY - titleBlockHeight / 2;
                         ctx.font = `900 ${titleFont}px Pretendard, sans-serif`;
@@ -1684,22 +1622,19 @@
                             ctx.fillText(line, canvas.width / 2, titleTopY + lineHeight / 2 + i * lineHeight);
                         });
                         
-                        // 서브 타이틀 (출처) — 타이틀 블록 아래에 배치
                         ctx.font = '700 80px Pretendard, sans-serif';
                         const subtitleY = titleTopY + titleBlockHeight + 80;
                         ctx.fillText(source || "중앙성가 42권", canvas.width / 2, subtitleY);
                         
-                        // 그림자 초기화
                         ctx.shadowColor = 'transparent';
                         ctx.shadowBlur = 0;
                         ctx.shadowOffsetX = 0;
                         ctx.shadowOffsetY = 0;
                         
-                        // 오른쪽 하단 뱃지 — 배경은 우측 끝에 anchor, 텍스트는 안쪽으로 들여서 cover 잘림 시에도 보이게
                         const badgeText = "주은혜 찬양사역팀";
                         ctx.font = '800 60px Pretendard, sans-serif';
                         const textWidth = ctx.measureText(badgeText).width;
-                        const textRightInset = 110;             // cover 잘림 안전 영역
+                        const textRightInset = 110;
                         const textRightX = canvas.width - textRightInset;
                         const badgePadX = 32;
                         const badgeWidth = textWidth + badgePadX * 2;
@@ -1707,7 +1642,6 @@
                         const badgeX = textRightX - badgeWidth + badgePadX;
                         const badgeY = canvas.height - badgeHeight - 80;
                         
-                        // 뱃지 배경 — 캔버스 우측 끝까지 연장 (탭 형태)
                         ctx.fillStyle = 'rgba(128, 43, 34, 0.92)'; 
                         ctx.beginPath();
                         ctx.moveTo(badgeX - 28, badgeY);
@@ -1717,7 +1651,6 @@
                         ctx.closePath();
                         ctx.fill();
                         
-                        // 뱃지 텍스트 — 안전 영역 내에 배치
                         ctx.fillStyle = '#ffffff';
                         ctx.textAlign = 'right';
                         ctx.fillText(badgeText, textRightX, badgeY + badgeHeight / 2 + 4);
@@ -1734,7 +1667,6 @@
                 setIsGenerating(true);
                 try {
                     const seed = Math.floor(Math.random() * 1000000);
-                    // 완전 무료 랜덤 이미지 제공 서비스 (CORS 이슈가 거의 없는 picsum 사용)
                     const imageUrl = `https://picsum.photos/seed/${seed}/1280/720`;
                     
                     const img = new Image();
@@ -1747,10 +1679,8 @@
                             canvas.height = 720;
                             const ctx = canvas.getContext('2d');
                             
-                            // 원본 이미지 그리기
                             ctx.drawImage(img, 0, 0, 1280, 720);
                             
-                            // 예배당/성가대 느낌을 내기 위해 어둡고 우아한 색상 오버레이 적용 (주은혜팀 네이비 톤)
                             const gradient = ctx.createLinearGradient(0, 0, 1280, 720);
                             gradient.addColorStop(0, 'rgba(25, 50, 120, 0.5)'); 
                             gradient.addColorStop(1, 'rgba(40, 20, 80, 0.6)');
@@ -1771,7 +1701,6 @@
                 } catch (err) {
                     console.warn("이미지 서버 로드 실패, 자체 생성 배경으로 대체합니다:", err);
                     
-                    // Fallback: 외부 서버 접속이 막혀있을 경우 자체적으로 그라데이션 배경 생성
                     const canvas = document.createElement('canvas');
                     canvas.width = 1080;
                     canvas.height = 1440;
@@ -1819,7 +1748,6 @@
                         </div>
                         <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-[#193278] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 text-center"><LucideIcon name={showAdd ? "x" : "plus"} /></button>
                     </div>
-                    {/* 예배찬양음원 슬림 배너 */}
                     <button onClick={() => setShowWorship(true)} className="worship-banner relative w-full rounded-xl p-3 flex items-center gap-3 shadow-md active:scale-[0.985] transition-transform overflow-hidden text-left" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%)' }}>
                         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 30%, rgba(168,85,247,0.2) 0%, transparent 50%)' }}></div>
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[80px] font-black pointer-events-none" style={{ color: 'rgba(255,255,255,0.06)', transform: 'translateY(-50%) rotate(-12deg)' }}>✟</div>
@@ -1943,7 +1871,6 @@
                         ))}
                     </div>
 
-                    {/* 예배찬양음원 모달 */}
                     {showWorship && ReactDOM.createPortal(
                         <WorshipModal
                             songs={worshipSongs}
@@ -1959,10 +1886,9 @@
             );
         };
 
-        // ============ 예배찬양음원 모달 ============
         const WorshipModal = ({ songs, isAdmin, requestAuth, showToast, askConfirm, onClose }) => {
-            const [editing, setEditing] = useState(null); // 편집 중인 곡 데이터
-            const [partFilter, setPartFilter] = useState({}); // {songId: 'chorus'|'s'|'a'|'t'|'b'}
+            const [editing, setEditing] = useState(null);
+            const [partFilter, setPartFilter] = useState({});
 
             const PART_LABELS = { s: '소프라노', a: '알토', t: '테너', b: '베이스', chorus: '합창' };
 
@@ -1988,7 +1914,6 @@
                 const { db, doc, setDoc } = window.MyFirebase;
                 try {
                     const { id, ...rest } = editing;
-                    // 빈 링크 제거
                     const cleanLinks = {};
                     Object.entries(rest.links).forEach(([k, v]) => { if (v && v.trim()) cleanLinks[k] = v.trim(); });
                     rest.links = cleanLinks;
@@ -2009,7 +1934,6 @@
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
                     <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg shadow-2xl scale-in flex flex-col min-h-[80vh] max-h-[90vh] rounded-t-[28px] md:rounded-[28px] overflow-hidden" style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}>
-                        {/* 헤더 — 보라 + 황금 그라디언트 */}
                         <div className="relative shrink-0 px-5 pt-4 pb-3 text-white" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%)' }}>
                             <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.18) 0%, transparent 50%), radial-gradient(circle at 80% 30%, rgba(168,85,247,0.25) 0%, transparent 60%)' }}></div>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[90px] font-black pointer-events-none" style={{ color: 'rgba(255,255,255,0.07)', transform: 'translateY(-50%) rotate(-12deg)' }}>✟</div>
@@ -2024,7 +1948,6 @@
                             </div>
                         </div>
 
-                        {/* 곡 리스트 */}
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-3 py-3 space-y-2">
                             {songs.length === 0 && (
                                 <p className="text-center text-gray-400 text-sm font-bold py-12">등록된 찬양이 없습니다.</p>
@@ -2065,7 +1988,6 @@
                         </div>
                     </div>
 
-                    {/* 편집 모달 */}
                     {editing && (
                         <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setEditing(null)}>
                             <div onClick={e => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-md scale-in flex flex-col max-h-[90vh] overflow-hidden">
@@ -2314,7 +2236,6 @@
                             <button onClick={onClose} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </div>
                         <div className="p-6 space-y-5 overflow-y-auto hide-scrollbar">
-                            {/* 프로필 사진 (관리자 전용) */}
                             <div className="flex flex-col items-center">
                                 <div className="relative w-24 h-24 mb-1">
                                     {form.photo ? (
@@ -2330,7 +2251,6 @@
                                             const file = e.target.files[0];
                                             if (!file) return;
                                             try {
-                                                // 미리보기는 base64로, 실제 업로드는 저장 시 Cloudinary로
                                                 const compressed = await compressImage(file, 300, 300, 0.82);
                                                 setForm(prev => ({...prev, photo: compressed, photoFile: file}));
                                             } catch(err) { alert("사진 업로드 실패"); }
@@ -2342,14 +2262,12 @@
                                 )}
                                 <p className="text-[10px] text-gray-300 font-bold mt-1">관리자 전용 — 팀원 사진</p>
                             </div>
-                            {/* 이름 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">이름</label>
                                 <input type="text" placeholder="팀원 이름"
                                     className="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
                                     value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus={isNew} />
                             </div>
-                            {/* 파트 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">파트</label>
                                 <div className="flex flex-wrap gap-2">
@@ -2361,7 +2279,6 @@
                                     ))}
                                 </div>
                             </div>
-                            {/* 상태 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">상태</label>
                                 <div className="flex gap-2">
@@ -2372,14 +2289,12 @@
                                     ))}
                                 </div>
                             </div>
-                            {/* 임원 직책 */}
                             <div>
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">임원 직책 <span className="normal-case font-normal">(없으면 비워두세요)</span></label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">임원 직책 <span className="normal-case font-normal">(없으면 비워두세요 / 겸직은 콤마로 구분: 파트장, 의상부장)</span></label>
                                 <input type="text" placeholder="예: 팀장, 총무, 파트장, 봉사부장 …"
                                     className="w-full bg-gray-50 p-3.5 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                     value={form.role} onChange={e => setForm({...form, role: e.target.value})} />
                             </div>
-                            {/* 생일 */}
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">생일 <span className="normal-case font-normal">(선택)</span></label>
                                 <div className="flex gap-2 mb-2">
@@ -2445,6 +2360,12 @@
             );
         };
 
+        // ── 직책 파싱 헬퍼 (겸직 지원: 콤마/중점/슬래시로 구분)
+        const splitRoles = (role) => {
+            if (!role) return [];
+            return role.split(/[,·、\/]/).map(r => r.trim()).filter(Boolean);
+        };
+
         const ManageView = ({ members, currentPassword, currentDeletePassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal, onOpenSelfPhoto }) => {
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
@@ -2455,7 +2376,6 @@
             const [showDelPwdSetting, setShowDelPwdSetting] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [apiForm, setApiForm] = useState(geminiApiKey || "");
-            // 찬양팀명단 전용 로컬 관리자 모드 — 전역 isAdmin이면 자동 활성
             const [localAdmin, setLocalAdmin] = useState(isAdmin || false);
             useEffect(() => { if (isAdmin) setLocalAdmin(true); }, [isAdmin]);
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -2463,7 +2383,6 @@
             const [adminPwInput, setAdminPwInput] = useState('');
             const [adminPwError, setAdminPwError] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
-            // 삭제 비밀번호 인증 모달
             const [delAuthModal, setDelAuthModal] = useState({ isOpen: false, name: null });
             const [delAuthInput, setDelAuthInput] = useState('');
             const [delAuthError, setDelAuthError] = useState(false);
@@ -2471,7 +2390,7 @@
             const handleLocalAdminLogin = () => {
                 if (adminPwInput === currentPassword) {
                     setLocalAdmin(true);
-                    if (onBecomeAdmin) onBecomeAdmin(); // 전역 isAdmin도 활성화
+                    if (onBecomeAdmin) onBecomeAdmin();
                     setShowAdminModal(false); setAdminPwInput(''); setAdminPwError(false);
                 } else {
                     setAdminPwError(true); setTimeout(() => setAdminPwError(false), 600);
@@ -2500,7 +2419,6 @@
                 await setDoc(doc(db, 'roster', 'current'), { list: newList });
             };
 
-            // 저장 시 Firebase에서 최신 명단을 직접 읽어 stale closure 완전 방지
             const handleSaveMember = async (form, originalName) => {
                 const { db, doc, setDoc, getDoc } = window.MyFirebase;
                 let photoUrl = form.photo;
@@ -2510,7 +2428,6 @@
                 }
                 const data = { name: form.name.trim(), part: form.part, status: form.status, role: form.role.trim(), birthday: form.birthday.trim(), birthdayType: form.birthdayType || 'solar', photo: photoUrl || null };
 
-                // 항상 Firebase 최신값 기준으로 처리
                 const snap = await getDoc(doc(db, 'roster', 'current'));
                 const latest = snap.exists() ? (snap.data().list || []) : [];
 
@@ -2521,7 +2438,7 @@
                     const found = latest.some(m => m.name === originalName);
                     newList = found
                         ? latest.map(m => m.name === originalName ? { ...m, ...data } : m)
-                        : [...latest, data]; // 혹시라도 못 찾으면 추가
+                        : [...latest, data];
                 }
                 await setDoc(doc(db, 'roster', 'current'), { list: newList });
                 showToast(originalName ? "수정되었습니다." : "팀원이 추가되었습니다.");
@@ -2572,88 +2489,94 @@
                 } catch (e) { showToast("변경 중 오류가 발생했습니다."); }
             };
 
-            // 레벨 2 필터탭 목록 (성가사 · 반주자 먼저, 임원진 다음)
             const partTabs = [
                 { id: 'all',     name: '전체',          color: '#193278' },
                 ...PART_OPTIONS,
                 { id: 'officer', name: '임원진', color: '#7c3aed' },
             ];
 
-            // 상태 카운트
             const counts = {
                 active:        members.filter(m => statusNorm(m) === 'active').length,
                 short_absence: members.filter(m => statusNorm(m) === 'short_absence').length,
                 sabbatical:    members.filter(m => statusNorm(m) === 'sabbatical').length,
             };
 
-            // 레벨1 필터 (상태)
             const byStatus = members.filter(m => statusNorm(m) === statusFilter);
 
-            // 레벨2 필터 (파트/임원)
+            // 임원진 필터: 직책 보유자 (겸직 포함, 사람 단위로 중복 제거)
+            const isOfficer = (m) => splitRoles(m.role).length > 0;
+
             let filtered;
             if (partFilter === 'all')          filtered = byStatus;
-            else if (partFilter === 'officer') filtered = byStatus.filter(m => m.role && m.role.trim());
+            else if (partFilter === 'officer') filtered = byStatus.filter(isOfficer);
             else                               filtered = byStatus.filter(m => m.part === partFilter);
 
-            // 파트별 그룹핑 (일반 모드)
             const grouped = PART_OPTIONS.map(p => ({
                 ...p,
                 members: filtered.filter(m => m.part === p.id),
             })).filter(g => g.members.length > 0);
 
-            // 임원진 모드 전용 그룹핑
-            const PART_ABBR = { staff: '성', soprano: 'S', alto: 'A', tenor: 'T', bass: 'B' };
-            const getRoleCategory = (role) => {
-                if (!role) return 4;
-                const r = role.trim();
-                if (['팀장','총무','회계'].includes(r)) return 1;
-                if (r === '파트장') return 2;
-                return 3;
-            };
-            // 팀장>총무>회계 고정 순서
             const LEAD_ORDER = ['팀장','총무','회계'];
+
+            // ★ 겸직 지원 그룹핑 — 직책마다 해당 그룹에 노출, 그룹별 표시 직책(displayRole)을 부착
             const officerGroups = (() => {
                 const officers = filtered;
                 const partOrder = ['soprano','alto','tenor','bass'];
+
+                // 각 멤버의 직책을 분리해서, predicate에 매칭되는 직책만 displayRole로 합쳐 노출
+                const withDisplayRole = (membersArr, predicate) => membersArr
+                    .map(m => {
+                        const roles = splitRoles(m.role);
+                        const matched = roles.filter(predicate);
+                        if (matched.length === 0) return null;
+                        return { ...m, displayRole: matched.join(', ') };
+                    })
+                    .filter(Boolean);
+
                 const staffGroup = {
                     id: 'staff_off', name: '성가사 · 반주자', color: '#193278', light: '#eff6ff',
                     members: officers.filter(m => m.part === 'staff'),
                 };
                 const leadGroup = {
                     id: 'lead', name: '팀장 · 총무 · 회계', color: '#7c3aed', light: '#f5f3ff',
-                    members: [...officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 1)]
-                        .sort((a, b) => {
-                            const ai = LEAD_ORDER.indexOf(a.role.trim());
-                            const bi = LEAD_ORDER.indexOf(b.role.trim());
-                            return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-                        }),
+                    members: withDisplayRole(
+                        officers.filter(m => m.part !== 'staff'),
+                        r => LEAD_ORDER.includes(r)
+                    ).sort((a, b) => {
+                        const ai = LEAD_ORDER.indexOf(a.displayRole.split(',')[0].trim());
+                        const bi = LEAD_ORDER.indexOf(b.displayRole.split(',')[0].trim());
+                        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+                    }),
                 };
                 const partLeaderGroup = {
                     id: 'partleader', name: '파트장', color: '#0ea5e9', light: '#f0f9ff',
-                    members: [...officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 2)]
-                        .sort((a, b) => partOrder.indexOf(a.part) - partOrder.indexOf(b.part)),
+                    members: withDisplayRole(
+                        officers.filter(m => m.part !== 'staff'),
+                        r => r === '파트장'
+                    ).sort((a, b) => partOrder.indexOf(a.part) - partOrder.indexOf(b.part)),
                     showPartAbbr: true,
                 };
-                // 담당부장: 같은 직책끼리 묶어서 정렬
                 const etcGroup = {
                     id: 'etc', name: '담당부장', color: '#f59e0b', light: '#fffbeb',
-                    members: [...officers.filter(m => m.part !== 'staff' && getRoleCategory(m.role) === 3)]
-                        .sort((a, b) => (a.role || '').localeCompare(b.role || '', 'ko')),
+                    members: withDisplayRole(
+                        officers.filter(m => m.part !== 'staff'),
+                        r => r && !LEAD_ORDER.includes(r) && r !== '파트장'
+                    ).sort((a, b) => (a.displayRole || '').localeCompare(b.displayRole || '', 'ko')),
                 };
                 return [staffGroup, leadGroup, partLeaderGroup, etcGroup].filter(g => g.members.length > 0);
             })();
 
-            // 레벨2 탭별 카운트
             const partCounts = partTabs.reduce((acc, p) => {
                 if (p.id === 'all')          acc[p.id] = byStatus.length;
-                else if (p.id === 'officer') acc[p.id] = byStatus.filter(m => m.role && m.role.trim()).length;
+                else if (p.id === 'officer') acc[p.id] = byStatus.filter(isOfficer).length;
                 else                          acc[p.id] = byStatus.filter(m => m.part === p.id).length;
                 return acc;
             }, {});
 
-            // 칩 컴포넌트 — 높이 통일, 왕관 제거, 직책은 하단 고정 공간
             const MemberChip = ({ m, showPartAbbr }) => {
-                const hasRole = m.role && m.role.trim();
+                // displayRole이 있으면 그것을 우선, 없으면 원본 role
+                const displayRole = m.displayRole || m.role;
+                const hasRole = displayRole && displayRole.trim();
                 const statusDots = { active: '#22c55e', short_absence: '#eab308', sabbatical: '#9ca3af' };
                 const dot = statusDots[statusNorm(m)] || '#9ca3af';
                 let pi = PART_ICON[m.part] || null;
@@ -2686,11 +2609,10 @@
                                 <span className="font-bold text-gray-800 text-sm leading-tight">{m.name}</span>
                             </div>
                         )}
-                        {/* 고정 높이 div — 직책 유무 관계없이 동일 공간 확보 */}
                         <div className="h-[18px] flex items-center justify-center">
                             {hasRole && (
                                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none bg-purple-50 text-purple-600">
-                                    {m.role}
+                                    {displayRole}
                                 </span>
                             )}
                         </div>
@@ -2705,7 +2627,6 @@
 
             return (
                 <div className="space-y-4 fade-in text-left">
-                    {/* 헤더 */}
                     <div className="flex items-end justify-between">
                         <div>
                             <h2 className="text-2xl font-black text-gray-800">찬양팀명단</h2>
@@ -2732,7 +2653,6 @@
                         </div>
                     </div>
 
-                    {/* 이름 검색 */}
                     <div className="relative w-full">
                         <input
                             type="text"
@@ -2752,7 +2672,6 @@
                         )}
                     </div>
 
-                    {/* 생일 배너 (C안 디자인 + B안 위치) */}
                     {!isSearching && (
                         <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50 to-[#fdf2f8] active:scale-95 transition-all shadow-sm">
                             <span className="text-xl leading-none shrink-0">🎂</span>
@@ -2766,7 +2685,6 @@
                         </button>
                     )}
 
-                    {/* 검색 결과 */}
                     {isSearching ? (
                         <div>
                             <p className="text-xs font-bold text-gray-400 mb-3">"{searchQuery}" 검색결과 {searchResults.length}명</p>
@@ -2783,7 +2701,6 @@
                         </div>
                     ) : (
                         <>
-                            {/* C안 현황 카드 */}
                             <div className="flex gap-2">
                                 {STATUS_OPTIONS.map(s => {
                                     const isActive = statusFilter === s.id;
@@ -2806,7 +2723,6 @@
                                 })}
                             </div>
 
-                            {/* 파트 필터 — 2줄 flex-wrap */}
                             <div className="flex flex-wrap gap-2">
                                 {partTabs.map(p => {
                                     const sel = partFilter === p.id;
@@ -2829,7 +2745,6 @@
                                 })}
                             </div>
 
-                            {/* 멤버 칩 그리드 */}
                             {(partFilter === 'officer' ? officerGroups : grouped).length === 0 ? (
                                 <div className="text-center py-14 text-gray-300">
                                     <LucideIcon name="users" className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -2847,14 +2762,13 @@
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                                                {group.members.map(m => <MemberChip key={m.name} m={m} showPartAbbr={group.showPartAbbr} />)}
+                                                {group.members.map(m => <MemberChip key={m.name + (m.displayRole || '')} m={m} showPartAbbr={group.showPartAbbr} />)}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
-                            {/* 범례 */}
                             <div className="flex items-center gap-4 px-0.5 pt-1 pb-2 border-t border-gray-50">
                                 <span className="text-[10px] font-bold text-gray-300">상태 표시</span>
                                 {[['#22c55e','활동중'],['#eab308','단기부재'],['#9ca3af','안식중']].map(([c,l]) => (
@@ -2866,7 +2780,6 @@
                         </>
                     )}
 
-                    {/* 설정 모달 */}
                     {showSettingsModal && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4">
                             <div className="bg-white w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl scale-in flex flex-col max-h-[90vh]">
@@ -2878,7 +2791,6 @@
                                     <button onClick={() => setShowSettingsModal(false)} className="p-2 text-gray-300 hover:text-gray-600"><LucideIcon name="x" className="w-6 h-6" /></button>
                                 </div>
                                 <div className="overflow-y-auto hide-scrollbar p-6 space-y-6">
-                                    {/* 비밀번호 변경 */}
                                     <div>
                                         <div className="flex items-center justify-between mb-3">
                                             <div>
@@ -2917,7 +2829,6 @@
                                             )}
                                         </div>
                                     </div>
-                                    {/* Gemini API */}
                                     <div className="border-t border-gray-100 pt-6">
                                         <p className="text-sm font-bold text-gray-800 mb-1">AI 출석 인식 (Gemini API)</p>
                                         <p className="text-xs text-blue-500 font-bold mb-3">★ 구글 AI Studio에서 발급받은 API 키를 입력하세요.</p>
@@ -2931,7 +2842,6 @@
                         </div>
                     )}
 
-                    {/* 관리자 모드 진입 모달 */}
                     {showAdminModal && (
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
                             <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${adminPwError ? 'shake' : ''}`}>
@@ -2955,7 +2865,6 @@
                         </div>
                     )}
 
-                    {/* 삭제 인증 모달 */}
                     {delAuthModal.isOpen && (
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[600] flex items-center justify-center p-5 text-center">
                             <div className={`bg-white p-8 rounded-[32px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${delAuthError ? 'shake' : ''}`}>
@@ -3067,7 +2976,6 @@
 
             return (
                 <div className="fade-in pb-32 text-left">
-                    {/* ── 상단 헤더 ── */}
                     <div className="flex items-center gap-3 mb-6 px-1">
                         <button onClick={onCancel} className="p-2 rounded-xl bg-white border border-gray-100 text-gray-400 shadow-sm transition-transform active:scale-90">
                             <LucideIcon name="chevron-left" className="w-5 h-5" />
@@ -3079,7 +2987,6 @@
                         <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="header-date-input" />
                     </div>
 
-                    {/* ── AI 출석 인식 섹션 ── */}
                     <div className="bg-gradient-to-br from-[#193278] to-[#2a4a9f] rounded-[28px] p-5 mb-5 shadow-lg">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
@@ -3091,7 +2998,6 @@
                             </div>
                         </div>
 
-                        {/* 이미지 업로드 존 */}
                         <div className={`relative rounded-2xl overflow-hidden mb-3 transition-all ${previewImage ? 'bg-black/20' : 'bg-white/10 border-2 border-dashed border-white/30'} min-h-[120px] flex items-center justify-center cursor-pointer`}>
                             {previewImage ? (
                                 <div className="w-full relative">
@@ -3131,9 +3037,7 @@
                         </button>
                     </div>
 
-                    {/* ── 팀원 체크 섹션 ── */}
                     <div className="bg-white rounded-[28px] shadow-sm border border-gray-50 overflow-hidden">
-                        {/* 전체 출석 카운터 헤더 */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
                             <span className="font-black text-gray-800 text-sm">팀원 출석 체크</span>
                             <div className="flex items-center gap-2">
@@ -3154,7 +3058,6 @@
 
                                 return (
                                     <div key={partId}>
-                                        {/* 파트 헤더 */}
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="w-1.5 h-5 rounded-full shrink-0" style={{backgroundColor: partColor}}></span>
                                             <span className="font-black text-sm text-gray-700 flex-1">{partName}</span>
@@ -3167,11 +3070,9 @@
                                                 {checkedCount === list.length ? '전체해제' : '전체선택'}
                                             </button>
                                         </div>
-                                        {/* 파트 진행률 바 */}
                                         <div className="w-full bg-gray-100 rounded-full h-1 mb-3 overflow-hidden">
                                             <div className="h-1 rounded-full transition-all duration-500" style={{width: `${rate}%`, backgroundColor: partColor}}></div>
                                         </div>
-                                        {/* 팀원 그리드 */}
                                         <div className="grid grid-cols-4 gap-1.5">
                                             {list.map(m => {
                                                 const pi_a = (() => { let p = PART_ICON[m.part] || null; if (m.part==='staff' && p) p={...p, abbr: m.role==='반주자'?'반':'성'}; return p; })();
@@ -3200,7 +3101,6 @@
                         </div>
                     </div>
 
-                    {/* ── 저장 플로팅 바 ── */}
                     <div className="fixed bottom-20 md:bottom-6 left-0 right-0 px-4 z-40 max-w-4xl mx-auto">
                         <div className="bg-white/90 backdrop-blur-md border border-gray-100 rounded-[20px] shadow-2xl p-3 flex items-center gap-3">
                             <div className="flex-1 pl-2">
@@ -3220,8 +3120,7 @@
             );
         };
 
-        // ============ localStorage 캐시 (트래픽 절감 + 즉시 표시) ============
-        // 메타데이터만 캐싱: 출석 사진 등 큰 base64는 캐시 안 함 (5MB 한도 보호)
+        // ============ localStorage 캐시 ============
         const CACHE_PREFIX = 'grace_cache_v1_';
         const cacheGet = (key) => {
             try {
@@ -3233,17 +3132,14 @@
             try {
                 localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data));
             } catch (e) {
-                // QuotaExceeded 등 → 캐시 전체 비우고 재시도
                 try { Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX)).forEach(k => localStorage.removeItem(k)); } catch {}
             }
         };
-        // history 캐시할 때 photo 필드는 제외 (큰 base64)
         const stripHeavyFields = (list) => list.map(({ photo, ...rest }) => rest);
 
         const App = () => {
             const [ready, setReady] = useState(false);
             const [activeTab, setActiveTab] = useState('music'); 
-            // 캐시에서 즉시 데이터 복원 (Firestore 응답 대기 없이 바로 화면에 그림)
             const [members, setMembers] = useState(() => cacheGet('members') || []);
             const [history, setHistory] = useState(() => cacheGet('history') || []);
             const [songs, setSongs] = useState(() => cacheGet('songs') || []);
@@ -3269,17 +3165,14 @@
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null });
 
             useEffect(() => {
-                // 캐시된 데이터가 있으면 즉시 ready 처리 (스켈레톤 → 캐시 화면 전환)
                 if (cacheGet('songs') || cacheGet('members')) setReady(true);
                 
-                // Firebase가 이미 준비됐으면 즉시 시작
                 if (window.FB_READY && window.MyFirebase) { initApp(); return; }
                 const waitFirebase = setInterval(() => { 
                     if (window.FB_READY && window.MyFirebase) { 
                         clearInterval(waitFirebase); initApp(); 
                     } 
                 }, 50);
-                // 10초 내 Firebase 미연결 시 강제 로드
                 const fallback = setTimeout(() => { clearInterval(waitFirebase); setReady(true); }, 10000);
                 return () => { clearInterval(waitFirebase); clearTimeout(fallback); };
             }, []);
@@ -3287,8 +3180,6 @@
             const initApp = async () => {
                 const { auth, db, doc, collection, onSnapshot, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.MyFirebase;
 
-                // 데이터 구독은 인증과 독립적으로 한 번만 등록 (onAuthStateChanged 외부)
-                // 이렇게 하면 토큰 갱신 시 구독이 누적되지 않음
                 let subscriptionsAttached = false;
                 const attachSubscriptions = () => {
                     if (subscriptionsAttached) return;
@@ -3314,7 +3205,7 @@
                         const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
                         list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
                         setHistory(list);
-                        cacheSet('history', stripHeavyFields(list)); // 출석 사진 제외하고 캐싱
+                        cacheSet('history', stripHeavyFields(list));
                     });
                     
                     onSnapshot(collection(db, 'music'), (s) => {
@@ -3324,16 +3215,13 @@
                         cacheSet('songs', list);
                     });
                     
-                    // worshipSongs 시드는 한 번만 시도하기 위한 플래그
                     let worshipSeeded = false;
                     onSnapshot(collection(db, 'worshipSongs'), (s) => {
-                        // 데이터를 먼저 즉시 화면에 반영 (시드와 무관)
                         const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
                         list.sort((a, b) => (a.order || 0) - (b.order || 0));
                         setWorshipSongs(list);
                         cacheSet('worshipSongs', list);
                         
-                        // 비어있고 아직 시드 안 했으면, 백그라운드로 fire-and-forget 시드
                         if (s.empty && !worshipSeeded) {
                             worshipSeeded = true;
                             const { setDoc } = window.MyFirebase;
@@ -3356,7 +3244,6 @@
                         list.sort((a, b) => {
                             const dateCmp = (b.date || '').localeCompare(a.date || '');
                             if (dateCmp !== 0) return dateCmp;
-                            // 동일 날짜: 알파벳 → 숫자 → 기호 순 (기호 최하단)
                             const typeOf = s => {
                                 const c = (s || '')[0];
                                 if (!c) return 3;
@@ -3373,7 +3260,6 @@
                     });
                 };
 
-                // UI는 인증/구독 끝나길 기다리지 않고 즉시 표시 (데이터는 도착하는 대로 채워짐)
                 setReady(true);
 
                 try {
@@ -3452,29 +3338,29 @@
                 });
             }, [members]);
 
-            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-center text-center text-center text-center"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin"></div></div>;
+            if (!ready) return <div className="h-screen flex items-center justify-center bg-[#f8faff] text-center"><div className="w-10 h-10 border-4 border-blue-100 border-t-[#193278] rounded-full animate-spin"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full text-left">
-                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left text-left text-left text-left">
-                        <div className="mb-10 flex items-center gap-3 text-left text-left text-left text-left">
-                            <AppLogo className="w-10 h-10 text-left text-left text-left text-left" />
-                            <div className="text-left text-left text-left text-left min-w-0">
+                <div className="flex h-screen bg-[#f8faff] overflow-hidden text-left w-full">
+                    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 p-6 z-10 shrink-0 text-left">
+                        <div className="mb-10 flex items-center gap-3 text-left">
+                            <AppLogo className="w-10 h-10" />
+                            <div className="text-left min-w-0">
                                 <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-[#193278] tracking-tight cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left text-left">
-                                    <span className={`w-2 h-2 rounded-full text-left text-left text-left text-left ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
+                                <div className="text-[10px] mt-0.5 text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 text-left">
+                                    <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> 
                                     {isAdmin ? '관리자 모드' : '온라인'}
                                 </div>
                             </div>
                         </div>
-                        <nav className="flex-1 space-y-2 text-left text-left text-left">
+                        <nav className="flex-1 space-y-2 text-left">
                             <NavBtn id="music" label="성가음원" icon="music-2" active={activeTab === 'music'} onClick={handleTabChange} />
                             <NavBtn id="videos" label="찬양영상" icon="play-circle" active={activeTab === 'videos'} onClick={handleTabChange} />
                             <NavBtn id="stats" label="출석현황" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={handleTabChange} />
-                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left text-left text-left">매니저 영역</div>
+                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-300 uppercase tracking-widest px-4 text-left">매니저 영역</div>
                             <NavBtn id="manage" label="찬양팀명단" icon="user-round" active={activeTab === 'manage'} onClick={handleTabChange} />
                         </nav>
-                        <div className="mt-auto space-y-2 text-left text-left text-left text-left">
+                        <div className="mt-auto space-y-2 text-left">
                             <button onClick={handleShare} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"><LucideIcon name="share-2" className="w-3.5 h-3.5 mr-2" /> 링크 공유</button>
                             {isAdmin && (
                                 <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold active:scale-95 transition-all text-center">
@@ -3484,23 +3370,23 @@
                         </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left text-left text-left text-left">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#f8faff] text-left">
                         <header className={`md:hidden absolute top-0 left-0 right-0 bg-white px-5 h-16 flex items-center justify-between border-b border-gray-100 shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left text-left">
-                                <AppLogo className="w-8 h-8 text-left text-left text-left text-left" />
-                                <span className="font-black text-xl text-[#193278] text-left text-left text-left text-left">주은혜 찬양사역팀</span>
+                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left">
+                                <AppLogo className="w-8 h-8" />
+                                <span className="font-black text-xl text-[#193278] text-left">주은혜 찬양사역팀</span>
                             </div>
-                            <div className="flex items-center gap-2 text-left text-left text-left text-left">
-                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5 text-left text-left" /></button>
-                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="찬양팀명단"><LucideIcon name="user-round" className="w-5 h-5 text-left text-left" /></button>
+                            <div className="flex items-center gap-2 text-left">
+                                <button onClick={handleShare} className="p-2 text-blue-500 transition-transform active:scale-90" title="공유"><LucideIcon name="share-2" className="w-5 h-5" /></button>
+                                <button onClick={() => handleTabChange('manage')} className={`p-2 rounded-full transition-transform active:scale-90 text-left ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50' : 'text-gray-400'}`} title="찬양팀명단"><LucideIcon name="user-round" className="w-5 h-5" /></button>
                                 {isAdmin && (
-                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5 text-left text-left" /></button>
+                                    <button onClick={() => window.location.reload()} className="p-2 text-red-500 transition-transform active:scale-90 text-left" title="세션 종료"><LucideIcon name="log-out" className="w-5 h-5" /></button>
                                 )}
                             </div>
                         </header>
 
-                        <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left text-left text-left text-left" onScroll={handleScroll}>
-                            <div className="max-w-4xl mx-auto w-full text-left text-left text-left text-left">
+                        <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
+                            <div className="max-w-4xl mx-auto w-full text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
                                 {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
@@ -3534,7 +3420,7 @@
                     }} showToast={showToast} />}
                     {authModal.isOpen && <AuthModal correctPassword={masterPassword} onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
-                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center text-center text-left text-left text-left">{toast.msg}</div>}
+                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-bold z-[300] shadow-xl animate-bounce text-center">{toast.msg}</div>}
                 </div>
             );
         };
@@ -3543,4 +3429,4 @@
         root.render(<App />);
     </script>
 </body>
-    </html>
+</html>
