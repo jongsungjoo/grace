@@ -1127,7 +1127,7 @@
                                         <h3 className="text-lg font-black text-gray-900 truncate">{pStep === 'list' ? '개인 출석' : pMember}</h3>
                                         <p className="text-xs text-gray-400 font-medium mt-0.5">
                                             {pStep === 'list' && `2026년 찬양 ${(history||[]).length}회`}
-                                            {pStep === 'history' && `2026년 1월~ · ${pHistory.length}회 · 출석률 ${pAttendRate}%`}
+                                            {pStep === 'history' && `2026년 1월~ · 출석 ${pHistory.filter(i=>i.isPresent).length}/${pHistory.length}회 · ${pAttendRate}%`}
                                         </p>
                                     </div>
                                 </div>
