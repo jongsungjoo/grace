@@ -254,7 +254,7 @@
             const base64Data = base64Image.split(',')[1];
             const payload = {
                 contents: [{ parts: [
-                    { text: "이 사진은 교회 찬양팀 출석 명단판입니다. 사진 하단의 강대상(나무 단상) 위에 모여 있는 자석/스티커의 이름들만 출석자입니다. 사진 상단 벽면이나 명단판 위쪽에 붙어 있는 이름은 결석자이므로 제외하세요. 규칙: 1) 강대상 위에 놓인 자석들 안의 한국 성명(2~4글자 한글)만 추출하세요. 2) 벽면/스크린/명단판 위쪽 이름, 지명, 단어, 기호는 제외하세요. 3) 출력형식: 오직 이름만 쉼표로 구분, 다른 텍스트 없이. 예시: 홍길동,김철수,이영희,박민준" },
+                    { text: "이 이미지에서 한국어 사람 이름을 모두 찾아 추출해주세요. 이름들은 자석, 스티커, 카드, 명단 등 어떤 형태로든 표기되어 있을 수 있습니다. 규칙: 1) 한국 성명(2~4글자 한글)만 추출하세요. 2) 지명, 단어, 기호는 제외하세요. 3) 출력형식: 오직 이름만 쉼표로 구분, 다른 텍스트 없이. 예시 출력: 홍길동,김철수,이영희,박민준" },
                     { inlineData: { mimeType: "image/jpeg", data: base64Data } }
                 ]}],
                 generationConfig: { temperature: 0.1 }
@@ -550,7 +550,7 @@
             );
         };
 
-        const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, requestAuth, showToast, geminiApiKey }) => {
+        const HistoryDetailModal = ({ record, allMembers, onClose, onSave, onDelete, requestAuth, showToast, geminiApiKey, onSelectMember }) => {
             const [selected, setSelected] = useState(new Set(record.members || []));
             const [image, setImage] = useState(record.image || null);
             const initialDate = record.date.replace(/\. /g, '-').replace(/\.$/, '');
@@ -692,9 +692,16 @@
                                                         const checked = selected.has(m.name);
                                                         return (
                                                             <button key={m.name}
-                                                                onClick={() => { if (!isEditable) return; const n = new Set(selected); if(n.has(m.name)) n.delete(m.name); else n.add(m.name); setSelected(n); }}
-                                                                disabled={!isEditable}
-                                                                className={`px-2 py-2.5 rounded-xl border border-gray-100 transition-all flex items-center justify-center gap-1.5 ${!isEditable ? '' : 'active:scale-95'}`}
+                                                                onClick={() => {
+                                                                    if (isEditable) {
+                                                                        const n = new Set(selected);
+                                                                        if(n.has(m.name)) n.delete(m.name); else n.add(m.name);
+                                                                        setSelected(n);
+                                                                    } else {
+                                                                        onSelectMember && onSelectMember(m.name);
+                                                                    }
+                                                                }}
+                                                                className={`px-2 py-2.5 rounded-xl border border-gray-100 transition-all flex items-center justify-center gap-1.5 active:scale-95 ${!isEditable ? 'hover:border-blue-200 hover:bg-blue-50' : ''}`}
                                                                 style={{backgroundColor: checked ? (pi_h?.light || '#f1f5f9') : '#fff', minHeight: '40px'}}
                                                             >
                                                                 {pi_h && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0"
@@ -802,22 +809,25 @@
             );
         };
 
-        const MemberChipAttended = ({ name, partMap, partOverride, roleOverride }) => {
+        const MemberChipAttended = ({ name, partMap, partOverride, roleOverride, onClick }) => {
             const part = partOverride || (partMap ? partMap[name] : null);
             let pi = PART_ICON[part] || null;
             if (part === 'staff' && pi) {
                 const role = roleOverride || '';
                 pi = { ...pi, abbr: role === '반주자' ? '반' : '성' };
             }
+            const interactive = !!onClick;
+            const Tag = interactive ? 'button' : 'div';
             return (
-                <div className="flex items-center justify-center gap-1.5 px-2 py-2.5 bg-white border border-gray-100 rounded-xl"
+                <Tag onClick={onClick}
+                    className={`flex items-center justify-center gap-1.5 px-2 py-2.5 bg-white border border-gray-100 rounded-xl ${interactive ? 'active:scale-95 hover:border-blue-200 hover:bg-blue-50 transition-all cursor-pointer w-full' : ''}`}
                     style={{minHeight:'40px'}}>
                     {pi && (
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded font-black shrink-0"
                             style={{backgroundColor:pi.light, color:pi.color, fontSize:'10px', border:`1.5px solid ${pi.color}26`}}>{pi.abbr}</span>
                     )}
                     <span className="font-bold text-xs text-gray-800 whitespace-nowrap leading-tight">{name}</span>
-                </div>
+                </Tag>
             );
         };
 
@@ -954,7 +964,7 @@
             );
         };
 
-        const AttendStatsModal = ({ history, members, memberPartMap, onClose }) => {
+        const AttendStatsModal = ({ history, members, memberPartMap, onClose, onSelectMember }) => {
             const safeHistory = (history || []).filter(h => {
                 const parts = (h.date || '').split('. ');
                 if (parts.length < 2) return false;
@@ -1066,7 +1076,7 @@
                             <Section title={`개근상 후보 (무결 참석)`} accent="#7c3aed" count={perfectMembers.length} empty={perfectMembers.length===0}>
                                 <div className="grid grid-cols-4 gap-1.5">
                                     {sortedPerfect.map(m => (
-                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} />
+                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} onClick={() => onSelectMember && onSelectMember(m.name)} />
                                     ))}
                                 </div>
                             </Section>
@@ -1074,7 +1084,7 @@
                             <Section title="아차상 후보 (1회 결석)" accent="#f59e0b" count={oneAbsenceMembers.length} empty={oneAbsenceMembers.length===0}>
                                 <div className="grid grid-cols-4 gap-1.5">
                                     {sortedOneAbsence.map(m => (
-                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} />
+                                        <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} roleOverride={memberRoleMap[m.name]} onClick={() => onSelectMember && onSelectMember(m.name)} />
                                     ))}
                                 </div>
                             </Section>
@@ -1085,9 +1095,9 @@
             );
         };
 
-        const PersonalAttendModal = ({ history, members, onClose }) => {
-            const [pStep, setPStep] = useState('list');
-            const [pMember, setPMember] = useState('');
+        const PersonalAttendModal = ({ history, members, onClose, initialMember }) => {
+            const [pStep, setPStep] = useState(initialMember ? 'history' : 'list');
+            const [pMember, setPMember] = useState(initialMember || '');
             const activeMembers = (members || []).filter(m => m && m.status === 'active');
 
             const memberAttendCount = useMemo(() => {
@@ -1112,14 +1122,17 @@
             }, [pMember, history]);
             const pAttendRate = pHistory.length > 0 ? Math.round(pHistory.filter(i=>i.isPresent).length / pHistory.length * 100) : 0;
             return (
-                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                <div className={`fixed inset-0 bg-black/85 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 ${initialMember ? 'z-[210]' : 'z-[200]'}`}>
                     <div className="bg-[#f8faff] w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
                         <div className="bg-white rounded-t-[24px] md:rounded-t-[24px] shrink-0">
                             <div className="md:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-gray-200 rounded-full"></div></div>
                             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                                 <div className="flex items-center gap-3 min-w-0">
                                     {pStep === 'history' && (
-                                        <button onClick={() => { setPStep('list'); setPMember(''); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90 shrink-0">
+                                        <button onClick={() => { 
+                                            if (initialMember) onClose();
+                                            else { setPStep('list'); setPMember(''); }
+                                        }} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90 shrink-0">
                                             <LucideIcon name="chevron-left" className="w-4 h-4" />
                                         </button>
                                     )}
@@ -1131,7 +1144,7 @@
                                         </p>
                                     </div>
                                 </div>
-                                {pStep === 'list' && (
+                                {(pStep === 'list' || initialMember) && (
                                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors active:scale-90 shrink-0">
                                         <LucideIcon name="x" className="w-4 h-4" />
                                     </button>
@@ -3149,6 +3162,7 @@
             const [showBdCalendar, setShowBdCalendar] = useState(false);
             const [showAttendStats, setShowAttendStats] = useState(false);
             const [showPersonalModal, setShowPersonalModal] = useState(false);
+            const [personalInitialMember, setPersonalInitialMember] = useState(null);
             const [editMemberConfig, setEditMemberConfig] = useState(null);
             const [selfPhotoMember, setSelfPhotoMember] = useState(null);
             const [editingHistory, setEditingHistory] = useState(null);
@@ -3404,11 +3418,11 @@
 
                     {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
                     {showBdCalendar && <BirthdayCalendarModal members={sortedMembers} onClose={() => setShowBdCalendar(false)} />}
-                    {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((acc,m)=>{if(m&&m.name)acc[m.name]=m.part;return acc;},{})} onClose={() => setShowAttendStats(false)} />}
-                    {showPersonalModal && <PersonalAttendModal history={history} members={sortedMembers} onClose={() => setShowPersonalModal(false)} />}
+                    {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((acc,m)=>{if(m&&m.name)acc[m.name]=m.part;return acc;},{})} onClose={() => setShowAttendStats(false)} onSelectMember={(name) => { setPersonalInitialMember(name); setShowPersonalModal(true); }} />}
+                    {showPersonalModal && <PersonalAttendModal history={history} members={sortedMembers} initialMember={personalInitialMember} onClose={() => { setShowPersonalModal(false); setPersonalInitialMember(null); }} />}
                     {editMemberConfig && <MemberEditModal member={editMemberConfig.member} onClose={() => { setEditMemberConfig(null); editMemberConfig.onClose(); }} onSave={editMemberConfig.onSave} onDelete={editMemberConfig.onDelete} />}
                     {selfPhotoMember && <SelfPhotoModal member={selfPhotoMember} onClose={() => setSelfPhotoMember(null)} onSave={handleSelfPhotoSave} />}
-                    {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} geminiApiKey={geminiApiKey} onSave={async (updated) => { 
+                    {editingHistory && <HistoryDetailModal record={editingHistory} allMembers={sortedMembers} requestAuth={requestAuth} onClose={() => setEditingHistory(null)} geminiApiKey={geminiApiKey} onSelectMember={(name) => { setPersonalInitialMember(name); setShowPersonalModal(true); }} onSave={async (updated) => { 
                         const { db, doc, setDoc } = window.MyFirebase;
                         await setDoc(doc(db, 'history', updated.id), updated);
                         showToast("수정되었습니다."); setEditingHistory(null);
