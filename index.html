@@ -1451,12 +1451,12 @@
             );
         };
 
-        const MusicView = ({ songs, worshipSongs, requestAuth, askConfirm, showToast, isAdmin, geminiApiKey }) => {
+        const MusicView = ({ songs, worshipSongs, requestAuth, askConfirm, showToast, isAdmin, geminiApiKey, lastMusicSource }) => {
             const getToday = () => new Date().toISOString().split('T')[0];
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
             const [isGenerating, setIsGenerating] = useState(false);
-            const [form, setForm] = useState({ title: '', date: getToday(), source: '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
+            const [form, setForm] = useState({ title: '', date: getToday(), source: lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
             const [showWorship, setShowWorship] = useState(false);
             const [editingWorship, setEditingWorship] = useState(null);
             const [worshipForm, setWorshipForm] = useState(null);
@@ -1476,10 +1476,16 @@
                 delete data.file;
                 if (form.id) { await setDoc(doc(db, 'music', form.id), data); showToast("수정되었습니다."); }
                 else { await addDoc(collection(db, 'music'), data); showToast("저장되었습니다."); }
-                resetForm();
+                // 다음 등록 시 기본값으로 쓰이도록 출처를 공유 설정에 저장
+                const savedSource = form.source && form.source.trim() ? form.source.trim() : lastMusicSource;
+                if (form.source && form.source.trim()) {
+                    try { await setDoc(doc(db, 'settings', 'admin'), { lastMusicSource: savedSource }, { merge: true }); }
+                    catch (e) { console.warn('lastMusicSource 저장 실패:', e); }
+                }
+                resetForm(savedSource);
             });
 
-            const resetForm = () => { setForm({ title: '', date: getToday(), source: '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
+            const resetForm = (overrideSource) => { setForm({ title: '', date: getToday(), source: overrideSource || lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
             const handleEdit = (song) => requestAuth(() => { 
                 setForm({
                     id: song.id, title: song.title || '', date: song.date || getToday(), source: song.source || '중앙성가 42권', image: song.image || '',
@@ -3171,6 +3177,7 @@
             const [masterPassword, setMasterPassword] = useState("onnurigrace");
             const [deletePassword, setDeletePassword] = useState("5879");
             const [geminiApiKey, setGeminiApiKey] = useState('');
+            const [lastMusicSource, setLastMusicSource] = useState('중앙성가 42권');
             const [isNavVisible, setIsNavVisible] = useState(true);
             const lastScrollY = useRef(0);
 
@@ -3204,6 +3211,7 @@
                             if (s.data().password) setMasterPassword(s.data().password);
                             if (s.data().deletePassword) setDeletePassword(s.data().deletePassword);
                             if (s.data().geminiKey) setGeminiApiKey(s.data().geminiKey);
+                            if (s.data().lastMusicSource) setLastMusicSource(s.data().lastMusicSource);
                         }
                     });
                     
@@ -3402,7 +3410,7 @@
                         <div className="flex-1 scroll-container p-4 pt-20 md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
-                                {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} />}
+                                {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'manage' && <ManageView members={sortedMembers} currentPassword={masterPassword} currentDeletePassword={deletePassword} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} onSaveGeminiKey={handleSaveGeminiKey} isAdmin={isAdmin} onBecomeAdmin={() => { setIsAdmin(true); }} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(cfg) => setEditMemberConfig(cfg)} onOpenSelfPhoto={(m) => setSelfPhotoMember(m)} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
