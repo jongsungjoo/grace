@@ -7,62 +7,77 @@
     <link rel="manifest" href="https://jongsungjoo.github.io/grace/manifest.json">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="주은혜매니저">
     <link rel="apple-touch-icon" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
 
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#ffffff">
     <link rel="icon" type="image/png" sizes="192x192" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
     <link rel="icon" type="image/png" sizes="512x512" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
-
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="주은혜 찬양사역팀">
-    <meta property="og:description" content="인천 온누리교회 주은혜 찬양사역팀 매니저 Pro">
-    <meta property="og:image" content="https://jongsungjoo.github.io/grace/icon2.png?v=1">
-    <meta property="og:url" content="https://jongsungjoo.github.io/grace/">
 
     <title>주은혜 찬양사역팀 매니저 Pro</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+    <!-- Tailwind with Dark Mode config -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        netflix: '#E50914',
+                        darkbg: '#000000',
+                        darksurface: '#141414'
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Theme Initialization Script to prevent flicker -->
+    <script>
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            if (!savedTheme) {
+                localStorage.setItem('theme', 'light');
+            }
+        }
+    </script>
 
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         
-        :root { 
-            --primary: #E50914; /* Netflix Red */
-            --bg: #000000;      /* Pitch Black */
-            --surface: #141414; /* Dark Charcoal */
-            --border: rgba(255, 255, 255, 0.1);
-        }
-        
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg); color: #ffffff; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; 
             -webkit-tap-highlight-color: transparent; 
             -webkit-font-smoothing: antialiased;
-        }
-
-        /* Netflix Style Glass & Shell */
-        .glass-nav {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-top: 0.5px solid var(--border);
-        }
-        .glass-header {
-            background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            background-color: #f8fafc;
+            color: #111827;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
-        .netflix-card {
-            background: var(--surface);
-            border-radius: 12px;
-            border: 1px solid var(--border);
+        /* 텍스트 입력창 등에서만 선택/복사 허용 */
+        input, textarea, [contenteditable="true"] {
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+
+        html.dark body {
+            background-color: #000000;
+            color: #ffffff;
         }
 
         .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -86,7 +101,7 @@
             min-height: 0; 
             display: flex; 
             flex-direction: column; 
-            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            padding-bottom: calc(100px + env(safe-area-inset-bottom)); /* 플로팅 네비바 여백 */
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -94,58 +109,15 @@
         .progress-bar-fill { transition: width 0.3s ease-in-out; }
         button, a { touch-action: manipulation; }
 
-        .header-date-input {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.875rem;
-            color: #fff;
-            outline: none;
-            max-width: 140px;
-            color-scheme: dark;
-        }
-        
-        /* 다크모드 차트 툴팁 스타일 강제 보정 */
-        #chartjs-tooltip { color: white !important; }
+        /* 다크/라이트 툴팁 보정 */
+        #chartjs-tooltip { transition: all 0.2s ease; }
     </style>
 </head>
 <body>
     <div id="root" class="h-full flex flex-col">
-        <!-- App Shell: Dark Netflix Style Skeleton -->
-        <div id="app-shell" style="height: 100vh; display: flex; flex-direction: column; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;">
-            <!-- Header -->
-            <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); padding: calc(12px + env(safe-area-inset-top)) 20px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 30;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #193278; color: white; font-size: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; line-height: 1.1; text-align: center;">온누리<br/>교회</div>
-                    <h1 style="font-size: 18px; font-weight: 900; color: #fff; margin: 0; letter-spacing: -0.5px;">주은혜 찬양사역팀</h1>
-                </div>
-            </div>
-            <!-- Body skeleton -->
-            <div style="flex: 1; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <div style="height: 28px; width: 120px; background: #222; border-radius: 4px;"></div>
-                    <div style="width: 40px; height: 40px; background: #222; border-radius: 50%;"></div>
-                </div>
-                <div style="height: 200px; background: #141414; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
-                <div style="height: 200px; background: #141414; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
-            </div>
-            <!-- Tab bar skeleton -->
-            <div style="background: rgba(0,0,0,0.9); border-top: 1px solid rgba(255,255,255,0.1); padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); display: flex; justify-content: space-around; flex-shrink: 0; z-index: 50;">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
-                    <div style="width: 24px; height: 24px; background: #E50914; border-radius: 6px; opacity: 0.9;"></div>
-                    <span style="font-size: 10px; font-weight: 600; color: #E50914;">음원</span>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
-                    <div style="width: 24px; height: 24px; background: #333; border-radius: 50%;"></div>
-                    <span style="font-size: 10px; font-weight: 500; color: #666;">영상</span>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
-                    <div style="width: 24px; height: 24px; background: #333; border-radius: 6px;"></div>
-                    <span style="font-size: 10px; font-weight: 500; color: #666;">출석</span>
-                </div>
-            </div>
+        <!-- App Skeleton -->
+        <div id="app-shell" class="h-screen flex items-center justify-center bg-gray-50 dark:bg-black transition-colors duration-300">
+            <div class="w-10 h-10 border-4 border-gray-200 dark:border-white/10 border-t-blue-600 dark:border-t-netflix rounded-full animate-spin"></div>
         </div>
     </div>
     <div id="modal-portal"></div>
@@ -180,7 +152,6 @@
 
         const SHARE_LINK = "https://teamgrace.netlify.app";
         
-        // 다크 테마에 맞춘 파트 컬러 조정 (투명도 등)
         const PARTS = [
             { id: 'soprano', name: '소프라노', color: '#ff4081', light: 'rgba(255,64,129,0.15)' },
             { id: 'alto',    name: '알토',     color: '#ffb300', light: 'rgba(255,179,0,0.15)' },
@@ -189,7 +160,7 @@
         ];
         
         const PART_ICON = {
-            staff:   { abbr: '성', color: '#fff', light: 'rgba(255,255,255,0.1)' },
+            staff:   { abbr: '성', color: '#4ade80', light: 'rgba(74,222,128,0.15)' },
             soprano: { abbr: 'S',  color: '#ff4081', light: 'rgba(255,64,129,0.15)' },
             alto:    { abbr: 'A',  color: '#ffb300', light: 'rgba(255,179,0,0.15)' },
             tenor:   { abbr: 'T',  color: '#29b6f6', light: 'rgba(41,182,246,0.15)' },
@@ -197,14 +168,14 @@
         };
         
         const PART_OPTIONS = [
-            { id: 'staff',   name: '성가사 · 반주자', color: '#ffffff', light: 'rgba(255,255,255,0.1)' },
+            { id: 'staff',   name: '성가사 · 반주자', color: '#4ade80', light: 'rgba(74,222,128,0.15)' },
             ...PARTS
         ];
 
         const STATUS_OPTIONS = [
-            { id: 'active',        label: '활동중',   dot: '#22c55e', light: 'rgba(34,197,94,0.1)', text: '#4ade80' },
-            { id: 'short_absence', label: '단기부재', dot: '#eab308', light: 'rgba(234,179,8,0.1)', text: '#facc15' },
-            { id: 'sabbatical',    label: '안식중',   dot: '#9ca3af', light: 'rgba(156,163,175,0.1)', text: '#9ca3af' },
+            { id: 'active',        label: '활동중',   dot: '#22c55e', light: 'rgba(34,197,94,0.1)', text: '#16a34a' },
+            { id: 'short_absence', label: '단기부재', dot: '#eab308', light: 'rgba(234,179,8,0.1)', text: '#ca8a04' },
+            { id: 'sabbatical',    label: '안식중',   dot: '#9ca3af', light: 'rgba(156,163,175,0.1)', text: '#64748b' },
         ];
 
         const LOGO_URL = "https://jongsungjoo.github.io/grace/logo.png"; 
@@ -217,10 +188,7 @@
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             formData.append('folder', folder);
-            const res = await fetch(
-                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-                { method: 'POST', body: formData }
-            );
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
             if (!res.ok) throw new Error('Cloudinary 업로드 실패');
             return (await res.json()).secure_url;
         };
@@ -315,12 +283,11 @@
             return <span ref={ref} className={`inline-flex items-center justify-center ${className}`} />;
         };
 
-        // 로고는 원본 유지
         const AppLogo = ({ className = "w-10 h-10" }) => {
             const [error, setError] = useState(false);
             if (!LOGO_URL || error) {
                 return (
-                    <div className={`${className} bg-[#193278] rounded-full flex items-center justify-center text-white shrink-0 shadow-md`}>
+                    <div className={`${className} bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 shadow-md`}>
                         <LucideIcon name="church" className="w-1/2 h-1/2" />
                     </div>
                 );
@@ -331,15 +298,16 @@
         };
 
         const NavBtn = ({ id, label, icon, active, onClick }) => (
-            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-white/10 text-white font-bold' : 'text-neutral-500 hover:bg-white/5'}`}>
+            <button onClick={() => onClick(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-blue-100 dark:bg-white/10 text-blue-700 dark:text-white font-bold' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'}`}>
                 <LucideIcon name={icon} className="w-5 h-5" />{label}
             </button>
         );
 
+        // 플로팅 메뉴용 네비게이션 아이콘 (텍스트 숨김 혹은 최소화)
         const NavIconBtn = ({ id, icon, label, active, onClick }) => (
-            <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${active ? 'text-white scale-105' : 'text-neutral-500 hover:text-neutral-300'}`}>
+            <button onClick={() => onClick(id)} className={`flex flex-col items-center gap-1 transition-all duration-300 px-3 py-1 rounded-full ${active ? 'text-blue-600 dark:text-white bg-blue-50 dark:bg-white/10 scale-105' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}>
                 <LucideIcon name={icon} className="w-6 h-6" />
-                <span className="text-[10px] font-bold tracking-tighter uppercase">{label}</span>
+                <span className="text-xs font-bold tracking-tight">{label}</span>
             </button>
         );
 
@@ -350,17 +318,17 @@
                 if (input === correctPassword) { onConfirm(); } else { setError(true); setTimeout(() => setError(false), 500); }
             };
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
-                    <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[24px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${error ? 'shake' : ''}`}>
-                        <h3 className="text-xl font-bold text-white mb-2">관리자 인증</h3>
-                        <p className="text-sm text-neutral-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
+                    <div className={`bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-8 rounded-[24px] w-full max-sm:max-w-xs max-w-sm scale-in text-center shadow-2xl ${error ? 'shake' : ''}`}>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">관리자 인증</h3>
+                        <p className="text-sm text-gray-500 dark:text-neutral-400 mb-6">보안을 위해 비밀번호가 필요합니다.</p>
                         <div className="relative mb-4">
-                            <input type="password" autoFocus className={`w-full bg-black border p-4 rounded-xl font-bold text-center text-white tracking-widest outline-none transition-all ${error ? 'border-red-500' : 'border-white/10 focus:border-[#E50914]'}`} placeholder="Password" value={input} onChange={e => { setInput(e.target.value); if(error) setError(false); }} onKeyDown={e => e.key === 'Enter' && handleConfirm()} />
-                            {error && <p className="text-red-500 text-[10px] font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                            <input type="password" autoFocus className={`w-full bg-gray-50 dark:bg-black border p-4 rounded-xl font-bold text-center text-gray-900 dark:text-white tracking-widest outline-none transition-all ${error ? 'border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-blue-500 dark:focus:border-netflix'}`} placeholder="Password" value={input} onChange={e => { setInput(e.target.value); if(error) setError(false); }} onKeyDown={e => e.key === 'Enter' && handleConfirm()} />
+                            {error && <p className="text-red-500 text-xs font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="flex-1 py-4 font-bold text-neutral-400 bg-white/5 rounded-xl active:scale-95 transition-transform">취소</button>
-                            <button onClick={handleConfirm} className="flex-[2] py-4 bg-[#E50914] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">확인</button>
+                            <button onClick={onClose} className="flex-1 py-4 font-bold text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-white/5 rounded-xl active:scale-95 transition-transform">취소</button>
+                            <button onClick={handleConfirm} className="flex-[2] py-4 bg-blue-600 dark:bg-netflix text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">확인</button>
                         </div>
                     </div>
                 </div>
@@ -368,21 +336,17 @@
         };
 
         const ConfirmModal = ({ modal, onClose }) => (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
-                <div className="bg-neutral-900 border border-white/10 p-8 rounded-[24px] w-full max-sm:max-w-sm scale-in text-center shadow-2xl">
-                    <h3 className="text-xl font-bold text-white mb-2">{modal.title}</h3>
-                    <p className="text-sm text-neutral-400 mb-8 leading-relaxed">{modal.msg}</p>
+            <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-[500] flex items-center justify-center p-5 text-center">
+                <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-8 rounded-[24px] w-full max-sm:max-w-sm scale-in text-center shadow-2xl">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{modal.title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-neutral-400 mb-8 leading-relaxed">{modal.msg}</p>
                     <div className="flex gap-3">
-                        <button onClick={onClose} className="flex-1 py-4 bg-white/5 rounded-xl font-bold text-neutral-400 active:scale-95 transition-transform">취소</button>
-                        <button onClick={() => { modal.onConfirm(); onClose(); }} className="flex-1 py-4 bg-[#E50914] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">확인</button>
+                        <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-white/5 rounded-xl font-bold text-gray-600 dark:text-neutral-400 active:scale-95 transition-transform">취소</button>
+                        <button onClick={() => { modal.onConfirm(); onClose(); }} className="flex-1 py-4 bg-blue-600 dark:bg-netflix text-white rounded-xl font-bold shadow-lg active:scale-95 transition-transform">확인</button>
                     </div>
                 </div>
             </div>
         );
-
-        /* ==========================================
-           2단계: 다크/넷플릭스 테마 모달 및 컴포넌트 
-           ========================================== */
 
         const InterestModal = ({ members, history, onClose }) => {
             const [showSabbatical, setShowSabbatical] = useState(false);
@@ -398,30 +362,30 @@
             const confirmationList = activeOnes.filter(m => !records4.includes(m.name));
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
-                    <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden text-left">
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden text-left">
                         <div className="shrink-0">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">관심 팀원</h3>
-                                    <p className="text-xs text-neutral-400 font-medium mt-0.5">최근 출석 이력 기준</p>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">관심 팀원</h3>
+                                    <p className="text-sm text-gray-500 dark:text-neutral-400 font-medium mt-0.5">최근 출석 이력 기준</p>
                                 </div>
-                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:text-white transition-colors active:scale-90">
-                                    <LucideIcon name="x" className="w-4 h-4" />
+                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors active:scale-90">
+                                    <LucideIcon name="x" className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-5 space-y-6">
                             {[
                                 { list: attentionList,    label: '관심 필요', sub: '3주 미출석',  accent: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-                                { list: confirmationList, label: '확인 필요', sub: '4주+ 미출석', accent: '#E50914', bg: 'rgba(229,9,20,0.1)' },
+                                { list: confirmationList, label: '확인 필요', sub: '4주+ 미출석', accent: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
                                 { list: shortAbsenceOnes, label: '단기 부재',  sub: '',            accent: '#eab308', bg: 'rgba(234,179,8,0.1)' },
                             ].map(({ list, label, sub, accent, bg }) => (
                                 <section key={label}>
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-1.5 h-4 rounded-full shrink-0" style={{backgroundColor: accent}}></span>
-                                        <span className="text-sm font-bold text-white">{label}</span>
-                                        {sub && <span className="text-xs text-neutral-400 font-medium">({sub})</span>}
+                                        <span className="text-base font-bold text-gray-900 dark:text-white">{label}</span>
+                                        {sub && <span className="text-sm text-gray-500 dark:text-neutral-400 font-medium">({sub})</span>}
                                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full ml-auto" style={{backgroundColor: bg, color: accent}}>{list.length}명</span>
                                     </div>
                                     {list.length > 0 ? (
@@ -429,23 +393,23 @@
                                             {list.map(m => <MemberChipAttended key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} />)}
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-neutral-500 font-medium pl-3">해당하는 팀원이 없습니다.</p>
+                                        <p className="text-sm text-gray-500 dark:text-neutral-500 font-medium pl-3">해당하는 팀원이 없습니다.</p>
                                     )}
                                 </section>
                             ))}
                             <section>
                                 <button onClick={() => setShowSabbatical(!showSabbatical)}
                                     className="w-full flex items-center gap-2 py-1 text-left">
-                                    <span className="w-1.5 h-4 rounded-full bg-neutral-600 shrink-0"></span>
-                                    <span className="text-sm font-bold text-neutral-300">안식 팀원</span>
-                                    <span className="text-xs font-semibold text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full ml-auto">{sabbaticalOnes.length}명</span>
-                                    <LucideIcon name={showSabbatical ? "chevron-up" : "chevron-down"} className="w-4 h-4 text-neutral-400 ml-1" />
+                                    <span className="w-1.5 h-4 rounded-full bg-gray-300 dark:bg-neutral-600 shrink-0"></span>
+                                    <span className="text-base font-bold text-gray-600 dark:text-neutral-300">안식 팀원</span>
+                                    <span className="text-xs font-semibold text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full ml-auto">{sabbaticalOnes.length}명</span>
+                                    <LucideIcon name={showSabbatical ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-gray-400 ml-1" />
                                 </button>
                                 {showSabbatical && (
                                     <div className="grid grid-cols-4 gap-2 mt-3">
                                         {sabbaticalOnes.length > 0
                                             ? sabbaticalOnes.map(m => <MemberChipAttended key={m.name} name={m.name} partOverride={m.part} roleOverride={m.role} />)
-                                            : <p className="text-xs text-neutral-500 font-medium col-span-4 pl-3">안식 팀원이 없습니다.</p>}
+                                            : <p className="text-sm text-gray-500 dark:text-neutral-500 font-medium col-span-4 pl-3">안식 팀원이 없습니다.</p>}
                                     </div>
                                 )}
                             </section>
@@ -493,7 +457,7 @@
                 <div className="fixed inset-0 z-[400] bg-black/95 flex items-center justify-center fade-in overflow-hidden" style={{ touchAction: 'none' }} onClick={() => { if (scale <= 1.01) onClose(); }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
                     <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-white/10 backdrop-blur-md transition-all active:scale-90 z-[310]"><LucideIcon name="x" className="w-8 h-8" /></button>
                     {scale > 1.05 && (
-                        <button onClick={(e) => { e.stopPropagation(); setScale(1); setTx(0); setTy(0); }} className="absolute top-6 left-6 text-white/80 hover:text-white px-4 py-2 rounded-full bg-white/10 backdrop-blur-md transition-all active:scale-90 z-[310] text-xs font-bold flex items-center gap-1.5"><LucideIcon name="minimize-2" className="w-4 h-4" /><span>원본</span></button>
+                        <button onClick={(e) => { e.stopPropagation(); setScale(1); setTx(0); setTy(0); }} className="absolute top-6 left-6 text-white/80 hover:text-white px-4 py-2 rounded-full bg-white/10 backdrop-blur-md transition-all active:scale-90 z-[310] text-sm font-bold flex items-center gap-1.5"><LucideIcon name="minimize-2" className="w-5 h-5" /><span>원본</span></button>
                     )}
                     <img src={src} draggable={false} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none pointer-events-none" style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transformOrigin: 'center center', transition: gesture.active ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)', willChange: 'transform' }} />
                 </div>
@@ -539,20 +503,20 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-center">
-                    <div className="bg-[#141414] border border-white/10 rounded-t-[24px] md:rounded-[24px] w-full md:max-w-2xl max-h-[95vh] md:max-h-[88vh] flex flex-col shadow-2xl scale-in overflow-hidden text-left">
-                        <header className="px-6 pt-5 pb-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-center">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-t-[24px] md:rounded-[24px] w-full md:max-w-2xl max-h-[95vh] md:max-h-[88vh] flex flex-col shadow-2xl scale-in overflow-hidden text-left">
+                        <header className="px-6 pt-5 pb-4 border-b border-gray-100 dark:border-white/10 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                                <h3 className="text-lg font-bold text-white shrink-0">{isEditable ? "기록 편집" : "기록 조회"}</h3>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white shrink-0">{isEditable ? "기록 편집" : "기록 조회"}</h3>
                                 {isEditable ? (
-                                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg font-bold text-sm text-white outline-none color-scheme-dark" />
+                                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-3 py-1.5 rounded-lg font-bold text-sm text-gray-900 dark:text-white outline-none dark:[color-scheme:dark]" />
                                 ) : (
-                                    <span className="text-sm font-semibold text-neutral-300 bg-white/5 border border-white/10 px-3 py-1 rounded-lg shrink-0">{record.date}</span>
+                                    <span className="text-sm font-semibold text-gray-600 dark:text-neutral-300 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-3 py-1 rounded-lg shrink-0">{record.date}</span>
                                 )}
                             </div>
                             <div className="flex gap-2 shrink-0">
-                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2 bg-white/5 text-white rounded-full hover:bg-white/10"><LucideIcon name="edit-3" className="w-5 h-5" /></button>}
-                                <button onClick={onClose} className="p-2 bg-white/5 text-neutral-400 hover:text-white rounded-full"><LucideIcon name="x" className="w-5 h-5" /></button>
+                                {!isEditable && <button onClick={() => requestAuth(() => setIsEditable(true))} className="p-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"><LucideIcon name="edit-3" className="w-5 h-5" /></button>}
+                                <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors"><LucideIcon name="x" className="w-5 h-5" /></button>
                             </div>
                         </header>
                         <div className="flex-1 overflow-y-auto p-6 hide-scrollbar">
@@ -560,49 +524,49 @@
                                 <section>
                                     {isEditable && (
                                         <div className="flex flex-col mb-4">
-                                            <button onClick={handleRunAI} disabled={ocrStatus === 'processing' || !image} className="w-full bg-[#E50914] text-white py-3 px-4 rounded-xl font-bold transition-transform active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 text-sm">
-                                                {ocrStatus === 'processing' ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LucideIcon name="sparkles" className="w-4 h-4" />}
+                                            <button onClick={handleRunAI} disabled={ocrStatus === 'processing' || !image} className="w-full bg-blue-600 dark:bg-netflix text-white py-3 px-4 rounded-xl font-bold transition-transform active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 text-sm">
+                                                {ocrStatus === 'processing' ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <LucideIcon name="sparkles" className="w-5 h-5" />}
                                                 {ocrStatus === 'processing' ? "AI 이름 인식 중..." : "AI 자동 출석 체크"}
                                             </button>
                                         </div>
                                     )}
-                                    <div className={`relative bg-black rounded-xl border border-white/10 overflow-hidden min-h-[180px] flex items-center justify-center transition-all ${isEditable ? 'cursor-pointer hover:border-white/30' : ''}`}>
+                                    <div className={`relative bg-gray-100 dark:bg-black rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden min-h-[180px] flex items-center justify-center transition-all ${isEditable ? 'cursor-pointer hover:border-gray-300 dark:hover:border-white/30' : ''}`}>
                                         {image ? (
                                             <div className={`w-full relative group ${!isEditable ? 'cursor-zoom-in' : ''}`} onClick={() => !isEditable && setIsFullScreen(true)}>
                                                 <img src={image} className="w-full max-h-[35vh] md:max-h-[40vh] object-contain" />
                                                 {ocrStatus === "processing" && (
-                                                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
-                                                        <div className="w-full bg-white/10 h-1.5 rounded-full mb-2 max-w-[150px]"><div className="bg-[#E50914] h-full progress-bar-fill rounded-full" style={{ width: `${ocrProgress}%` }}></div></div>
-                                                        <p className="text-[#E50914] font-bold text-xs animate-pulse">인식 중 {ocrProgress}%</p>
+                                                    <div className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+                                                        <div className="w-full bg-white/20 h-1.5 rounded-full mb-2 max-w-[150px]"><div className="bg-blue-500 dark:bg-netflix h-full progress-bar-fill rounded-full" style={{ width: `${ocrProgress}%` }}></div></div>
+                                                        <p className="text-white dark:text-netflix font-bold text-sm animate-pulse">인식 중 {ocrProgress}%</p>
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="text-center p-4 text-neutral-600">
+                                            <div className="text-center p-4 text-gray-400 dark:text-neutral-600">
                                                 <LucideIcon name="image" className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                                <p className="text-xs font-semibold">{isEditable ? "영역을 눌러 사진 업로드" : "사진이 없습니다."}</p>
+                                                <p className="text-sm font-semibold">{isEditable ? "영역을 눌러 사진 업로드" : "사진이 없습니다."}</p>
                                             </div>
                                         )}
                                         {isEditable && <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={ocrStatus === 'processing'} />}
                                     </div>
                                 </section>
                                 <section>
-                                    <h4 className="text-xs font-bold text-neutral-400 mb-4 uppercase tracking-wider">참석 팀원 명단 ({selected.size}명)</h4>
+                                    <h4 className="text-sm font-bold text-gray-500 dark:text-neutral-400 mb-4 uppercase tracking-wider">참석 팀원 명단 ({selected.size}명)</h4>
                                     {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                         const list = activeMembers.filter(m => m.part === partId);
                                         if (list.length === 0) return null;
                                         
                                         const checkedCount = list.filter(m => selected.has(m.name)).length;
                                         const partObj = PARTS.find(p => p.id === partId);
-                                        const partColor = partId === 'staff' ? '#fff' : (partObj ? partObj.color : '#ccc');
+                                        const partColor = partId === 'staff' ? '#4ade80' : (partObj ? partObj.color : '#ccc');
                                         const partNameLabel = partId === 'staff' ? '성가사 · 반주자' : (partObj ? partObj.name : '');
                                         
                                         return (
                                             <div key={partId} className="mb-6 text-left">
                                                 <h5 className="flex items-center gap-2 mb-3">
                                                     <span className="w-1.5 h-4 rounded-full shrink-0" style={{backgroundColor: partColor}}></span>
-                                                    <span className="text-sm font-bold text-white">{partNameLabel}</span>
-                                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10" style={{color: partColor}}>{checkedCount}/{list.length}</span>
+                                                    <span className="text-base font-bold text-gray-900 dark:text-white">{partNameLabel}</span>
+                                                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10" style={{color: partColor}}>{checkedCount}/{list.length}</span>
                                                 </h5>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     {list.map(m => {
@@ -616,10 +580,10 @@
                                                                         setSelected(n);
                                                                     } else { onSelectMember && onSelectMember(m.name); }
                                                                 }}
-                                                                className={`px-2 py-2.5 rounded-xl border transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-1 ${checked ? 'bg-white/10 border-white/20' : 'bg-black border-white/5'}`}
-                                                                style={{ minHeight: '44px' }}
+                                                                className={`px-2 py-2.5 rounded-xl border transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-1 ${checked ? 'bg-blue-50 dark:bg-white/10 border-blue-200 dark:border-white/20' : 'bg-white dark:bg-black border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/20'}`}
+                                                                style={{ minHeight: '48px' }}
                                                             >
-                                                                <span className={`text-xs font-bold whitespace-nowrap ${checked ? 'text-white' : 'text-neutral-500'}`}>{m.name}</span>
+                                                                <span className={`text-sm font-bold whitespace-nowrap ${checked ? 'text-blue-700 dark:text-white' : 'text-gray-500 dark:text-neutral-500'}`}>{m.name}</span>
                                                             </button>
                                                         );
                                                     })}
@@ -630,9 +594,9 @@
                                 </section>
                             </div>
                         </div>
-                        {isEditable && <footer className="flex gap-2 p-6 border-t border-white/10 shrink-0 bg-black/50 backdrop-blur-md">
-                            <button onClick={() => onDelete(record.id)} className="p-4 rounded-xl bg-white/5 text-red-500 border border-white/5 active:scale-95 transition-transform hover:bg-white/10"><LucideIcon name="trash-2" className="w-5 h-5" /></button>
-                            <button onClick={() => setIsEditable(false)} className="flex-1 bg-white/10 text-white py-4 rounded-xl font-bold active:scale-95 transition-transform text-sm">취소</button>
+                        {isEditable && <footer className="flex gap-2 p-6 border-t border-gray-200 dark:border-white/10 shrink-0 bg-gray-50 dark:bg-black/50 backdrop-blur-md">
+                            <button onClick={() => onDelete(record.id)} className="p-4 rounded-xl bg-white dark:bg-white/5 text-red-500 border border-gray-200 dark:border-white/5 active:scale-95 transition-transform hover:bg-gray-50 dark:hover:bg-white/10"><LucideIcon name="trash-2" className="w-5 h-5" /></button>
+                            <button onClick={() => setIsEditable(false)} className="flex-1 bg-white dark:bg-white/10 text-gray-700 dark:text-white border border-gray-200 dark:border-transparent py-4 rounded-xl font-bold active:scale-95 transition-transform text-sm hover:bg-gray-50">취소</button>
                             <button onClick={async () => {
                                 let finalImage = image;
                                 if (imageFile) {
@@ -640,7 +604,7 @@
                                     catch(e) {}
                                 }
                                 onSave({...record, date: date.replace(/-/g, '. ') + '.', members: Array.from(selected), count: selected.size, image: finalImage});
-                            }} className="flex-[2] bg-[#E50914] text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-transform text-sm">저장</button>
+                            }} className="flex-[2] bg-blue-600 dark:bg-netflix text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-transform text-sm hover:opacity-90">저장</button>
                         </footer>}
                     </div>
                     {isFullScreen && image && <PinchZoomImg src={image} onClose={() => setIsFullScreen(false)} />}
@@ -674,9 +638,9 @@
             if (part === 'staff' && pi) pi = { ...pi, abbr: roleOverride === '반주자' ? '반' : '성' };
             const Tag = onClick ? 'button' : 'div';
             return (
-                <Tag onClick={onClick} className={`flex flex-col items-center justify-center gap-1.5 px-1 py-2.5 bg-black border border-white/10 rounded-xl ${onClick ? 'active:scale-95 hover:bg-white/5 transition-all cursor-pointer w-full' : 'w-full'}`} style={{minHeight:'64px'}}>
-                    {pi && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-bold shrink-0" style={{backgroundColor:pi.light, color:pi.color, fontSize:'10px'}}>{pi.abbr}</span>}
-                    <span className="font-bold text-xs text-white whitespace-nowrap leading-tight">{name}</span>
+                <Tag onClick={onClick} className={`flex flex-col items-center justify-center gap-1.5 px-1 py-2.5 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-xl ${onClick ? 'active:scale-95 hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer w-full' : 'w-full'}`} style={{minHeight:'64px'}}>
+                    {pi && <span className="inline-flex items-center justify-center w-6 h-6 rounded font-bold shrink-0" style={{backgroundColor:pi.light, color:pi.color, fontSize:'11px'}}>{pi.abbr}</span>}
+                    <span className="font-bold text-xs text-gray-900 dark:text-white whitespace-nowrap leading-tight">{name}</span>
                 </Tag>
             );
         };
@@ -720,26 +684,26 @@
             const bdList = Object.entries(bdMap).sort((a,b) => Number(a[0]) - Number(b[0])).flatMap(([d, bds]) => bds.map(b => ({ ...b, displayD: Number(d) })));
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-left">
-                    <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-left">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 shrink-0">
                             <div>
-                                <h3 className="text-lg font-bold text-white">생일 달력</h3>
-                                <p className="text-xs text-neutral-400 font-medium mt-0.5">팀원 생일 현황</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">생일 달력</h3>
+                                <p className="text-sm text-gray-500 dark:text-neutral-400 font-medium mt-0.5">팀원 생일 현황</p>
                             </div>
-                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:text-white transition-colors active:scale-90">
-                                <LucideIcon name="x" className="w-4 h-4" />
+                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:bg-gray-200 dark:hover:text-white transition-colors active:scale-90">
+                                <LucideIcon name="x" className="w-5 h-5" />
                             </button>
                         </div>
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-5 pb-6">
                             <div className="flex items-center justify-between py-5">
-                                <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white hover:bg-white/10 active:scale-90 transition-all"><LucideIcon name="chevron-left" className="w-5 h-5" /></button>
-                                <p className="font-bold text-white text-xl">{calYear}년 {calMonth}월</p>
-                                <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white hover:bg-white/10 active:scale-90 transition-all"><LucideIcon name="chevron-right" className="w-5 h-5" /></button>
+                                <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:scale-90 transition-all"><LucideIcon name="chevron-left" className="w-6 h-6" /></button>
+                                <p className="font-bold text-gray-900 dark:text-white text-xl">{calYear}년 {calMonth}월</p>
+                                <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 active:scale-90 transition-all"><LucideIcon name="chevron-right" className="w-6 h-6" /></button>
                             </div>
                             <div className="grid grid-cols-7 mb-2">
                                 {['일','월','화','수','목','금','토'].map((d,i) => (
-                                    <div key={d} className={`text-center text-xs font-bold pb-2 ${i===0?'text-[#E50914]':i===6?'text-blue-400':'text-neutral-500'}`}>{d}</div>
+                                    <div key={d} className={`text-center text-sm font-bold pb-2 ${i===0?'text-red-500 dark:text-netflix':i===6?'text-blue-500 dark:text-blue-400':'text-gray-500 dark:text-neutral-500'}`}>{d}</div>
                                 ))}
                             </div>
                             <div className="grid grid-cols-7 gap-1.5">
@@ -749,34 +713,34 @@
                                     const isTodayCell = isCurrentMonth && day === todayD;
                                     const dow = (firstDay + day - 1) % 7;
                                     return (
-                                        <div key={day} className={`flex flex-col items-center px-0 py-1.5 rounded-xl min-h-[64px] transition-all ${bds.length > 0 ? 'bg-white/5 border border-white/10' : 'border border-transparent'} ${isTodayCell ? 'ring-1 ring-white/50' : ''}`}>
-                                            <span className={`text-[13px] font-bold leading-none mb-1 ${isTodayCell?'text-white':dow===0?'text-[#E50914]':dow===6?'text-blue-400':'text-neutral-400'}`}>{day}</span>
-                                            {bds.length > 0 && <span className="text-xs leading-none mb-1">🎁</span>}
+                                        <div key={day} className={`flex flex-col items-center px-0 py-1.5 rounded-xl min-h-[68px] transition-all ${bds.length > 0 ? 'bg-pink-50 dark:bg-white/5 border border-pink-100 dark:border-white/10' : 'border border-transparent'} ${isTodayCell ? 'ring-2 ring-blue-500 dark:ring-white/50' : ''}`}>
+                                            <span className={`text-sm font-bold leading-none mb-1 ${isTodayCell?'text-blue-600 dark:text-white':dow===0?'text-red-500 dark:text-netflix':dow===6?'text-blue-500 dark:text-blue-400':'text-gray-600 dark:text-neutral-400'}`}>{day}</span>
+                                            {bds.length > 0 && <span className="text-sm leading-none mb-1">🎁</span>}
                                             <div className="flex flex-col items-center gap-0.5 w-full px-1">
-                                                {bds.map((b, bi) => <span key={bi} className="text-[9px] font-semibold text-white leading-tight truncate w-full text-center">{b.name}</span>)}
+                                                {bds.map((b, bi) => <span key={bi} className="text-[10px] font-semibold text-gray-900 dark:text-white leading-tight truncate w-full text-center">{b.name}</span>)}
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
                             {bdList.length > 0 ? (
-                                <div className="mt-8 pt-6 border-t border-white/10">
-                                    <p className="text-sm font-bold text-neutral-500 mb-4">이달 생일자 {bdList.length}명</p>
-                                    <div className="bg-black border border-white/10 rounded-xl overflow-hidden">
+                                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/10">
+                                    <p className="text-base font-bold text-gray-500 dark:text-neutral-500 mb-4">이달 생일자 {bdList.length}명</p>
+                                    <div className="bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                                         {bdList.map((b, i) => (
-                                            <div key={i} className={`flex items-center gap-3 px-5 py-3.5 ${i < bdList.length-1 ? 'border-b border-white/5' : ''}`}>
-                                                <span className="text-xl">🎂</span>
-                                                <span className="font-semibold text-white text-sm flex-1">{b.name}</span>
-                                                <span className="text-sm font-medium text-neutral-400">
+                                            <div key={i} className={`flex items-center gap-3 px-5 py-4 ${i < bdList.length-1 ? 'border-b border-gray-100 dark:border-white/5' : ''}`}>
+                                                <span className="text-2xl">🎂</span>
+                                                <span className="font-semibold text-gray-900 dark:text-white text-base flex-1">{b.name}</span>
+                                                <span className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                                                     {calMonth}/{b.displayD}
-                                                    {b.lunar && <span className="text-purple-400 ml-1 text-xs bg-purple-900/30 px-2 py-0.5 rounded-full">(음력 {b.lunarMM}/{b.lunarDD})</span>}
+                                                    {b.lunar && <span className="text-purple-600 dark:text-purple-400 ml-1 text-xs bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full">(음력 {b.lunarMM}/{b.lunarDD})</span>}
                                                 </span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             ) : (
-                                <div className="mt-8 text-center py-12 text-neutral-600"><p className="text-sm font-semibold">이달 생일자가 없습니다</p></div>
+                                <div className="mt-8 text-center py-12 text-gray-400 dark:text-neutral-600"><p className="text-base font-semibold">이달 생일자가 없습니다</p></div>
                             )}
                         </div>
                     </div>
@@ -818,49 +782,49 @@
             const top3dates = [...safeHistory].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,3);
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-left">
-                    <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
-                        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/10">
-                            <div><h3 className="text-lg font-bold text-white">출석 통계</h3><p className="text-xs text-neutral-400 font-medium mt-0.5">2026년 1월~ · {totalSessions}회 · 활동 {activeMembers.length}명</p></div>
-                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:text-white transition-colors active:scale-90"><LucideIcon name="x" className="w-4 h-4" /></button>
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4 text-left">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col min-h-[65vh] max-h-[90vh] overflow-hidden">
+                        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                            <div><h3 className="text-lg font-bold text-gray-900 dark:text-white">출석 통계</h3><p className="text-sm text-gray-500 dark:text-neutral-400 font-medium mt-0.5">2026년 1월~ · {totalSessions}회 · 활동 {activeMembers.length}명</p></div>
+                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:bg-gray-200 dark:hover:text-white transition-colors active:scale-90"><LucideIcon name="x" className="w-5 h-5" /></button>
                         </div>
                         <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-6 space-y-8">
                             <section>
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3"><span className="w-1.5 h-4 rounded-full bg-green-500"></span>최다 출석 (Top 3)</h4>
-                                <div className="bg-black border border-white/10 rounded-xl overflow-hidden">
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3"><span className="w-1.5 h-4 rounded-full bg-green-500"></span>최다 출석 (Top 3)</h4>
+                                <div className="bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
                                     {top3dates.map((h, i) => (
-                                        <div key={h.id||i} className={`flex items-center gap-3 px-5 py-3.5 ${i < top3dates.length-1 ? 'border-b border-white/5' : ''}`}>
-                                            <span className="text-sm font-bold text-neutral-500 w-4">{i+1}</span>
-                                            <span className="text-sm font-semibold text-white flex-1">{h.date}</span>
-                                            <span className="font-bold text-green-500 text-lg">{h.count}<span className="text-xs font-medium text-neutral-500 ml-0.5">명</span></span>
+                                        <div key={h.id||i} className={`flex items-center gap-3 px-5 py-4 ${i < top3dates.length-1 ? 'border-b border-gray-200 dark:border-white/5' : ''}`}>
+                                            <span className="text-base font-bold text-gray-400 dark:text-neutral-500 w-4">{i+1}</span>
+                                            <span className="text-base font-semibold text-gray-900 dark:text-white flex-1">{h.date}</span>
+                                            <span className="font-bold text-green-600 dark:text-green-500 text-xl">{h.count}<span className="text-sm font-medium text-gray-500 dark:text-neutral-500 ml-0.5">명</span></span>
                                         </div>
                                     ))}
                                 </div>
                             </section>
                             <section>
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3"><span className="w-1.5 h-4 rounded-full bg-[#E50914]"></span>파트 출석률 순위</h4>
-                                <div className="bg-black border border-white/10 rounded-xl overflow-hidden">
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3"><span className="w-1.5 h-4 rounded-full bg-blue-500 dark:bg-netflix"></span>파트 출석률 순위</h4>
+                                <div className="bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
                                     {partStats.sort((a,b)=>b.rate-a.rate).map((p, i) => (
-                                        <div key={p.id} className={`flex items-center gap-3 px-5 py-3.5 ${i < partStats.length-1 ? 'border-b border-white/5' : ''}`}>
-                                            <span className="text-sm font-bold w-5 text-center" style={{color: i===0?'#f59e0b':'#737373'}}>{i===0?'🥇':i+1}</span>
-                                            <span className="text-sm font-semibold text-white w-[72px] whitespace-nowrap">{p.name}</span>
-                                            <div className="flex-1 bg-white/5 rounded-full h-2 min-w-[30px] overflow-hidden"><div className="h-full rounded-full transition-all" style={{width:`${p.rate}%`, backgroundColor:p.color}}></div></div>
-                                            <span className="text-xs font-medium text-neutral-500 w-[44px] text-right">{p.avg}명</span>
-                                            <span className="text-sm font-bold w-10 text-right" style={{color:p.color}}>{p.rate}%</span>
+                                        <div key={p.id} className={`flex items-center gap-3 px-5 py-4 ${i < partStats.length-1 ? 'border-b border-gray-200 dark:border-white/5' : ''}`}>
+                                            <span className="text-base font-bold w-6 text-center" style={{color: i===0?'#f59e0b':'#737373'}}>{i===0?'🥇':i+1}</span>
+                                            <span className="text-base font-semibold text-gray-900 dark:text-white w-[72px] whitespace-nowrap">{p.name}</span>
+                                            <div className="flex-1 bg-gray-200 dark:bg-white/5 rounded-full h-2.5 min-w-[30px] overflow-hidden"><div className="h-full rounded-full transition-all" style={{width:`${p.rate}%`, backgroundColor:p.color}}></div></div>
+                                            <span className="text-sm font-medium text-gray-500 dark:text-neutral-500 w-[50px] text-right">{p.avg}명</span>
+                                            <span className="text-base font-bold w-12 text-right" style={{color:p.color}}>{p.rate}%</span>
                                         </div>
                                     ))}
                                 </div>
                             </section>
                             <section>
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
                                     <span className="w-1.5 h-4 rounded-full bg-purple-500"></span>개근상 후보
-                                    <span className="text-xs font-semibold bg-white/10 text-neutral-400 px-2 py-0.5 rounded-full ml-auto">{perfectMembers.length}명</span>
+                                    <span className="text-sm font-semibold bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-neutral-400 px-2.5 py-0.5 rounded-full ml-auto">{perfectMembers.length}명</span>
                                 </h4>
                                 {perfectMembers.length > 0 ? (
                                     <div className="grid grid-cols-4 gap-2">
                                         {sortedPerfect.map(m => <MemberChipAttended key={m.name} name={m.name} partMap={memberPartMap} onClick={() => onSelectMember && onSelectMember(m.name)} />)}
                                     </div>
-                                ) : <p className="text-xs text-neutral-500 font-medium pl-3">해당 없음</p>}
+                                ) : <p className="text-sm text-gray-500 dark:text-neutral-500 font-medium pl-3">해당 없음</p>}
                             </section>
                         </div>
                     </div>
@@ -889,25 +853,25 @@
             const pAttendRate = pHistory.length > 0 ? Math.round(pHistory.filter(i=>i.isPresent).length / pHistory.length * 100) : 0;
 
             return (
-                <div className={`fixed inset-0 bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 text-left ${initialMember ? 'z-[210]' : 'z-[200]'}`}>
-                    <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
-                        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <div className={`fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 text-left ${initialMember ? 'z-[210]' : 'z-[200]'}`}>
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh] overflow-hidden">
+                        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
                             <div className="flex items-center gap-3 min-w-0">
                                 {pStep === 'history' && (
-                                    <button onClick={() => { if (initialMember) onClose(); else { setPStep('list'); setPMember(''); } }} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:text-white shrink-0">
-                                        <LucideIcon name="chevron-left" className="w-4 h-4" />
+                                    <button onClick={() => { if (initialMember) onClose(); else { setPStep('list'); setPMember(''); } }} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white shrink-0 transition-colors">
+                                        <LucideIcon name="chevron-left" className="w-5 h-5" />
                                     </button>
                                 )}
                                 <div className="min-w-0">
-                                    <h3 className="text-lg font-bold text-white truncate">{pStep === 'list' ? '개인 출석' : pMember}</h3>
-                                    <p className="text-xs text-neutral-400 font-medium mt-0.5">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">{pStep === 'list' ? '개인 출석' : pMember}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-neutral-400 font-medium mt-0.5">
                                         {pStep === 'list' && `2026년 찬양 ${(history||[]).length}회`}
                                         {pStep === 'history' && `2026년 1월~ · 출석 ${pHistory.filter(i=>i.isPresent).length}/${pHistory.length}회 · ${pAttendRate}%`}
                                     </p>
                                 </div>
                             </div>
                             {(pStep === 'list' || initialMember) && (
-                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:text-white shrink-0"><LucideIcon name="x" className="w-4 h-4" /></button>
+                                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white shrink-0 transition-colors"><LucideIcon name="x" className="w-5 h-5" /></button>
                             )}
                         </div>
                         <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-5">
@@ -920,18 +884,18 @@
                                             <div key={p.id}>
                                                 <div className="flex items-center gap-2 mb-3">
                                                     <span className="w-1.5 h-4 rounded-full shrink-0" style={{backgroundColor: p.color}}></span>
-                                                    <span className="text-sm font-bold" style={{color: p.color}}>{p.name}</span>
-                                                    <span className="text-xs font-semibold text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full">{partMembers.length}명</span>
+                                                    <span className="text-base font-bold" style={{color: p.color}}>{p.name}</span>
+                                                    <span className="text-sm font-semibold text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-white/5 px-2.5 py-0.5 rounded-full">{partMembers.length}명</span>
                                                 </div>
                                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                                     {partMembers.map(m => {
                                                         const pi = (() => { let pt = PART_ICON[m.part]||null; if(m.part==='staff'&&pt) pt={...pt,abbr:m.role==='반주자'?'반':'성'}; return pt; })();
                                                         return (
-                                                            <button key={m.name} onClick={() => { setPMember(m.name); setPStep('history'); }} className="flex flex-col items-center gap-2 px-3 py-3 bg-black border border-white/5 rounded-[16px] active:scale-95 transition-all w-full">
-                                                                {pi && <span className="inline-flex items-center justify-center w-6 h-6 rounded-md font-bold shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'11px'}}>{pi.abbr}</span>}
-                                                                <div className="flex flex-col min-w-0 text-center">
-                                                                    <span className="font-bold text-[13px] text-white whitespace-nowrap truncate">{m.name}</span>
-                                                                    <span className="text-[10px] font-medium text-neutral-500 mt-0.5">{memberAttendCount[m.name] || 0}회 출석</span>
+                                                            <button key={m.name} onClick={() => { setPMember(m.name); setPStep('history'); }} className="flex flex-col items-center gap-2 px-3 py-4 bg-white dark:bg-black border border-gray-200 dark:border-white/5 rounded-[16px] active:scale-95 transition-all w-full hover:shadow-sm dark:hover:border-white/20">
+                                                                {pi && <span className="inline-flex items-center justify-center w-7 h-7 rounded-md font-bold shrink-0" style={{backgroundColor:pi.light,color:pi.color,fontSize:'12px'}}>{pi.abbr}</span>}
+                                                                <div className="flex flex-col min-w-0 text-center mt-1">
+                                                                    <span className="font-bold text-sm text-gray-900 dark:text-white whitespace-nowrap truncate">{m.name}</span>
+                                                                    <span className="text-xs font-medium text-gray-500 dark:text-neutral-500 mt-0.5">{memberAttendCount[m.name] || 0}회 출석</span>
                                                                 </div>
                                                             </button>
                                                         );
@@ -945,14 +909,14 @@
                             {pStep === 'history' && (
                                 <div className="space-y-2">
                                     {pHistory.length === 0 ? (
-                                        <div className="text-center py-12 text-neutral-600"><LucideIcon name="calendar" className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm font-semibold">기록이 없습니다.</p></div>
+                                        <div className="text-center py-12 text-gray-400 dark:text-neutral-600"><LucideIcon name="calendar" className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-base font-semibold">기록이 없습니다.</p></div>
                                     ) : pHistory.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 bg-black border border-white/5 px-5 py-3.5 rounded-[20px]">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-[#E50914]/20 text-[#E50914]' : 'bg-white/5 text-neutral-500'}`}>
-                                                <LucideIcon name={item.isPresent ? "check" : "minus"} className="w-4 h-4" />
+                                        <div key={idx} className="flex items-center gap-4 bg-gray-50 dark:bg-black border border-transparent dark:border-white/5 px-5 py-4 rounded-[20px]">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.isPresent ? 'bg-blue-100 dark:bg-netflix/20 text-blue-600 dark:text-netflix' : 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-neutral-500'}`}>
+                                                <LucideIcon name={item.isPresent ? "check" : "minus"} className="w-5 h-5" />
                                             </div>
-                                            <span className="font-bold text-white text-sm flex-1">{item.date}</span>
-                                            <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${item.isPresent ? 'bg-[#E50914]/20 text-[#E50914]' : 'bg-white/5 text-neutral-500'}`}>{item.isPresent ? '출석' : '결석'}</span>
+                                            <span className="font-bold text-gray-900 dark:text-white text-base flex-1">{item.date}</span>
+                                            <span className={`text-sm font-bold px-3 py-1.5 rounded-full ${item.isPresent ? 'bg-blue-100 dark:bg-netflix/20 text-blue-600 dark:text-netflix' : 'bg-gray-200 dark:bg-white/5 text-gray-500 dark:text-neutral-500'}`}>{item.isPresent ? '출석' : '결석'}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -963,7 +927,7 @@
             );
         };
 
-        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onOpenPersonal, onDetail }) => {
+        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onOpenPersonal, onDetail, theme }) => {
             const [subTab, setSubTab] = useState('total');
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
@@ -992,8 +956,12 @@
                     });
 
                     let datasets = [];
+                    const isDark = theme === 'dark';
+                    const textColor = isDark ? '#9ca3af' : '#6b7280';
+                    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
                     if (subTab === 'total') {
-                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count || 0), borderColor: '#E50914', backgroundColor: 'rgba(229, 9, 20, 0.1)', fill: true, tension: 0.4, borderWidth: 2 }];
+                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count || 0), borderColor: isDark ? '#E50914' : '#2563eb', backgroundColor: isDark ? 'rgba(229, 9, 20, 0.1)' : 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.4, borderWidth: 2 }];
                     } else {
                         datasets = PARTS.map(p => ({
                             label: p.name, data: sorted.map(h => (h.members || []).filter(n => memberPartMap[n] === p.id).length),
@@ -1006,85 +974,85 @@
                         data: { labels, datasets },
                         options: { 
                             responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: subTab === 'part', position: 'top', labels: { color: '#aaa', boxWidth: 8, font: { size: 10 } } }, tooltip: { mode: 'index', intersect: false } }, 
+                            plugins: { legend: { display: subTab === 'part', position: 'top', labels: { color: textColor, boxWidth: 8, font: { size: 11 } } }, tooltip: { mode: 'index', intersect: false } }, 
                             scales: {
-                                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#666', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
-                                x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } }, border: { display: false } }
+                                y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor, font: { size: 11 } }, grid: { color: gridColor }, border: { display: false } },
+                                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } }, border: { display: false } }
                             }
                         }
                     });
                 }
-            }, [history, subTab, memberPartMap]);
+            }, [history, subTab, memberPartMap, theme]);
 
             return (
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left mb-2">
                         <div>
-                            <h2 className="text-[28px] font-black text-white tracking-tight">출석현황</h2>
-                            <p className="text-xs text-neutral-400 font-bold mt-1">대시보드</p>
+                            <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">출석현황</h2>
+                            <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">대시보드</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 text-left">
-                        <div onClick={() => onOpenPersonal()} className="netflix-card p-4 flex flex-col cursor-pointer transition-transform active:scale-95 group">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#E50914] transition-colors mb-3">
-                                <LucideIcon name="user" className="w-4 h-4 text-neutral-400 group-hover:text-white" />
+                        <div onClick={() => onOpenPersonal()} className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-2xl p-4 flex flex-col cursor-pointer transition-transform active:scale-95 shadow-sm dark:shadow-none group hover:border-blue-300 dark:hover:border-white/30">
+                            <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-600 dark:group-hover:bg-netflix transition-colors mb-3">
+                                <LucideIcon name="user" className="w-5 h-5 text-blue-600 dark:text-neutral-400 group-hover:text-white" />
                             </div>
                             <div>
-                                <p className="text-[11px] font-medium text-neutral-500 mb-0.5">2026 찬양</p>
+                                <p className="text-xs font-medium text-gray-500 dark:text-neutral-500 mb-1">2026 찬양</p>
                                 <div className="flex items-baseline gap-0.5">
-                                    <span className="text-2xl font-bold text-white leading-none">{(history||[]).filter(h=>{const p=(h.date||'').split('. ');return p.length>=2&&parseInt(p[0])>2025;}).length}</span>
-                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">회</span>
+                                    <span className="text-2xl font-black text-gray-900 dark:text-white leading-none">{(history||[]).filter(h=>{const p=(h.date||'').split('. ');return p.length>=2&&parseInt(p[0])>2025;}).length}</span>
+                                    <span className="text-sm font-medium text-gray-400 dark:text-neutral-500 ml-0.5">회</span>
                                 </div>
                             </div>
                         </div>
-                        <div onClick={() => onOpenAttendStats()} className="netflix-card p-4 flex flex-col cursor-pointer transition-transform active:scale-95 group">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#E50914] transition-colors mb-3">
-                                <LucideIcon name="bar-chart-2" className="w-4 h-4 text-green-500 group-hover:text-white" />
+                        <div onClick={() => onOpenAttendStats()} className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-2xl p-4 flex flex-col cursor-pointer transition-transform active:scale-95 shadow-sm dark:shadow-none group hover:border-green-300 dark:hover:border-white/30">
+                            <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-green-500 transition-colors mb-3">
+                                <LucideIcon name="bar-chart-2" className="w-5 h-5 text-green-500 dark:text-green-500 group-hover:text-white" />
                             </div>
                             <div>
-                                <p className="text-[11px] font-medium text-neutral-500 mb-0.5">최다 출석</p>
+                                <p className="text-xs font-medium text-gray-500 dark:text-neutral-500 mb-1">최다 출석</p>
                                 <div className="flex items-baseline gap-0.5">
-                                    <span className="text-2xl font-bold text-white leading-none">{stats.max}</span>
-                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">명</span>
+                                    <span className="text-2xl font-black text-gray-900 dark:text-white leading-none">{stats.max}</span>
+                                    <span className="text-sm font-medium text-gray-400 dark:text-neutral-500 ml-0.5">명</span>
                                 </div>
                             </div>
                         </div>
-                        <div onClick={onOpenInterest} className="netflix-card p-4 flex flex-col cursor-pointer transition-transform active:scale-95 group">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#E50914] transition-colors mb-3">
-                                <LucideIcon name="heart" className="w-4 h-4 text-[#E50914] group-hover:text-white" />
+                        <div onClick={onOpenInterest} className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-2xl p-4 flex flex-col cursor-pointer transition-transform active:scale-95 shadow-sm dark:shadow-none group hover:border-red-300 dark:hover:border-white/30">
+                            <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-red-500 dark:group-hover:bg-netflix transition-colors mb-3">
+                                <LucideIcon name="heart" className="w-5 h-5 text-red-500 dark:text-netflix group-hover:text-white" />
                             </div>
                             <div>
-                                <p className="text-[11px] font-medium text-neutral-500 mb-0.5">관심 팀원</p>
+                                <p className="text-xs font-medium text-gray-500 dark:text-neutral-500 mb-1">관심 팀원</p>
                                 <div className="flex items-baseline gap-0.5">
-                                    <span className={`text-2xl font-bold leading-none ${stats.attention > 0 ? 'text-[#E50914]' : 'text-white'}`}>{stats.attention}</span>
-                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">명</span>
+                                    <span className={`text-2xl font-black leading-none ${stats.attention > 0 ? 'text-red-500 dark:text-netflix' : 'text-gray-900 dark:text-white'}`}>{stats.attention}</span>
+                                    <span className="text-sm font-medium text-gray-400 dark:text-neutral-500 ml-0.5">명</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="netflix-card p-5 relative flex flex-col min-h-[260px]">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-3xl p-5 relative flex flex-col min-h-[280px] shadow-sm dark:shadow-none">
                         <div className="flex justify-center mb-4">
-                            <div className="flex items-center p-1 bg-black rounded-lg border border-white/5">
-                                <button onClick={() => setSubTab('total')} className={`px-4 py-1.5 rounded-md text-[12px] font-bold transition-all ${subTab === 'total' ? 'bg-[#141414] text-white shadow-sm border border-white/10' : 'text-neutral-500 border border-transparent'}`}>전체</button>
-                                <button onClick={() => setSubTab('part')} className={`px-4 py-1.5 rounded-md text-[12px] font-bold transition-all ${subTab === 'part' ? 'bg-[#141414] text-white shadow-sm border border-white/10' : 'text-neutral-500 border border-transparent'}`}>파트별</button>
+                            <div className="flex items-center p-1 bg-gray-100 dark:bg-black rounded-xl border border-transparent dark:border-white/5">
+                                <button onClick={() => setSubTab('total')} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'total' ? 'bg-white dark:bg-darksurface text-blue-600 dark:text-white shadow-sm border border-gray-200 dark:border-white/10' : 'text-gray-500 dark:text-neutral-500 border border-transparent'}`}>전체</button>
+                                <button onClick={() => setSubTab('part')} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'part' ? 'bg-white dark:bg-darksurface text-blue-600 dark:text-white shadow-sm border border-gray-200 dark:border-white/10' : 'text-gray-500 dark:text-neutral-500 border border-transparent'}`}>파트별</button>
                             </div>
                         </div>
-                        <div className="flex-1 min-h-[180px] text-left relative">
+                        <div className="flex-1 min-h-[200px] text-left relative">
                             <canvas ref={chartRef}></canvas>
                         </div>
                     </div>
 
                     <div className="space-y-4 mt-8">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="font-bold text-white text-xl tracking-tight">출석 기록</h3>
-                            <button onClick={onAddAttendance} className="bg-[#E50914] text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-transform active:scale-95 shadow-lg shadow-red-500/20">
+                            <h3 className="font-black text-gray-900 dark:text-white text-xl tracking-tight">출석 기록</h3>
+                            <button onClick={onAddAttendance} className="bg-blue-600 dark:bg-netflix text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-md">
                                 <LucideIcon name="plus" className="w-4 h-4" /> 기록 추가
                             </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                            {(!history || history.length === 0) ? <div className="text-center py-20 text-neutral-500 font-medium col-span-full">기록이 없습니다.</div> : 
+                            {(!history || history.length === 0) ? <div className="text-center py-20 text-gray-400 dark:text-neutral-500 font-medium col-span-full">기록이 없습니다.</div> : 
                             history.map(h => {
                                 const countsByPart = (h.members || []).reduce((acc, name) => {
                                     const part = memberPartMap[name];
@@ -1092,28 +1060,28 @@
                                 }, { soprano: 0, alto: 0, tenor: 0, bass: 0 });
 
                                 return (
-                                    <div key={h.id} onClick={() => onDetail(h)} className="netflix-card overflow-hidden group cursor-pointer transition-colors hover:border-white/30 text-left">
-                                        <div className="relative h-32 w-full bg-[#000] border-b border-white/5">
+                                    <div key={h.id} onClick={() => onDetail(h)} className="bg-white dark:bg-darksurface rounded-2xl border border-gray-200 dark:border-transparent overflow-hidden group cursor-pointer transition-all hover:shadow-md dark:hover:border-white/30 text-left">
+                                        <div className="relative h-36 w-full bg-gray-100 dark:bg-black border-b border-gray-200 dark:border-white/5">
                                             {h.image ? (
-                                                <img src={h.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                                <img src={h.image} className="w-full h-full object-cover opacity-90 dark:opacity-60 group-hover:opacity-100 transition-opacity" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-neutral-700"><LucideIcon name="image" className="w-8 h-8" /></div>
+                                                <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-neutral-700"><LucideIcon name="image" className="w-10 h-10" /></div>
                                             )}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
-                                            <div className="absolute bottom-3 left-4 right-4 flex justify-between items-end">
-                                                <span className="font-black text-white text-lg tracking-tight shadow-black">{h.date}</span>
-                                                <div className="flex items-baseline gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
-                                                    <span className="text-sm font-bold text-white">{h.count}</span>
-                                                    <span className="text-[10px] text-neutral-300">출석</span>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent dark:from-black dark:via-transparent dark:opacity-80"></div>
+                                            <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end">
+                                                <span className="font-black text-white text-xl tracking-tight shadow-sm">{h.date}</span>
+                                                <div className="flex items-baseline gap-1 bg-black/50 dark:bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 dark:border-white/10">
+                                                    <span className="text-base font-bold text-white">{h.count}</span>
+                                                    <span className="text-[11px] text-gray-200 dark:text-neutral-300">출석</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="p-4 bg-[#141414]">
+                                        <div className="p-5 bg-white dark:bg-[#141414]">
                                             <div className="grid grid-cols-4 gap-2">
                                                 {PARTS.map(p => (
-                                                    <div key={p.id} className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 border border-white/5">
-                                                        <span className="text-[10px] font-bold" style={{color: p.color}}>{p.id==='soprano'?'S':p.id==='alto'?'A':p.id==='tenor'?'T':'B'}</span>
-                                                        <span className="font-bold text-white mt-1">{countsByPart[p.id]}</span>
+                                                    <div key={p.id} className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
+                                                        <span className="text-xs font-black" style={{color: p.color}}>{p.id==='soprano'?'S':p.id==='alto'?'A':p.id==='tenor'?'T':'B'}</span>
+                                                        <span className="font-black text-gray-900 dark:text-white mt-1">{countsByPart[p.id]}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1189,75 +1157,75 @@
             return (
                 <div className="fade-in pb-32 text-left">
                     <div className="flex items-center gap-3 mb-6 px-1">
-                        <button onClick={onCancel} className="p-2 rounded-full bg-white/5 border border-white/10 text-neutral-400 hover:text-white transition-transform active:scale-90">
-                            <LucideIcon name="chevron-left" className="w-5 h-5" />
+                        <button onClick={onCancel} className="p-2 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-transform active:scale-90 shadow-sm dark:shadow-none">
+                            <LucideIcon name="chevron-left" className="w-6 h-6" />
                         </button>
                         <div className="flex-1">
-                            <h2 className="text-xl font-black text-white">출석체크</h2>
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white">출석체크</h2>
                         </div>
-                        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="header-date-input" />
+                        <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="bg-white dark:bg-white/10 border border-gray-200 dark:border-transparent px-3 py-2 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none shadow-sm dark:shadow-none" />
                     </div>
 
-                    <div className="netflix-card p-5 mb-5 relative overflow-hidden">
-                        <div className="absolute inset-0 pointer-events-none opacity-20" style={{background: 'radial-gradient(circle at 100% 0%, #E50914 0%, transparent 40%)'}}></div>
-                        <div className="relative flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-[#E50914]/20 rounded-lg flex items-center justify-center"><LucideIcon name="sparkles" className="w-4 h-4 text-[#E50914]" /></div>
-                            <div><p className="font-bold text-white text-sm">AI 자동 출석 인식</p></div>
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-[28px] p-6 mb-6 shadow-sm dark:shadow-none relative overflow-hidden">
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-20" style={{background: 'radial-gradient(circle at 100% 0%, #2563eb 0%, transparent 40%)'}}></div>
+                        <div className="relative flex items-center gap-3 mb-5">
+                            <div className="w-10 h-10 bg-blue-50 dark:bg-[#E50914]/20 rounded-xl flex items-center justify-center"><LucideIcon name="sparkles" className="w-5 h-5 text-blue-600 dark:text-[#E50914]" /></div>
+                            <div><p className="font-bold text-gray-900 dark:text-white text-base">AI 자동 출석 인식</p></div>
                         </div>
 
-                        <div className={`relative rounded-xl overflow-hidden mb-4 transition-all ${previewImage ? 'bg-black' : 'bg-black border border-dashed border-white/20'} min-h-[120px] flex items-center justify-center cursor-pointer`}>
+                        <div className={`relative rounded-2xl overflow-hidden mb-5 transition-all ${previewImage ? 'bg-gray-100 dark:bg-black' : 'bg-gray-50 dark:bg-black border-2 border-dashed border-gray-300 dark:border-white/20'} min-h-[140px] flex items-center justify-center cursor-pointer`}>
                             {previewImage ? (
                                 <div className="w-full relative">
-                                    <img src={previewImage} className="w-full max-h-44 object-contain opacity-80" />
+                                    <img src={previewImage} className="w-full max-h-56 object-contain opacity-90 dark:opacity-80" />
                                     {ocrStatus === "processing" && (
-                                        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
-                                            <div className="w-36 bg-white/10 h-1.5 rounded-full mb-2 overflow-hidden"><div className="bg-[#E50914] h-full progress-bar-fill rounded-full" style={{ width: `${ocrProgress}%` }}></div></div>
-                                            <p className="text-[#E50914] font-bold text-xs animate-pulse">인식 중... {ocrProgress}%</p>
+                                        <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm">
+                                            <div className="w-40 bg-gray-200 dark:bg-white/10 h-2 rounded-full mb-3 overflow-hidden"><div className="bg-blue-600 dark:bg-[#E50914] h-full progress-bar-fill rounded-full" style={{ width: `${ocrProgress}%` }}></div></div>
+                                            <p className="text-blue-600 dark:text-[#E50914] font-bold text-sm animate-pulse">인식 중... {ocrProgress}%</p>
                                         </div>
                                     )}
                                     {ocrStatus !== "processing" && (
-                                        <button onClick={(e) => { e.stopPropagation(); setPreviewImage(null); setImageFile(null); }} className="absolute top-2 right-2 w-7 h-7 bg-black/60 border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-black transition-colors"><LucideIcon name="x" className="w-3.5 h-3.5" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); setPreviewImage(null); setImageFile(null); }} className="absolute top-3 right-3 w-8 h-8 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black transition-colors"><LucideIcon name="x" className="w-4 h-4" /></button>
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center py-6 text-center">
-                                    <LucideIcon name="image-plus" className="w-8 h-8 text-neutral-500 mb-2" />
-                                    <p className="text-neutral-400 text-xs font-bold">여기를 눌러 사진 업로드</p>
+                                <div className="flex flex-col items-center py-8 text-center">
+                                    <LucideIcon name="image-plus" className="w-10 h-10 text-gray-400 dark:text-neutral-500 mb-3" />
+                                    <p className="text-gray-500 dark:text-neutral-400 text-sm font-bold">여기를 눌러 사진 업로드</p>
                                 </div>
                             )}
                             <input ref={fileInputRef} type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} disabled={ocrStatus === "processing"} />
                         </div>
 
                         <button onClick={handleRunAI} disabled={ocrStatus === 'processing' || !previewImage}
-                            className="relative w-full bg-white/10 text-white py-3 rounded-xl font-bold transition-transform active:scale-95 flex justify-center items-center gap-2 hover:bg-white/20 disabled:opacity-40 border border-white/10">
-                            {ocrStatus === 'processing' ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 인식 중...</> : <><LucideIcon name="sparkles" className="w-4 h-4" /> AI 인식 실행</>}
+                            className="relative w-full bg-blue-600 dark:bg-white/10 text-white py-4 rounded-xl font-bold transition-transform active:scale-95 flex justify-center items-center gap-2 hover:bg-blue-700 dark:hover:bg-white/20 disabled:opacity-50 shadow-md dark:shadow-none border border-transparent dark:border-white/10">
+                            {ocrStatus === 'processing' ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 인식 중...</> : <><LucideIcon name="sparkles" className="w-5 h-5" /> AI 인식 실행</>}
                         </button>
                     </div>
 
-                    <div className="netflix-card overflow-hidden pb-4">
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 mb-4 bg-black/50">
-                            <span className="font-bold text-white text-sm">참석자 명단</span>
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-[28px] overflow-hidden pb-6 shadow-sm dark:shadow-none">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-white/10 mb-5 bg-gray-50 dark:bg-black/50">
+                            <span className="font-bold text-gray-900 dark:text-white text-base">참석자 명단</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-xl font-black text-[#E50914]">{Object.keys(attendanceMap).length}</span>
-                                <span className="text-sm text-neutral-500 font-bold">/ {activeMembers.length}명</span>
+                                <span className="text-2xl font-black text-blue-600 dark:text-[#E50914]">{Object.keys(attendanceMap).length}</span>
+                                <span className="text-sm text-gray-500 dark:text-neutral-500 font-bold">/ {activeMembers.length}명</span>
                             </div>
                         </div>
 
-                        <div className="px-5 space-y-6">
+                        <div className="px-6 space-y-7">
                             {['staff', ...PARTS.map(p=>p.id)].map(partId => {
                                 const list = activeMembers.filter(m => m.part === partId);
                                 if (list.length === 0) return null;
                                 const checkedCount = list.filter(m => attendanceMap[m.name]).length;
                                 const partObj = PARTS.find(p => p.id === partId);
-                                const partColor = partId === 'staff' ? '#fff' : (partObj?.color || '#ccc');
+                                const partColor = partId === 'staff' ? '#4ade80' : (partObj?.color || '#ccc');
                                 const partName = partId === 'staff' ? '성가사 · 반주자' : (partObj?.name || '');
 
                                 return (
                                     <div key={partId}>
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className="w-1.5 h-4 rounded-full shrink-0" style={{backgroundColor: partColor}}></span>
-                                            <span className="font-bold text-sm text-white flex-1">{partName}</span>
-                                            <button onClick={() => togglePart(partId)} className="text-[10px] font-bold px-2 py-1 rounded-md border transition-colors bg-white/5 text-neutral-400 border-white/10 hover:text-white">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="w-1.5 h-5 rounded-full shrink-0" style={{backgroundColor: partColor}}></span>
+                                            <span className="font-bold text-base text-gray-900 dark:text-white flex-1">{partName}</span>
+                                            <button onClick={() => togglePart(partId)} className="text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-neutral-400 border-gray-200 dark:border-white/10 hover:bg-gray-200 dark:hover:text-white">
                                                 {checkedCount === list.length ? '전체해제' : '전체선택'}
                                             </button>
                                         </div>
@@ -1267,9 +1235,9 @@
                                                 return (
                                                     <button key={m.name}
                                                         onClick={() => { const n = {...attendanceMap}; if(n[m.name]) delete n[m.name]; else n[m.name]=true; setAttendanceMap(n); }}
-                                                        className={`px-2 py-2.5 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-1 active:scale-95 ${checked ? 'bg-white/10 border-[#E50914]/50 shadow-[0_0_10px_rgba(229,9,20,0.1)]' : 'bg-black border-white/5 hover:border-white/20'}`}
-                                                        style={{minHeight: '44px'}}>
-                                                        <span className={`text-xs font-bold whitespace-nowrap ${checked ? 'text-white' : 'text-neutral-500'}`}>{m.name}</span>
+                                                        className={`px-2 py-3 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-1.5 active:scale-95 ${checked ? 'bg-blue-50 border-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.1)] dark:bg-white/10 dark:border-[#E50914]/50 dark:shadow-[0_0_10px_rgba(229,9,20,0.1)]' : 'bg-white border-gray-200 hover:border-blue-300 dark:bg-black dark:border-white/5 dark:hover:border-white/20'}`}
+                                                        style={{minHeight: '52px'}}>
+                                                        <span className={`text-sm font-bold whitespace-nowrap ${checked ? 'text-blue-700 dark:text-white' : 'text-gray-500 dark:text-neutral-500'}`}>{m.name}</span>
                                                     </button>
                                                 );
                                             })}
@@ -1280,13 +1248,14 @@
                         </div>
                     </div>
 
-                    <div className="fixed bottom-20 md:bottom-6 left-0 right-0 px-4 z-40 max-w-4xl mx-auto">
-                        <div className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-3 flex items-center gap-3">
+                    {/* Bottom Action Bar */}
+                    <div className="fixed bottom-[100px] left-0 right-0 px-5 z-40 max-w-4xl mx-auto">
+                        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-gray-200 dark:border-white/20 rounded-2xl shadow-2xl p-4 flex items-center gap-4">
                             <div className="flex-1 pl-3">
-                                <p className="text-xs text-neutral-400 font-bold">선택 인원</p>
-                                <p className="font-black text-white"><span className="text-xl text-[#E50914]">{Object.keys(attendanceMap).length}</span><span className="text-sm text-neutral-500 ml-1">명</span></p>
+                                <p className="text-xs text-gray-500 dark:text-neutral-400 font-bold mb-0.5">선택 인원</p>
+                                <p className="font-black text-gray-900 dark:text-white"><span className="text-2xl text-blue-600 dark:text-[#E50914]">{Object.keys(attendanceMap).length}</span><span className="text-base text-gray-400 dark:text-neutral-500 ml-1">명</span></p>
                             </div>
-                            <button onClick={handleSave} className="flex-1 bg-[#E50914] text-white py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95">저장 완료</button>
+                            <button onClick={handleSave} className="flex-1 bg-blue-600 dark:bg-[#E50914] text-white py-4 rounded-xl font-bold shadow-lg transition-transform active:scale-95 text-base">저장 완료</button>
                         </div>
                     </div>
                 </div>
@@ -1339,52 +1308,52 @@
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left">
-                            <h2 className="text-[28px] font-black text-white tracking-tight">성가음원</h2>
-                            <p className="text-xs text-neutral-400 font-bold mt-1">주은혜 오리지널</p>
+                            <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">성가음원</h2>
+                            <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">주은혜 오리지널</p>
                         </div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-10 h-10 bg-[#E50914] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} className="w-5 h-5"/></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-blue-600 dark:bg-netflix text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} className="w-6 h-6"/></button>
                     </div>
 
-                    <button onClick={() => setShowWorship(true)} className="w-full bg-[#141414] border border-white/10 rounded-xl p-4 flex items-center gap-4 active:scale-[0.985] transition-transform overflow-hidden text-left relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#E50914]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[#E50914] text-xl bg-white/5">✟</div>
+                    <button onClick={() => setShowWorship(true)} className="w-full bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.985] transition-transform shadow-sm dark:shadow-none overflow-hidden text-left relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-transparent dark:from-[#E50914]/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="relative shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-blue-600 dark:text-[#E50914] text-2xl bg-blue-50 dark:bg-white/5">✟</div>
                         <div className="relative flex-1 min-w-0">
-                            <p className="text-[10px] font-black tracking-wider leading-none text-[#E50914] mb-1">WORSHIP SONGS</p>
-                            <h3 className="text-base font-bold text-white leading-tight">예배찬양음원</h3>
+                            <p className="text-xs font-black tracking-wider leading-none text-blue-600 dark:text-[#E50914] mb-1.5">WORSHIP SONGS</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">예배찬양음원</h3>
                         </div>
-                        <span className="relative text-white/50 text-xl"><LucideIcon name="chevron-right" /></span>
+                        <span className="relative text-gray-300 dark:text-white/50 text-xl"><LucideIcon name="chevron-right" /></span>
                     </button>
 
                     <div className="relative w-full text-left">
-                        <input type="text" placeholder="성가 검색" className="w-full bg-white/10 border border-white/10 py-3.5 pl-12 pr-4 rounded-xl font-bold text-white placeholder-neutral-500 outline-none focus:border-[#E50914] transition-colors" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"><LucideIcon name="search" className="w-5 h-5" /></div>
+                        <input type="text" placeholder="성가 검색" className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 py-4 pl-12 pr-4 rounded-xl font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 shadow-sm dark:shadow-none outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><LucideIcon name="search" className="w-6 h-6" /></div>
                     </div>
 
                     {showAdd && ReactDOM.createPortal(
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
-                            <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
-                                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10 shrink-0">
-                                    <h3 className="font-bold text-white text-lg">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
-                                    <button onClick={resetForm} className="p-2 text-neutral-400 hover:text-white"><LucideIcon name="x" className="w-5 h-5" /></button>
+                        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                            <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{form.id ? "성가 정보 수정" : "새 성가 등록"}</h3>
+                                    <button onClick={resetForm} className="p-2 text-gray-500 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
                                 </div>
-                                <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-4 text-white">
-                                    <input type="text" placeholder="성가 곡명" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl outline-none focus:border-[#E50914]" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                                    <input type="text" placeholder="출처 (예: 중앙성가 42권)" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl outline-none focus:border-[#E50914]" value={form.source || ''} onChange={e=>setForm({...form, source:e.target.value})} />
-                                    <label className="flex w-full bg-black/50 border border-white/10 text-neutral-300 py-3 rounded-xl font-bold text-sm cursor-pointer hover:bg-white/5 transition-colors items-center justify-center">
-                                        <LucideIcon name="upload" className="w-4 h-4 mr-2" /> 사진 직접 업로드
+                                <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-5 text-gray-900 dark:text-white">
+                                    <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold outline-none focus:border-blue-500 dark:focus:border-netflix" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                    <input type="text" placeholder="출처 (예: 중앙성가 42권)" className="w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold outline-none focus:border-blue-500 dark:focus:border-netflix" value={form.source || ''} onChange={e=>setForm({...form, source:e.target.value})} />
+                                    <label className="flex w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-neutral-300 py-4 rounded-xl font-bold text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-colors items-center justify-center">
+                                        <LucideIcon name="upload" className="w-5 h-5 mr-2" /> 사진 직접 업로드
                                         <input type="file" hidden accept="image/*" onChange={e => setForm({...form, file: e.target.files[0]})} />
                                     </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="text" placeholder="소프라노 유튜브" className="bg-black/50 border border-white/10 p-3 rounded-xl text-xs" value={form.links?.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
-                                        <input type="text" placeholder="알토 유튜브" className="bg-black/50 border border-white/10 p-3 rounded-xl text-xs" value={form.links?.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
-                                        <input type="text" placeholder="테너 유튜브" className="bg-black/50 border border-white/10 p-3 rounded-xl text-xs" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
-                                        <input type="text" placeholder="베이스 유튜브" className="bg-black/50 border border-white/10 p-3 rounded-xl text-xs" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input type="text" placeholder="소프라노 유튜브" className="bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-3.5 rounded-xl text-sm" value={form.links?.s} onChange={e=>setForm({...form, links:{...form.links, s:e.target.value}})} />
+                                        <input type="text" placeholder="알토 유튜브" className="bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-3.5 rounded-xl text-sm" value={form.links?.a} onChange={e=>setForm({...form, links:{...form.links, a:e.target.value}})} />
+                                        <input type="text" placeholder="테너 유튜브" className="bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-3.5 rounded-xl text-sm" value={form.links?.t} onChange={e=>setForm({...form, links:{...form.links, t:e.target.value}})} />
+                                        <input type="text" placeholder="베이스 유튜브" className="bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-3.5 rounded-xl text-sm" value={form.links?.b} onChange={e=>setForm({...form, links:{...form.links, b:e.target.value}})} />
                                     </div>
-                                    <input type="text" placeholder="합창 유튜브" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-xs" value={form.links?.chorus || ''} onChange={e=>setForm({...form, links:{...form.links, chorus:e.target.value}})} />
+                                    <input type="text" placeholder="합창 유튜브" className="w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl text-sm" value={form.links?.chorus || ''} onChange={e=>setForm({...form, links:{...form.links, chorus:e.target.value}})} />
                                 </div>
-                                <div className="flex gap-2 p-6 pt-4 border-t border-white/10 shrink-0">
-                                    <button onClick={resetForm} className="flex-1 bg-white/10 text-white py-4 rounded-xl font-bold hover:bg-white/20">취소</button>
-                                    <button onClick={handleSave} className="flex-[2] bg-[#E50914] text-white py-4 rounded-xl font-bold hover:bg-red-600">저장</button>
+                                <div className="flex gap-2 p-6 pt-4 border-t border-gray-100 dark:border-white/10 shrink-0">
+                                    <button onClick={resetForm} className="flex-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">취소</button>
+                                    <button onClick={handleSave} className="flex-[2] bg-blue-600 dark:bg-netflix text-white py-4 rounded-xl font-bold hover:bg-blue-700 dark:hover:bg-red-600 shadow-md transition-colors">저장</button>
                                 </div>
                             </div>
                         </div>
@@ -1392,38 +1361,38 @@
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full text-left">
                         {filteredSongs.map(song => (
-                            <div key={song.id} className="relative w-full h-72 rounded-xl overflow-hidden group border border-white/10 cursor-default bg-[#141414]">
+                            <div key={song.id} className="relative w-full h-[320px] rounded-2xl overflow-hidden group border border-gray-200 dark:border-white/10 cursor-default bg-gray-100 dark:bg-darksurface shadow-sm dark:shadow-none">
                                 {song.image ? (
-                                    <img src={song.image} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+                                    <img src={song.image} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-90 dark:opacity-60 group-hover:opacity-100 dark:group-hover:opacity-80 transition-opacity duration-700" />
                                 ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-neutral-700"><LucideIcon name="music" className="w-16 h-16" /></div>
+                                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-neutral-700"><LucideIcon name="music" className="w-20 h-20" /></div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent dark:from-black dark:via-black/60"></div>
                                 
-                                <div className={`absolute top-3 right-3 flex gap-2 transition-opacity duration-300 z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-black/50 backdrop-blur-md p-2 rounded-full text-white border border-white/20 hover:bg-white/20"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-black/50 backdrop-blur-md p-2 rounded-full text-red-500 border border-white/20 hover:bg-red-500/20"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
+                                <div className={`absolute top-4 right-4 flex gap-2 transition-opacity duration-300 z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-white/20 dark:bg-black/50 backdrop-blur-md p-2.5 rounded-full text-white border border-white/20 hover:bg-white/40"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-white/20 dark:bg-black/50 backdrop-blur-md p-2.5 rounded-full text-red-400 border border-white/20 hover:bg-white/40"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
                                 </div>
 
-                                <div className="absolute bottom-0 left-0 right-0 p-5 pt-10">
-                                    <p className="text-[#E50914] text-[10px] font-black tracking-widest mb-1.5">{song.source || '주은혜 찬양'}</p>
-                                    <h3 className="text-2xl font-black text-white mb-1 leading-tight line-clamp-2">{song.title}</h3>
-                                    <p className="text-sm font-medium text-neutral-400 mb-4">{song.date}</p>
+                                <div className="absolute bottom-0 left-0 right-0 p-6 pt-10">
+                                    <p className="text-blue-400 dark:text-[#E50914] text-xs font-black tracking-widest mb-2">{song.source || '주은혜 찬양'}</p>
+                                    <h3 className="text-2xl font-black text-white mb-2 leading-tight line-clamp-2 drop-shadow-md">{song.title}</h3>
+                                    <p className="text-sm font-medium text-gray-300 dark:text-neutral-400 mb-5">{song.date}</p>
                                     
                                     <div className="flex gap-2">
                                         {['s', 'a', 't', 'b'].map(p => {
                                             const link = song.links?.[p];
                                             const pData = PARTS.find(part => part.id.startsWith(p));
-                                            if (!link) return <button key={p} disabled className="flex-1 py-2 bg-white/5 rounded-md text-neutral-600 font-bold text-sm border border-white/5 uppercase">{(pData?.abbr || p).toUpperCase()}</button>;
+                                            if (!link) return <button key={p} disabled className="flex-1 py-3 bg-white/10 dark:bg-white/5 rounded-xl text-white/50 dark:text-neutral-600 font-bold text-sm border border-white/10 uppercase backdrop-blur-sm">{(pData?.abbr || p).toUpperCase()}</button>;
                                             return (
-                                                <button key={p} onClick={() => window.open(link, '_blank')} className="flex-1 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-md font-bold text-sm border border-white/20 transition-colors uppercase" style={{color: pData.color}}>
+                                                <button key={p} onClick={() => window.open(link, '_blank')} className="flex-1 py-3 bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 backdrop-blur-md rounded-xl font-bold text-sm border border-white/30 dark:border-white/20 transition-colors uppercase shadow-sm" style={{color: pData.color}}>
                                                     {(pData?.abbr || p).toUpperCase()}
                                                 </button>
                                             );
                                         })}
                                     </div>
                                     {song.links?.chorus && (
-                                        <button onClick={() => window.open(song.links.chorus, '_blank')} className="w-full mt-2 py-2 bg-white text-black hover:bg-gray-200 rounded-md font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                                        <button onClick={() => window.open(song.links.chorus, '_blank')} className="w-full mt-3 py-3 bg-white text-gray-900 hover:bg-gray-100 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
                                             <LucideIcon name="play" className="w-4 h-4" /> 합창 영상 재생
                                         </button>
                                     )}
@@ -1459,54 +1428,54 @@
                 <div className="fade-in space-y-6 text-left">
                     <div className="flex justify-between items-center text-left">
                         <div className="text-left">
-                            <h2 className="text-[28px] font-black text-white tracking-tight">찬양영상</h2>
-                            <p className="text-xs text-neutral-400 font-bold mt-1">주일 예배 실황</p>
+                            <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">찬양영상</h2>
+                            <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">주일 예배 실황</p>
                         </div>
-                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-10 h-10 bg-[#E50914] text-white rounded-full flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} className="w-5 h-5" /></button>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-12 h-12 bg-blue-600 dark:bg-netflix text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"><LucideIcon name={showAdd ? "x" : "plus"} className="w-6 h-6" /></button>
                     </div>
                     <div className="relative w-full text-left">
-                        <input type="text" placeholder="영상 검색" className="w-full bg-white/10 border border-white/10 py-3.5 pl-12 pr-4 rounded-xl font-bold text-white placeholder-neutral-500 outline-none focus:border-[#E50914] transition-colors" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"><LucideIcon name="search" className="w-5 h-5" /></div>
+                        <input type="text" placeholder="영상 검색" className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 py-4 pl-12 pr-4 rounded-xl font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors shadow-sm dark:shadow-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><LucideIcon name="search" className="w-6 h-6" /></div>
                     </div>
                     
                     {showAdd && ReactDOM.createPortal(
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
-                            <div className="bg-[#141414] border border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col">
-                                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10 shrink-0">
-                                    <h3 className="font-bold text-white text-lg">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
-                                    <button onClick={resetForm} className="p-2 text-neutral-400 hover:text-white"><LucideIcon name="x" className="w-5 h-5" /></button>
+                        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[200] flex items-end md:items-center justify-center p-0 md:p-4">
+                            <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full md:max-w-2xl rounded-t-[24px] md:rounded-[24px] shadow-2xl scale-in flex flex-col">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{form.id ? "영상 정보 수정" : "새 영상 등록"}</h3>
+                                    <button onClick={resetForm} className="p-2 text-gray-500 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
                                 </div>
-                                <div className="p-6 space-y-4">
-                                    <input type="text" placeholder="찬양 제목" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#E50914]" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                                    <input type="text" placeholder="유튜브 URL" className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#E50914]" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
+                                <div className="p-6 space-y-5">
+                                    <input type="text" placeholder="찬양 제목" className="w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl text-gray-900 dark:text-white font-bold outline-none focus:border-blue-500 dark:focus:border-netflix" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                    <input type="text" placeholder="유튜브 URL" className="w-full bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl text-gray-900 dark:text-white font-bold outline-none focus:border-blue-500 dark:focus:border-netflix" value={form.url} onChange={e=>setForm({...form, url:e.target.value})} />
                                 </div>
                                 <div className="flex gap-2 px-6 pb-6 pt-0 shrink-0">
-                                    <button onClick={resetForm} className="flex-1 bg-white/10 text-white py-4 rounded-xl font-bold hover:bg-white/20">취소</button>
-                                    <button onClick={handleSave} className="flex-[2] bg-[#E50914] text-white py-4 rounded-xl font-bold hover:bg-red-600">완료</button>
+                                    <button onClick={resetForm} className="flex-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">취소</button>
+                                    <button onClick={handleSave} className="flex-[2] bg-blue-600 dark:bg-netflix text-white py-4 rounded-xl font-bold hover:bg-blue-700 dark:hover:bg-red-600 shadow-md transition-colors">완료</button>
                                 </div>
                             </div>
                         </div>
                     , document.getElementById('modal-portal'))}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
                         {filteredVideos.map(vid => {
                             const yid = getYoutubeId(vid.url);
                             return (
-                                <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="netflix-card flex flex-col h-auto group cursor-pointer relative hover:border-white/30 transition-colors overflow-hidden">
-                                    <div className="w-full aspect-video bg-black relative">
-                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/maxresdefault.jpg`} onError={(e)=>{e.target.src=`https://img.youtube.com/vi/${yid}/mqdefault.jpg`;}} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" /> : <div className="w-full h-full flex items-center justify-center text-neutral-700"><LucideIcon name="play" className="w-12 h-12" /></div>}
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-2xl flex flex-col h-auto group cursor-pointer relative hover:shadow-md dark:hover:border-white/30 transition-all overflow-hidden shadow-sm dark:shadow-none">
+                                    <div className="w-full aspect-video bg-gray-100 dark:bg-black relative">
+                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/maxresdefault.jpg`} onError={(e)=>{e.target.src=`https://img.youtube.com/vi/${yid}/mqdefault.jpg`;}} className="w-full h-full object-cover opacity-90 dark:opacity-80 group-hover:opacity-100 transition-opacity" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-neutral-700"><LucideIcon name="play" className="w-12 h-12" /></div>}
+                                        <div className="absolute inset-0 bg-black/10 dark:bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            <div className="w-14 h-14 bg-black/50 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center text-white"><LucideIcon name="play" className="w-6 h-6 ml-1" /></div>
+                                            <div className="w-16 h-16 bg-white/80 dark:bg-black/50 backdrop-blur-md border border-white/50 dark:border-white/30 rounded-full flex items-center justify-center text-blue-600 dark:text-white shadow-lg"><LucideIcon name="play" className="w-8 h-8 ml-1" /></div>
                                         </div>
                                     </div>
-                                    <div className="p-4 bg-[#141414]">
-                                        <h4 className="text-[15px] font-bold text-white line-clamp-2 leading-snug">{vid.title}</h4>
-                                        <div className="text-[12px] font-medium text-[#E50914] mt-1.5">{vid.date}</div>
+                                    <div className="p-5 bg-white dark:bg-darksurface">
+                                        <h4 className="text-base font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug">{vid.title}</h4>
+                                        <div className="text-sm font-medium text-blue-500 dark:text-netflix mt-2">{vid.date}</div>
                                     </div>
-                                    <div className={`absolute top-2 right-2 flex gap-1 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-black/70 backdrop-blur-md p-2 rounded-full text-white border border-white/20"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-black/70 backdrop-blur-md p-2 rounded-full text-red-500 border border-white/20"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
+                                    <div className={`absolute top-3 right-3 flex gap-2 transition-all z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(vid); }} className="bg-white/80 dark:bg-black/70 backdrop-blur-md p-2.5 rounded-full text-blue-600 dark:text-white border border-gray-200 dark:border-white/20 shadow-sm"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(vid.id); }} className="bg-white/80 dark:bg-black/70 backdrop-blur-md p-2.5 rounded-full text-red-500 border border-gray-200 dark:border-white/20 shadow-sm"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                             );
@@ -1530,28 +1499,28 @@
                 {photoFullscreen && form.photo && (
                     <div className="fixed inset-0 z-[500] bg-black/95 flex items-center justify-center fade-in" onClick={() => setPhotoFullscreen(false)}>
                         <div className="absolute top-4 right-4 flex gap-2 z-10">
-                            <button onClick={(e) => { e.stopPropagation(); setPhotoFullscreen(false); }} className="bg-white/10 backdrop-blur-sm text-white p-2 rounded-xl active:scale-90"><LucideIcon name="x" className="w-5 h-5" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); setPhotoFullscreen(false); }} className="bg-white/10 backdrop-blur-sm text-white p-3 rounded-full active:scale-90 transition-transform"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </div>
                         <img src={form.photo} className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" onClick={e => e.stopPropagation()} />
                     </div>
                 )}
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
-                    <div className="bg-[#141414] border border-white/10 w-full sm:max-w-sm rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
-                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 shrink-0">
-                            <h3 className="font-bold text-white text-lg">{isNew ? '새 팀원 추가' : '팀원 정보 수정'}</h3>
-                            <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white"><LucideIcon name="x" className="w-5 h-5" /></button>
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+                    <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[92vh]">
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">{isNew ? '새 팀원 추가' : '팀원 정보 수정'}</h3>
+                            <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white transition-colors"><LucideIcon name="x" className="w-6 h-6" /></button>
                         </div>
-                        <div className="p-6 space-y-5 overflow-y-auto hide-scrollbar">
+                        <div className="p-6 space-y-6 overflow-y-auto hide-scrollbar">
                             <div className="flex flex-col items-center">
-                                <div className="relative w-24 h-24 mb-1">
+                                <div className="relative w-28 h-28 mb-2">
                                     {form.photo ? (
-                                        <img src={form.photo} className="w-24 h-24 rounded-full object-cover border-4 border-white/10 cursor-zoom-in active:scale-95 transition-transform" onClick={() => setPhotoFullscreen(true)} />
+                                        <img src={form.photo} className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-sm dark:border-white/10 cursor-zoom-in active:scale-95 transition-transform" onClick={() => setPhotoFullscreen(true)} />
                                     ) : (
-                                        <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border-4 border-dashed border-white/20">
-                                            <LucideIcon name="user" className="w-8 h-8 text-neutral-500" />
+                                        <div className="w-28 h-28 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center border-4 border-dashed border-gray-300 dark:border-white/20">
+                                            <LucideIcon name="user" className="w-10 h-10 text-gray-400 dark:text-neutral-500" />
                                         </div>
                                     )}
-                                    <label className="absolute bottom-0 right-0 w-8 h-8 bg-[#E50914] rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-red-600 transition-colors">
+                                    <label className="absolute bottom-0 right-0 w-9 h-9 bg-blue-600 dark:bg-[#E50914] rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-blue-700 dark:hover:bg-red-600 transition-colors">
                                         <LucideIcon name="camera" className="w-4 h-4 text-white" />
                                         <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                             const file = e.target.files[0]; if (!file) return;
@@ -1559,54 +1528,54 @@
                                         }} />
                                     </label>
                                 </div>
-                                {form.photo && <button onClick={() => setForm(prev => ({...prev, photo: null}))} className="text-[10px] text-red-500 font-bold mt-1">사진 삭제</button>}
+                                {form.photo && <button onClick={() => setForm(prev => ({...prev, photo: null}))} className="text-xs text-red-500 font-bold mt-1">사진 삭제</button>}
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">이름</label>
-                                <input type="text" placeholder="팀원 이름" className="w-full bg-black border border-white/10 p-4 rounded-xl font-bold text-white outline-none focus:border-[#E50914]" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus={isNew} />
+                                <label className="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest block mb-2">이름</label>
+                                <input type="text" placeholder="팀원 이름" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus={isNew} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">파트</label>
+                                <label className="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest block mb-2">파트</label>
                                 <div className="flex flex-wrap gap-2">
                                     {PART_OPTIONS.map(p => (
                                         <button key={p.id} onClick={() => setForm({...form, part: p.id})}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${form.part === p.id ? 'text-white' : 'bg-black border-white/10 text-neutral-500 hover:border-white/30'}`}
+                                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${form.part === p.id ? 'text-white shadow-sm' : 'bg-gray-50 dark:bg-black border-gray-200 dark:border-white/10 text-gray-500 dark:text-neutral-500 hover:border-gray-300 dark:hover:border-white/30'}`}
                                             style={form.part === p.id ? { backgroundColor: p.color, borderColor: p.color } : {}}
                                         >{p.name}</button>
                                     ))}
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">상태</label>
+                                <label className="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest block mb-2">상태</label>
                                 <div className="flex gap-2">
                                     {STATUS_OPTIONS.map(s => (
                                         <button key={s.id} onClick={() => setForm({...form, status: s.id})}
-                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${form.status === s.id ? 'border-[#E50914] bg-[#E50914] text-white' : 'bg-black border-white/10 text-neutral-500 hover:border-white/30'}`}
+                                            className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-all ${form.status === s.id ? 'border-blue-600 bg-blue-600 dark:border-netflix dark:bg-netflix text-white shadow-sm' : 'bg-gray-50 dark:bg-black border-gray-200 dark:border-white/10 text-gray-500 dark:text-neutral-500 hover:border-gray-300 dark:hover:border-white/30'}`}
                                         >{s.label}</button>
                                     ))}
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1">임원 직책 <span className="normal-case font-normal">(콤마 구분)</span></label>
-                                <input type="text" placeholder="예: 파트장" className="w-full bg-black border border-white/10 p-3.5 rounded-xl font-bold text-sm text-white outline-none focus:border-[#E50914]" value={form.role} onChange={e => setForm({...form, role: e.target.value})} />
+                                <label className="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest block mb-2">임원 직책 <span className="normal-case font-medium">(콤마 구분)</span></label>
+                                <input type="text" placeholder="예: 파트장" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors" value={form.role} onChange={e => setForm({...form, role: e.target.value})} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">생일 <span className="normal-case font-normal">(선택)</span></label>
+                                <label className="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest block mb-2">생일 <span className="normal-case font-medium">(선택)</span></label>
                                 <div className="flex gap-2 mb-2">
                                     {[['solar','양력'],['lunar','음력']].map(([v,l]) => (
                                         <button key={v} onClick={() => setForm({...form, birthdayType: v})}
-                                            className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${form.birthdayType === v ? 'bg-white/20 border-white/30 text-white' : 'bg-black border-white/10 text-neutral-500'}`}>
+                                            className={`flex-1 py-3 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 ${form.birthdayType === v ? 'bg-gray-200 border-gray-300 text-gray-900 dark:bg-white/20 dark:border-white/30 dark:text-white shadow-sm' : 'bg-gray-50 dark:bg-black border-gray-200 dark:border-white/10 text-gray-500 dark:text-neutral-500'}`}>
                                             {v === 'solar' ? '☀️' : '🌙'} {l}
                                         </button>
                                     ))}
                                 </div>
-                                <input type="text" placeholder="MM-DD" className="w-full bg-black border border-white/10 p-3.5 rounded-xl font-bold text-sm text-white outline-none focus:border-[#E50914] tracking-widest" value={form.birthday} onChange={e => setForm({...form, birthday: e.target.value})} maxLength={5} />
+                                <input type="text" placeholder="MM-DD (예: 08-15)" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix tracking-widest transition-colors" value={form.birthday} onChange={e => setForm({...form, birthday: e.target.value})} maxLength={5} />
                             </div>
                         </div>
-                        <div className="flex gap-2 px-6 pb-6 pt-3 border-t border-white/10 shrink-0">
-                            {!isNew && <button onClick={onDelete} className="p-3 rounded-xl bg-white/5 text-red-500 border border-white/5 hover:bg-white/10"><LucideIcon name="trash-2" className="w-5 h-5" /></button>}
-                            <button onClick={onClose} className="flex-1 bg-white/10 text-white py-4 rounded-xl font-bold hover:bg-white/20 transition-colors">취소</button>
-                            <button onClick={() => { if (!form.name.trim()) return; onSave(form); }} className="flex-[2] bg-[#E50914] text-white py-4 rounded-xl font-bold shadow-lg hover:bg-red-600 transition-colors">저장</button>
+                        <div className="flex gap-3 px-6 pb-6 pt-4 border-t border-gray-100 dark:border-white/10 shrink-0">
+                            {!isNew && <button onClick={onDelete} className="p-4 rounded-xl bg-red-50 dark:bg-white/5 text-red-500 border border-red-100 dark:border-white/5 hover:bg-red-100 dark:hover:bg-white/10 transition-colors"><LucideIcon name="trash-2" className="w-5 h-5" /></button>}
+                            <button onClick={onClose} className="flex-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">취소</button>
+                            <button onClick={() => { if (!form.name.trim()) return; onSave(form); }} className="flex-[2] bg-blue-600 dark:bg-netflix text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 dark:hover:bg-red-600 transition-colors">저장</button>
                         </div>
                     </div>
                 </div>
@@ -1648,7 +1617,7 @@
                 }).filter(Boolean);
 
                 return [
-                    { id: 'staff_off', name: '성가사 · 반주자', color: '#fff', members: officers.filter(m => m.part === 'staff') },
+                    { id: 'staff_off', name: '성가사 · 반주자', color: '#4ade80', members: officers.filter(m => m.part === 'staff') },
                     { id: 'lead', name: '팀장 · 총무 · 회계', color: '#b388ff', members: withDisplayRole(officers.filter(m => m.part !== 'staff'), r => LEAD_ORDER.includes(r)).sort((a,b)=>LEAD_ORDER.indexOf(a.displayRole.split(',')[0])-LEAD_ORDER.indexOf(b.displayRole.split(',')[0])) },
                     { id: 'partleader', name: '파트장', color: '#38bdf8', members: withDisplayRole(officers.filter(m => m.part !== 'staff'), r => r === '파트장').sort((a,b)=>partOrder.indexOf(a.part)-partOrder.indexOf(b.part)), showPartAbbr: true },
                     { id: 'etc', name: '담당부장', color: '#f59e0b', members: withDisplayRole(officers.filter(m => m.part !== 'staff'), r => r && !LEAD_ORDER.includes(r) && r !== '파트장').sort((a,b)=>(a.displayRole||'').localeCompare(b.displayRole||'','ko')) }
@@ -1667,18 +1636,18 @@
                 const dot = STATUS_OPTIONS.find(s=>s.id===statusNorm(m))?.dot || '#9ca3af';
                 let pi = PART_ICON[m.part] || null; if (m.part === 'staff' && pi) pi = { ...pi, abbr: m.role === '반주자' ? '반' : '성' };
                 return (
-                    <button onClick={() => { if (isAdmin) { onOpenEditModal(m); } }} className="relative flex flex-col items-center justify-center px-1.5 bg-[#141414] border border-white/5 rounded-2xl transition-all text-center w-full active:scale-95 cursor-pointer hover:border-white/30" style={{ height: '76px' }}>
-                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
+                    <button onClick={() => { if (isAdmin) { onOpenEditModal(m); } }} className="relative flex flex-col items-center justify-center px-1.5 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/5 rounded-2xl transition-all text-center w-full active:scale-95 cursor-pointer hover:border-gray-300 dark:hover:border-white/30 shadow-sm dark:shadow-none" style={{ height: '84px' }}>
+                        <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dot }}></span>
                         {m.photo ? (
-                            <><img src={m.photo} className="w-10 h-10 rounded-full object-cover border border-white/10 mb-1" /><span className="font-bold text-white text-xs leading-tight">{m.name}</span></>
+                            <><img src={m.photo} className="w-11 h-11 rounded-full object-cover border border-gray-100 dark:border-white/10 mb-1" /><span className="font-bold text-gray-900 dark:text-white text-xs leading-tight">{m.name}</span></>
                         ) : (
-                            <div className="flex items-center justify-center gap-1 mb-1">
-                                {pi && <span className="inline-flex items-center justify-center w-5 h-5 rounded font-bold" style={{ backgroundColor: pi.light, color: pi.color, fontSize: '10px' }}>{pi.abbr}</span>}
-                                <span className="font-bold text-white text-sm leading-tight">{m.name}</span>
+                            <div className="flex items-center justify-center gap-1.5 mb-1 mt-1">
+                                {pi && <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg font-bold" style={{ backgroundColor: pi.light, color: pi.color, fontSize: '11px' }}>{pi.abbr}</span>}
+                                <span className="font-bold text-gray-900 dark:text-white text-sm leading-tight">{m.name}</span>
                             </div>
                         )}
-                        <div className="h-[18px] flex items-center justify-center">
-                            {hasRole && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white/10 text-neutral-300 border border-white/5">{displayRole}</span>}
+                        <div className="h-[20px] flex items-center justify-center mt-0.5">
+                            {hasRole && <span className="text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-neutral-300 border border-gray-200 dark:border-white/5">{displayRole}</span>}
                         </div>
                     </button>
                 );
@@ -1691,12 +1660,12 @@
                 <div className="space-y-4 fade-in text-left">
                     <div className="flex items-end justify-between">
                         <div>
-                            <h2 className="text-2xl font-black text-white">찬양팀명단</h2>
-                            <p className="text-xs text-neutral-400 font-bold mt-0.5">총 {members.length}명</p>
+                            <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">찬양팀명단</h2>
+                            <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">총 {members.length}명</p>
                         </div>
                         <div className="flex gap-2 items-center">
                             {isAdmin && (
-                                <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-[#E50914] text-white px-4 py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-transform">
+                                <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-blue-600 dark:bg-netflix text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">
                                     <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
                                 </button>
                             )}
@@ -1704,23 +1673,23 @@
                     </div>
 
                     <div className="relative w-full">
-                        <input type="text" placeholder="이름 검색" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-[#141414] border border-white/10 p-4 pl-12 rounded-xl font-bold text-white outline-none focus:border-[#E50914]" />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"><LucideIcon name="search" className="w-5 h-5" /></div>
-                        {isSearching && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/10 rounded-full flex items-center justify-center text-neutral-400"><LucideIcon name="x" className="w-4 h-4" /></button>}
+                        <input type="text" placeholder="이름 검색" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 p-4 pl-12 rounded-xl font-bold text-gray-900 dark:text-white shadow-sm dark:shadow-none outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-400"><LucideIcon name="search" className="w-6 h-6" /></div>
+                        {isSearching && <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-500 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"><LucideIcon name="x" className="w-4 h-4" /></button>}
                     </div>
 
                     {!isSearching && (
-                        <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-3 px-5 py-4 rounded-xl bg-[#141414] border border-white/10 active:scale-95 transition-all text-left">
-                            <span className="text-xl">🎂</span>
-                            <span className="text-sm font-bold text-white flex-1">{new Date().getMonth()+1}월 생일 팀원</span>
-                            <LucideIcon name="chevron-right" className="w-4 h-4 text-neutral-500" />
+                        <button onClick={onOpenBdCalendar} className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 active:scale-95 transition-all text-left shadow-sm dark:shadow-none">
+                            <span className="text-2xl">🎂</span>
+                            <span className="text-base font-bold text-gray-900 dark:text-white flex-1">{new Date().getMonth()+1}월 생일 팀원</span>
+                            <LucideIcon name="chevron-right" className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                         </button>
                     )}
 
                     {isSearching ? (
                         <div>
-                            <p className="text-xs font-bold text-neutral-500 mb-3">검색결과 {searchResults.length}명</p>
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">{searchResults.map(m => <MemberChip key={m.name} m={m} />)}</div>
+                            <p className="text-sm font-bold text-gray-500 dark:text-neutral-500 mb-3">검색결과 {searchResults.length}명</p>
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">{searchResults.map(m => <MemberChip key={m.name} m={m} />)}</div>
                         </div>
                     ) : (
                         <>
@@ -1728,33 +1697,33 @@
                                 {STATUS_OPTIONS.map(s => {
                                     const isActive = statusFilter === s.id;
                                     return (
-                                        <button key={s.id} onClick={() => { setStatusFilter(s.id); setPartFilter('all'); }} className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 border ${isActive ? 'bg-white/10 border-white/30 text-white' : 'bg-[#141414] border-white/5 text-neutral-500'}`}>
-                                            <span className="font-black text-2xl leading-none" style={{color: isActive ? s.dot : '#666'}}>{counts[s.id]}</span>
-                                            <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: isActive ? s.dot : '#444'}}></span><span>{s.label}</span></div>
+                                        <button key={s.id} onClick={() => { setStatusFilter(s.id); setPartFilter('all'); }} className={`flex-1 py-4 px-2 rounded-2xl text-sm font-bold transition-all flex flex-col items-center gap-2 border ${isActive ? 'bg-blue-50 dark:bg-white/10 border-blue-200 dark:border-white/30 text-blue-700 dark:text-white shadow-sm dark:shadow-none' : 'bg-white dark:bg-[#141414] border-gray-200 dark:border-white/5 text-gray-500 dark:text-neutral-500 shadow-sm dark:shadow-none hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                                            <span className="font-black text-3xl leading-none" style={{color: isActive ? (document.documentElement.classList.contains('dark') ? s.dot : s.text) : '#9ca3af'}}>{counts[s.id]}</span>
+                                            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor: isActive ? s.dot : '#d1d5db'}}></span><span>{s.label}</span></div>
                                         </button>
                                     );
                                 })}
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2.5">
                                 {partTabs.map(p => {
                                     const sel = partFilter === p.id;
                                     return (
-                                        <button key={p.id} onClick={() => setPartFilter(p.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 ${sel ? 'bg-white/20 border-white/30 text-white' : 'bg-[#141414] border-white/5 text-neutral-400'}`}>
-                                            {p.id === 'officer' ? '임원진' : p.name} <span className="text-[10px] opacity-70 ml-1">{partCounts[p.id]}</span>
+                                        <button key={p.id} onClick={() => setPartFilter(p.id)} className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border flex items-center gap-1.5 ${sel ? 'bg-blue-600 dark:bg-white/20 border-blue-600 dark:border-white/30 text-white shadow-md' : 'bg-white dark:bg-[#141414] border-gray-200 dark:border-white/5 text-gray-600 dark:text-neutral-400 shadow-sm dark:shadow-none hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                                            {p.id === 'officer' ? '임원진' : p.name} <span className={`text-[11px] ml-0.5 ${sel ? 'text-blue-200 dark:text-white/70' : 'text-gray-400 dark:text-neutral-500'}`}>{partCounts[p.id]}</span>
                                         </button>
                                     );
                                 })}
                             </div>
 
-                            <div className="space-y-5">
+                            <div className="space-y-6">
                                 {(partFilter === 'officer' ? officerGroups : grouped).map(group => (
                                     <div key={group.id}>
-                                        <div className="flex items-center gap-2 mb-2 px-1">
-                                            <span className="w-1.5 h-4 rounded-full" style={{backgroundColor: group.color || '#fff'}}></span>
-                                            <span className="text-xs font-bold text-white">{group.name}</span>
+                                        <div className="flex items-center gap-2.5 mb-3 px-1">
+                                            <span className="w-1.5 h-5 rounded-full" style={{backgroundColor: group.color || '#9ca3af'}}></span>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{group.name}</span>
                                         </div>
-                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                                             {group.members.map(m => <MemberChip key={m.name + (m.displayRole || '')} m={m} showPartAbbr={group.showPartAbbr} />)}
                                         </div>
                                     </div>
@@ -1791,10 +1760,25 @@
             
             const [isNavVisible, setIsNavVisible] = useState(true);
             const lastScrollY = useRef(0);
+            
+            const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', msg: '', onConfirm: null });
+
+            useEffect(() => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                localStorage.setItem('theme', theme);
+            }, [theme]);
+
+            const toggleTheme = () => {
+                setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+            };
 
             useEffect(() => {
                 if (window.FB_READY && window.MyFirebase) { initApp(); return; }
@@ -1860,41 +1844,51 @@
                 });
             };
 
-            if (!ready) return <div className="h-screen flex items-center justify-center bg-black"><div className="w-10 h-10 border-4 border-white/10 border-t-[#E50914] rounded-full animate-spin"></div></div>;
+            if (!ready) return <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-black"><div className="w-10 h-10 border-4 border-gray-200 dark:border-white/10 border-t-blue-600 dark:border-t-netflix rounded-full animate-spin"></div></div>;
 
             return (
-                <div className="flex h-screen bg-[#000] overflow-hidden text-left w-full">
-                    <aside className="hidden md:flex flex-col w-64 bg-[#141414] border-r border-white/10 p-6 z-10 shrink-0 text-left">
+                <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden text-left w-full transition-colors duration-300">
+                    {/* Sidebar for Desktop */}
+                    <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#141414] border-r border-gray-200 dark:border-white/10 p-6 z-10 shrink-0 text-left transition-colors duration-300">
                         <div className="mb-10 flex items-center gap-3 text-left">
                             <AppLogo className="w-10 h-10" />
                             <div className="text-left min-w-0">
-                                <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-[#E50914] tracking-tight cursor-pointer">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-neutral-500 font-bold uppercase tracking-widest flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> {isAdmin ? '관리자 모드' : '온라인'}</div>
+                                <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-gray-900 dark:text-white tracking-tight cursor-pointer">주은혜 찬양사역팀</h1>
+                                <div className="text-[10px] mt-0.5 text-gray-500 dark:text-neutral-500 font-bold uppercase tracking-widest flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> {isAdmin ? '관리자 모드' : '온라인'}</div>
                             </div>
                         </div>
                         <nav className="flex-1 space-y-2 text-left">
                             <NavBtn id="music" label="성가음원" icon="music-2" active={activeTab === 'music'} onClick={setActiveTab} />
                             <NavBtn id="videos" label="찬양영상" icon="play-circle" active={activeTab === 'videos'} onClick={setActiveTab} />
                             <NavBtn id="stats" label="출석현황" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
-                            <div className="pt-6 pb-2 text-[10px] font-black text-neutral-600 uppercase tracking-widest px-4 text-left">매니저 영역</div>
+                            <div className="pt-6 pb-2 text-[10px] font-black text-gray-400 dark:text-neutral-600 uppercase tracking-widest px-4 text-left">매니저 영역</div>
                             <NavBtn id="manage" label="찬양팀명단" icon="user-round" active={activeTab === 'manage'} onClick={setActiveTab} />
                         </nav>
+                        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-white/10 flex justify-center">
+                            <button onClick={toggleTheme} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-white/20 transition-all">
+                                {theme === 'dark' ? <><LucideIcon name="sun" className="w-4 h-4" /> 라이트 모드</> : <><LucideIcon name="moon" className="w-4 h-4" /> 다크 모드</>}
+                            </button>
+                        </div>
                     </aside>
 
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative bg-[#000] text-left">
-                        <header className={`md:hidden absolute top-0 left-0 right-0 glass-header px-5 h-[calc(60px+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-between shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative text-left">
+                        {/* Mobile Header */}
+                        <header className={`md:hidden absolute top-0 left-0 right-0 px-5 h-[calc(64px+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-between shrink-0 z-30 transition-all duration-300 bg-white/80 dark:bg-black/70 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                             <div onClick={() => setActiveTab('music')} className="flex items-center gap-3 cursor-pointer">
                                 <AppLogo className="w-8 h-8" />
-                                <span className="font-black text-lg text-white tracking-tight">주은혜 찬양사역팀</span>
+                                <span className="font-black text-lg text-gray-900 dark:text-white tracking-tight">주은혜 찬양사역팀</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => setActiveTab('manage')} className={`p-2 rounded-full transition-transform active:scale-90 ${activeTab === 'manage' ? 'text-white bg-white/10' : 'text-neutral-400'}`}><LucideIcon name="user-round" className="w-5 h-5" /></button>
+                            <div className="flex items-center gap-1">
+                                <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                                    {theme === 'dark' ? <LucideIcon name="sun" className="w-5 h-5" /> : <LucideIcon name="moon" className="w-5 h-5" />}
+                                </button>
+                                <button onClick={() => setActiveTab('manage')} className={`p-2 rounded-full transition-transform active:scale-90 ${activeTab === 'manage' ? 'text-blue-600 bg-blue-50 dark:text-white dark:bg-white/10' : 'text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-white/10'}`}><LucideIcon name="user-round" className="w-5 h-5" /></button>
                             </div>
                         </header>
 
-                        <div className="flex-1 scroll-container p-4 pt-[calc(80px+env(safe-area-inset-top))] md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
+                        <div className="flex-1 scroll-container p-4 pt-[calc(84px+env(safe-area-inset-top))] md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left">
-                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} />}
+                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} theme={theme} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} />}
                                 {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
                                 {activeTab === 'manage' && <ManageView members={sortedMembers} isAdmin={isAdmin} requestAuth={requestAuth} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(m) => requestAuth(() => setEditMemberConfig({ member: m }))} />}
@@ -1902,7 +1896,8 @@
                             </div>
                         </div>
 
-                        <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-[calc(60px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] glass-nav flex items-center justify-around px-2 z-50 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+                        {/* Floating Mobile Bottom Navigation */}
+                        <nav className={`md:hidden fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] h-16 bg-white/90 dark:bg-[#141414]/90 backdrop-blur-2xl border border-gray-200/50 dark:border-white/10 rounded-full flex items-center justify-around px-2 z-50 transition-transform duration-300 shadow-xl dark:shadow-2xl ${isNavVisible ? 'translate-y-0' : 'translate-y-[150%]'}`}>
                             <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={setActiveTab} />
                             <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={setActiveTab} />
                             <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
@@ -1924,7 +1919,7 @@
                     }} showToast={showToast} />}
                     {authModal.isOpen && <AuthModal correctPassword={masterPassword} onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
                     {confirmModal.isOpen && <ConfirmModal modal={confirmModal} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
-                    {toast.show && <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full text-sm font-bold z-[600] shadow-xl text-center fade-in">{toast.msg}</div>}
+                    {toast.show && <div className="fixed bottom-[100px] md:bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full text-sm font-bold z-[600] shadow-xl text-center fade-in">{toast.msg}</div>}
                 </div>
             );
         };
