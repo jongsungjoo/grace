@@ -1400,6 +1400,139 @@
                             </div>
                         ))}
                     </div>
+
+                    {showWorship && ReactDOM.createPortal(
+                        <WorshipModal
+                            songs={worshipSongs}
+                            isAdmin={isAdmin}
+                            requestAuth={requestAuth}
+                            showToast={showToast}
+                            askConfirm={askConfirm}
+                            onClose={() => setShowWorship(false)}
+                        />,
+                        document.getElementById('modal-portal') || document.body
+                    )}
+                </div>
+            );
+        };
+
+        const WorshipModal = ({ songs, isAdmin, requestAuth, showToast, askConfirm, onClose }) => {
+            const [editing, setEditing] = useState(null);
+
+            const handleEdit = (song) => requestAuth(() => {
+                setEditing({
+                    id: song.id, order: song.order || 0, kind: song.kind || '', title: song.title || '',
+                    links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', chorus: song.links?.chorus || '' }
+                });
+            });
+
+            const handleSaveEdit = async () => {
+                if (!editing) return;
+                if (!editing.title.trim()) return showToast("곡명을 입력해주세요.");
+                const { db, doc, setDoc } = window.MyFirebase;
+                try {
+                    const { id, ...rest } = editing;
+                    const cleanLinks = {};
+                    Object.entries(rest.links).forEach(([k, v]) => { if (v && v.trim()) cleanLinks[k] = v.trim(); });
+                    rest.links = cleanLinks;
+                    await setDoc(doc(db, 'worshipSongs', id), rest, { merge: false });
+                    showToast("저장되었습니다."); setEditing(null);
+                } catch (e) { showToast("저장 중 오류가 발생했습니다."); }
+            };
+
+            const openLink = (url) => { if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
+
+            return (
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[300] flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+                    <div onClick={e => e.stopPropagation()} className="w-full md:max-w-lg bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 shadow-2xl scale-in flex flex-col min-h-[80vh] max-h-[90vh] rounded-t-[24px] md:rounded-[24px] overflow-hidden text-left">
+                        <div className="relative shrink-0 px-6 pt-5 pb-4 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-blue-50 dark:bg-black/50">
+                            <div>
+                                <p className="text-[10px] font-black tracking-wider text-blue-600 dark:text-netflix mb-0.5">WORSHIP SONGS</p>
+                                <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">예배찬양음원</h2>
+                            </div>
+                            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90">
+                                <LucideIcon name="x" className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto hide-scrollbar flex-1 px-4 py-4 space-y-4 text-left">
+                            {songs.length === 0 && <p className="text-center text-gray-400 dark:text-neutral-500 text-sm font-bold py-12">등록된 찬양이 없습니다.</p>}
+                            {songs.map((song, idx) => {
+                                const links = song.links || {};
+                                const hasParts = links.s || links.a || links.t || links.b;
+                                return (
+                                    <div key={song.id} className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-white/10 text-blue-600 dark:text-white text-base font-black flex items-center justify-center shrink-0">{song.order || idx + 1}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black tracking-wider leading-none text-blue-500 dark:text-neutral-400">{song.kind}</p>
+                                                <h3 className="text-base font-black text-gray-900 dark:text-white truncate leading-tight mt-1">{song.title}</h3>
+                                            </div>
+                                            {isAdmin && (
+                                                <button onClick={() => handleEdit(song)} className="shrink-0 p-2 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-400 active:scale-90 transition-transform">
+                                                    <LucideIcon name="edit-2" className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {hasParts ? (
+                                            <div className="flex gap-2">
+                                                {['s','a','t','b'].map(p => {
+                                                    const link = links[p];
+                                                    const pData = { s:{abbr:'S',color:'#ff4081'}, a:{abbr:'A',color:'#ffb300'}, t:{abbr:'T',color:'#29b6f6'}, b:{abbr:'B',color:'#b388ff'} }[p];
+                                                    if (!link) return <button key={p} disabled className="flex-1 py-2.5 bg-gray-50 dark:bg-white/5 rounded-xl text-gray-300 dark:text-neutral-600 font-bold text-sm">{(pData?.abbr||p).toUpperCase()}</button>;
+                                                    return <button key={p} onClick={() => openLink(link)} className="flex-1 py-2.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 rounded-xl font-bold text-sm transition-colors shadow-sm" style={{color: pData.color}}>{(pData?.abbr||p).toUpperCase()}</button>
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <button disabled={!links.chorus} onClick={() => openLink(links.chorus)} className={`w-full py-3 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-colors shadow-sm ${links.chorus ? 'bg-blue-50 dark:bg-netflix/20 text-blue-600 dark:text-netflix hover:bg-blue-100 dark:hover:bg-netflix/30' : 'bg-gray-50 dark:bg-white/5 text-gray-300 dark:text-neutral-600'}`}>
+                                                <LucideIcon name="play" className="w-5 h-5" />
+                                                <span>{links.chorus ? '합창 영상 재생' : '링크 없음'}</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {editing && (
+                        <div className="fixed inset-0 z-[310] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm" onClick={() => setEditing(null)}>
+                            <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 rounded-[24px] shadow-2xl w-full max-w-sm scale-in flex flex-col max-h-[90vh] overflow-hidden text-left">
+                                <div className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
+                                    <h3 className="font-black text-gray-900 dark:text-white text-lg">{editing.kind} 편집</h3>
+                                    <button onClick={() => setEditing(null)} className="p-2 text-gray-400 dark:text-neutral-400"><LucideIcon name="x" className="w-5 h-5" /></button>
+                                </div>
+                                <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-4">
+                                    <div>
+                                        <label className="text-xs font-black text-gray-500 dark:text-neutral-400 block mb-1.5">곡명</label>
+                                        <input type="text" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-3.5 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix" value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-black text-gray-500 dark:text-neutral-400 block mb-1.5">합창 링크 (단일 영상인 경우)</label>
+                                        <input type="text" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-3.5 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix" value={editing.links.chorus} onChange={e => setEditing({ ...editing, links: { ...editing.links, chorus: e.target.value } })} />
+                                    </div>
+                                    <div className="pt-2">
+                                        <label className="text-xs font-black text-gray-500 dark:text-neutral-400 block mb-2">파트별 링크 (4파트 분할인 경우)</label>
+                                        <div className="space-y-2">
+                                            {['s','a','t','b'].map(p => {
+                                                const pData = { s:{label:'소프라노', color:'text-[#ff4081]'}, a:{label:'알토', color:'text-[#ffb300]'}, t:{label:'테너', color:'text-[#29b6f6]'}, b:{label:'베이스', color:'text-[#b388ff]'} }[p];
+                                                return (
+                                                    <div key={p} className="flex items-center gap-3">
+                                                        <span className={`w-14 shrink-0 text-xs font-black ${pData.color}`}>{pData.label}</span>
+                                                        <input type="text" className="flex-1 bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-3 rounded-xl font-bold text-xs text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix" value={editing.links[p]} onChange={e => setEditing({ ...editing, links: { ...editing.links, [p]: e.target.value } })} />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-4 border-t border-gray-100 dark:border-white/10 flex gap-2 shrink-0">
+                                    <button onClick={() => setEditing(null)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white font-black text-sm active:scale-95 transition-transform">취소</button>
+                                    <button onClick={handleSaveEdit} className="flex-[2] py-3 rounded-xl bg-blue-600 dark:bg-netflix text-white font-black text-sm shadow-lg active:scale-95 transition-transform">저장</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -1587,6 +1720,8 @@
             const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [searchQuery, setSearchQuery] = useState('');
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [apiForm, setApiForm] = useState(geminiApiKey || "");
 
             const statusNorm = m => m.status === 'inactive' ? 'sabbatical' : (m.status || 'active');
             const splitRoles = (role) => { if (!role) return []; return role.split(/[,·、\/]/).map(r => r.trim()).filter(Boolean); };
@@ -1665,9 +1800,14 @@
                         </div>
                         <div className="flex gap-2 items-center">
                             {isAdmin && (
-                                <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-blue-600 dark:bg-netflix text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">
-                                    <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
-                                </button>
+                                <>
+                                    <button onClick={() => setShowSettingsModal(true)} className="p-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors active:scale-95">
+                                        <LucideIcon name="settings" className="w-5 h-5" />
+                                    </button>
+                                    <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-blue-600 dark:bg-netflix text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">
+                                        <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -1730,6 +1870,33 @@
                                 ))}
                             </div>
                         </>
+                    )}
+                    
+                    {showSettingsModal && (
+                        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+                            <div className="bg-white dark:bg-darksurface border border-gray-200 dark:border-white/10 w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] shadow-2xl scale-in flex flex-col max-h-[90vh]">
+                                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <LucideIcon name="settings" className="w-6 h-6 text-blue-600 dark:text-netflix" />
+                                        <h3 className="font-black text-gray-900 dark:text-white text-lg">시스템 설정</h3>
+                                    </div>
+                                    <button onClick={() => setShowSettingsModal(false)} className="p-2 text-gray-400 dark:text-neutral-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                                        <LucideIcon name="x" className="w-6 h-6" />
+                                    </button>
+                                </div>
+                                <div className="overflow-y-auto hide-scrollbar p-6 space-y-6">
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI 자동 출석 체크 설정</p>
+                                        <p className="text-xs text-blue-600 dark:text-netflix font-bold mb-3">Google AI Studio에서 발급받은 Gemini API 키를 입력하세요.</p>
+                                        <div className="space-y-3">
+                                            <input type="password" placeholder="Gemini API Key 입력" className="w-full bg-gray-50 dark:bg-black border border-gray-200 dark:border-white/10 p-4 rounded-xl font-bold text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-netflix" value={apiForm} onChange={e=>setApiForm(e.target.value)} />
+                                            <button onClick={() => { onSaveGeminiKey(apiForm); showToast("API 키가 저장되었습니다."); setShowSettingsModal(false); }} className="w-full py-4 bg-blue-600 dark:bg-netflix text-white rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">설정 저장</button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-neutral-500 font-medium mt-3 leading-relaxed">※ 등록된 키는 안전하게 Firebase 내부 설정으로 암호화되어 저장되며 관리자만 변경할 수 있습니다.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             );
@@ -1889,9 +2056,13 @@
                         <div className="flex-1 scroll-container p-4 pt-[calc(84px+env(safe-area-inset-top))] md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
                             <div className="max-w-4xl mx-auto w-full text-left">
                                 {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} theme={theme} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} />}
-                                {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />}
+                                {activeTab === 'music' && (
+                                    <>
+                                        <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />
+                                    </>
+                                )}
                                 {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} isAdmin={isAdmin} requestAuth={requestAuth} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(m) => requestAuth(() => setEditMemberConfig({ member: m }))} />}
+                                {activeTab === 'manage' && <ManageView members={sortedMembers} isAdmin={isAdmin} requestAuth={requestAuth} geminiApiKey={geminiApiKey} onSaveGeminiKey={(k) => window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'settings', 'admin'), { geminiKey: k }, { merge: true })} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(m) => requestAuth(() => setEditMemberConfig({ member: m }))} />}
                                 {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                             </div>
                         </div>
