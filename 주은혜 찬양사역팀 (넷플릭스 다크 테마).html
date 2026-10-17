@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <link rel="manifest" href="https://jongsungjoo.github.io/grace/manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="주은혜매니저">
+    <link rel="apple-touch-icon" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://jongsungjoo.github.io/grace/icon.png?v=1">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="주은혜 찬양사역팀">
+    <meta property="og:description" content="인천 온누리교회 주은혜 찬양사역팀 매니저 Pro">
+    <meta property="og:image" content="https://jongsungjoo.github.io/grace/icon2.png?v=1">
+    <meta property="og:url" content="https://jongsungjoo.github.io/grace/">
+
+    <title>주은혜 찬양사역팀 매니저 Pro</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        :root { 
+            --primary: #E50914; /* Netflix Red */
+            --bg: #000000;      /* Pitch Black */
+            --surface: #141414; /* Dark Charcoal for cards */
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg); color: #ffffff; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Dark Theme Skeletons & Utilities */
+        .glass-nav {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-top: 0.5px solid var(--border);
+        }
+        .glass-header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+        }
+        
+        .netflix-card {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .scale-in { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .scroll-container { 
+            flex: 1; 
+            overflow-y: scroll; 
+            -webkit-overflow-scrolling: touch; 
+            overscroll-behavior-y: contain; 
+            min-height: 0; 
+            display: flex; 
+            flex-direction: column; 
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .progress-bar-fill { transition: width 0.3s ease-in-out; }
+        button, a { touch-action: manipulation; }
+
+        .header-date-input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #fff;
+            outline: none;
+            max-width: 140px;
+            color-scheme: dark;
+        }
+        
+        /* Custom Scrollbar for horizontal lists if needed later */
+        .netflix-row::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+    <div id="root" class="h-full flex flex-col">
+        <!-- App Shell: Dark Netflix Style -->
+        <div id="app-shell" style="height: 100vh; display: flex; flex-direction: column; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif;">
+            <!-- Header -->
+            <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); padding: calc(12px + env(safe-area-inset-top)) 20px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 30;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h1 style="font-size: 22px; font-weight: 900; color: #E50914; margin: 0; letter-spacing: -0.5px; text-transform: uppercase;">Grace</h1>
+                </div>
+            </div>
+            <!-- Body skeleton -->
+            <div style="flex: 1; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <div style="height: 28px; width: 120px; background: #222; border-radius: 4px;"></div>
+                    <div style="width: 40px; height: 40px; background: #222; border-radius: 50%;"></div>
+                </div>
+                <div style="height: 200px; background: #141414; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
+                <div style="height: 200px; background: #141414; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
+            </div>
+            <!-- Tab bar skeleton -->
+            <div style="background: rgba(0,0,0,0.9); border-top: 1px solid rgba(255,255,255,0.1); padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); display: flex; justify-content: space-around; flex-shrink: 0; z-index: 50;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
+                    <div style="width: 24px; height: 24px; background: #fff; border-radius: 6px; opacity: 0.9;"></div>
+                    <span style="font-size: 10px; font-weight: 600; color: #fff;">음원</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
+                    <div style="width: 24px; height: 24px; background: #333; border-radius: 50%;"></div>
+                    <span style="font-size: 10px; font-weight: 500; color: #666;">영상</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 16px;">
+                    <div style="width: 24px; height: 24px; background: #333; border-radius: 6px;"></div>
+                    <span style="font-size: 10px; font-weight: 500; color: #666;">출석</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="modal-portal"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
+            authDomain: "onnuri-grace.firebaseapp.com",
+            projectId: "onnuri-grace",
+            storageBucket: "onnuri-grace.firebasestorage.app",
+            messagingSenderId: "349044849326",
+            appId: "1:349044849326:web:8fa00da5f4a81eff318b3f",
+            measurementId: "G-BMQYDH77QX"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            window.FB_READY = true;
+            window.MyFirebase = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, signInAnonymously, onAuthStateChanged, signInWithCustomToken };
+            window.dispatchEvent(new Event('firebase-ready'));
+        } catch (e) { console.error(e); }
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        const SHARE_LINK = "https://teamgrace.netlify.app";
+        // Dark Mode Optimized Colors
+        const PARTS = [
+            { id: 'soprano', name: '소프라노', color: '#ff4081', light: 'rgba(255,64,129,0.15)' },
+            { id: 'alto',    name: '알토',     color: '#ffb300', light: 'rgba(255,179,0,0.15)' },
+            { id: 'tenor',   name: '테너',     color: '#29b6f6', light: 'rgba(41,182,246,0.15)' },
+            { id: 'bass',    name: '베이스',   color: '#b388ff', light: 'rgba(179,136,255,0.15)' }
+        ];
+
+        const CLOUDINARY_CLOUD_NAME = "dov08cs8q";
+        const CLOUDINARY_UPLOAD_PRESET = "onnuri";
+
+        const uploadToCloudinary = async (file, folder = 'grace') => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', folder);
+            const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                { method: 'POST', body: formData }
+            );
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error?.message || 'Cloudinary 업로드 실패');
+            }
+            const data = await res.json();
+            return data.secure_url;
+        };
+
+        const getYoutubeId = (url) => {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url?.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        };
+
+        const compressImage = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
+            return new Promise((resolve, reject) => {
+                if (!file) return reject("No file provided");
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onerror = () => reject(new Error("Image Load Failed")); 
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } }
+                            else { if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; } }
+                            canvas.width = Math.floor(width) || 100;
+                            canvas.height = Math.floor(height) || 100;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve(canvas.toDataURL('image/jpeg', quality));
+                        } catch (e) {
+                            reject(e);
+                        }
+                    };
+                };
+                reader.onerror = (e) => reject(e);
+            });
+        };
+
+        const cropImageForOCR = (dataUrl, startYRatio = 0.0, endYRatio = 1.0) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const startY = Math.floor(img.height * startYRatio);
+                        const endY = Math.floor(img.height * endYRatio);
+                        const cropHeight = Math.max(1, endY - startY);
+                        canvas.width = img.width;
+                        canvas.height = cropHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, startY, img.width, cropHeight, 0, 0, img.width, cropHeight);
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    } catch(e) { reject(e); }
+                };
+                img.onerror = () => reject(new Error("Cropping failed"));
+                img.src = dataUrl;
+            });
+        };
+
+        const recognizeNamesWithGemini = async (base64Image, apiKey, onRetry) => {
+            const cleanKey = apiKey ? apiKey.trim().replace(/[^a-zA-Z0-9_-]/g, '') : "";
+            if (!cleanKey) throw new Error("시스템 설정 메뉴에서 발급받으신 Gemini API 키를 입력해주세요.");
+            if (cleanKey.includes("AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww")) throw new Error("데이터베이스 전용 키가 입력되었습니다. 구글 AI Studio에서 새로 발급받은 키를 넣어주세요.");
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
+            const base64Data = base64Image.split(',')[1];
+            const payload = {
+                contents: [{ parts: [
+                    { text: "이 이미지에서 한국어 사람 이름을 모두 찾아 추출해주세요. 이름들은 자석, 스티커, 카드, 명단 등 어떤 형태로든 표기되어 있을 수 있습니다. 규칙: 1) 한국 성명(2~4글자 한글)만 추출하세요. 2) 지명, 단어, 기호는 제외하세요. 3) 출력형식: 오직 이름만 쉼표로 구분, 다른 텍스트 없이. 예시 출력: 홍길동,김철수,이영희,박민준" },
+                    { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                ]}],
+                generationConfig: { temperature: 0.1 }
+            };
+
+            const RETRY_DELAYS = [3000, 7000, 15000];
+            const MAX_ATTEMPTS = 4;
+
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        const status = response.status;
+                        const isBusy = status === 503 || status === 429 || (errData.error?.status === 'UNAVAILABLE') || (errData.error?.message || '').toLowerCase().includes('high demand') || (errData.error?.message || '').toLowerCase().includes('overloaded');
+                        if (isBusy && attempt < MAX_ATTEMPTS - 1) {
+                            const waitSec = RETRY_DELAYS[attempt] / 1000;
+                            onRetry && onRetry(attempt + 1, waitSec);
+                            await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+                            continue;
+                        }
+                        throw new Error(errData.error?.message || `HTTP 에러 (${status})`);
+                    }
+                    const data = await response.json();
+                    if (!data.candidates || data.candidates.length === 0) throw new Error("결과를 찾을 수 없습니다.");
+                    return data.candidates[0].content.parts[0].text;
+                } catch (e) {
+                    if (attempt < MAX_ATTEMPTS - 1 && !(e.message?.includes('키') || e.message?.includes('API'))) {
+                        const waitSec = RETRY_DELAYS[attempt] / 1000;
+                        onRetry && onRetry(attempt + 1, waitSec);
+                        await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+                        continue;
+                    }
+                    throw e;
+                }
+            }
+        };
+
+        const LucideIcon = ({ name, className = "w-5 h-5" }) => {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (window.lucide && ref.current) {
+                    ref.current.innerHTML = `<i data-lucide="${name}"></i>`;
+                    window.lucide.createIcons({ root: ref.current });
+                }
+            }, [name]);
+            return <span ref={ref} className={`inline-flex items-center justify-center ${className}`} />;
+        };
+
+        const NavIconBtn = ({ id, icon, label, active, onClick }) => (
+            <button onClick={() => onClick(id)} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 ${active ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'}`}>
+                <LucideIcon name={icon} className={`w-6 h-6 ${active ? 'scale-110' : 'scale-100'} transition-transform duration-300`} />
+                <span className={`text-[10px] font-bold tracking-wide ${active ? '' : ''}`}>{label}</span>
+            </button>
+        );
+
+        const AuthModal = ({ onClose, onConfirm, correctPassword }) => {
+            const [input, setInput] = useState("");
+            const [error, setError] = useState(false);
+
+            const handleConfirm = () => {
+                if (input === correctPassword) { onConfirm(); } 
+                else { setError(true); setTimeout(() => setError(false), 500); }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[500] flex items-center justify-center p-5 text-center">
+                    <div className={`bg-neutral-900 border border-white/10 p-8 rounded-[24px] w-full max-w-sm scale-in text-center shadow-2xl ${error ? 'shake' : ''}`}>
+                        <h3 className="text-xl font-bold text-white mb-2">관리자 인증</h3>
+                        <p className="text-sm text-neutral-400 mb-6 font-medium">보안을 위해 비밀번호가 필요합니다.</p>
+                        <div className="relative mb-6">
+                            <input type="password" autoFocus className={`w-full bg-black border p-4 rounded-xl font-bold text-center tracking-widest text-white outline-none transition-all ${error ? 'border-red-500' : 'border-white/10 focus:border-red-600'}`} placeholder="Password" value={input} onChange={e => { setInput(e.target.value); if(error) setError(false); }} onKeyDown={e => e.key === 'Enter' && handleConfirm()} />
+                            {error && <p className="text-red-500 text-[10px] font-bold mt-2 animate-bounce">비밀번호가 올바르지 않습니다.</p>}
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-4 font-bold text-neutral-400 bg-white/5 rounded-xl active:scale-95 transition-transform hover:bg-white/10">취소</button>
+                            <button onClick={handleConfirm} className="flex-[2] py-4 bg-[#E50914] text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform hover:bg-red-700">확인</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ConfirmModal = ({ modal, onClose }) => (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[500] flex items-center justify-center p-5 text-center">
+                <div className="bg-neutral-900 border border-white/10 p-8 rounded-[24px] w-full max-w-sm scale-in text-center shadow-2xl">
+                    <h3 className="text-xl font-bold text-white mb-2">{modal.title}</h3>
+                    <p className="text-sm text-neutral-400 mb-8 font-medium leading-relaxed">{modal.msg}</p>
+                    <div className="flex gap-3">
+                        <button onClick={onClose} className="flex-1 py-4 bg-white/5 rounded-xl font-bold text-neutral-400 active:scale-95 transition-transform hover:bg-white/10">취소</button>
+                        <button onClick={() => { modal.onConfirm(); onClose(); }} className="flex-1 py-4 bg-[#E50914] text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform hover:bg-red-700">확인</button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        /* 다크모드 공통 파트 아이콘 매핑 */
+        const PART_ICON = {
+            staff:   { abbr: '성', color: '#ffffff', light: 'rgba(255,255,255,0.1)' },
+            soprano: { abbr: 'S',  color: '#ff4081', light: 'rgba(255,64,129,0.15)' },
+            alto:    { abbr: 'A',  color: '#ffb300', light: 'rgba(255,179,0,0.15)' },
+            tenor:   { abbr: 'T',  color: '#29b6f6', light: 'rgba(41,182,246,0.15)' },
+            bass:    { abbr: 'B',  color: '#b388ff', light: 'rgba(179,136,255,0.15)' },
+        };
+
+        const MemberChipAttended = ({ name, partMap, partOverride, roleOverride, onClick }) => {
+            const part = partOverride || (partMap ? partMap[name] : null);
+            let pi = PART_ICON[part] || null;
+            if (part === 'staff' && pi) {
+                const role = roleOverride || '';
+                pi = { ...pi, abbr: role === '반주자' ? '반' : '성' };
+            }
+            const interactive = !!onClick;
+            const Tag = interactive ? 'button' : 'div';
+            return (
+                <Tag onClick={onClick}
+                    className={`flex items-center justify-center gap-1.5 px-2 py-2.5 bg-neutral-800 border border-white/5 rounded-xl ${interactive ? 'active:scale-95 hover:bg-neutral-700 transition-all cursor-pointer w-full' : ''}`}
+                    style={{minHeight:'44px'}}>
+                    {pi && (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded font-bold shrink-0"
+                            style={{backgroundColor:pi.light, color:pi.color, fontSize:'10px', border: `1px solid ${pi.color}40`}}>{pi.abbr}</span>
+                    )}
+                    <span className="font-semibold text-xs text-white whitespace-nowrap leading-tight">{name}</span>
+                </Tag>
+            );
+        };
+
+        const PinchZoomImg = ({ src, onClose }) => {
+            const [scale, setScale] = useState(1);
+            const [tx, setTx] = useState(0);
+            const [ty, setTy] = useState(0);
+            const [gesture, setGesture] = useState({ active: false });
+
+            const onTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    const t0 = e.touches[0], t1 = e.touches[1];
+                    const d = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+                    setGesture({ active: true, mode: 'pinch', startDist: d, startScale: scale, startTx: tx, startTy: ty, startMidX: (t0.clientX + t1.clientX) / 2, startMidY: (t0.clientY + t1.clientY) / 2 });
+                } else if (e.touches.length === 1) {
+                    const t = e.touches[0];
+                    if (scale > 1.01) setGesture({ active: true, mode: 'pan', startX: t.clientX, startY: t.clientY, startTx: tx, startTy: ty });
+                }
+            };
+            const onTouchMove = (e) => {
+                if (!gesture.active) return;
+                if (gesture.mode === 'pinch' && e.touches.length === 2) {
+                    e.preventDefault();
+                    const t0 = e.touches[0], t1 = e.touches[1];
+                    const d = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+                    const factor = d / (gesture.startDist || 1);
+                    setScale(Math.max(1, Math.min(gesture.startScale * factor, 6)));
+                    setTx(gesture.startTx + ((t0.clientX + t1.clientX) / 2 - gesture.startMidX));
+                    setTy(gesture.startTy + ((t0.clientY + t1.clientY) / 2 - gesture.startMidY));
+                } else if (gesture.mode === 'pan' && e.touches.length === 1) {
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    setTx(gesture.startTx + (t.clientX - gesture.startX));
+                    setTy(gesture.startTy + (t.clientY - gesture.startY));
+                }
+            };
+            const onTouchEnd = (e) => {
+                if (e.touches.length === 0) {
+                    setGesture({ active: false });
+                    if (scale <= 1.01) { setScale(1); setTx(0); setTy(0); }
+                }
+            };
+            const handleReset = (e) => { e.stopPropagation(); setScale(1); setTx(0); setTy(0); };
+
+            return (
+                <div className="fixed inset-0 z-[600] bg-black/95 flex items-center justify-center fade-in overflow-hidden" style={{ touchAction: 'none' }} onClick={() => { if (scale <= 1.01) onClose(); }} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
+                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-6 right-6 text-white/80 hover:text-white p-3 rounded-full bg-white/10 backdrop-blur-md transition-all active:scale-90 z-[610]"><LucideIcon name="x" className="w-6 h-6" /></button>
+                    {scale > 1.05 && <button onClick={handleReset} className="absolute top-6 left-6 text-white/80 hover:text-white px-4 py-2 rounded-full bg-white/10 backdrop-blur-md transition-all active:scale-90 z-[610] text-xs font-bold flex items-center gap-1.5"><LucideIcon name="minimize-2" className="w-4 h-4" /><span>원본</span></button>}
+                    <img src={src} draggable={false} className="max-w-full max-h-full object-contain select-none pointer-events-none" style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transformOrigin: 'center center', transition: gesture.active ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)', willChange: 'transform' }} />
+                </div>
+            );
+        };
+
+        const MusicView = ({ songs, worshipSongs, requestAuth, askConfirm, showToast, isAdmin, geminiApiKey, lastMusicSource }) => {
+            const getToday = () => new Date().toISOString().split('T')[0];
+            const [showAdd, setShowAdd] = useState(false);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [form, setForm] = useState({ title: '', date: getToday(), source: lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
+
+            const filteredSongs = useMemo(() => songs.filter(s => (s.title || "").toLowerCase().includes(searchTerm.toLowerCase())), [songs, searchTerm]);
+
+            const resetForm = () => { setForm({ title: '', date: getToday(), source: lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
+            const handleEdit = (song) => requestAuth(() => { 
+                setForm({ id: song.id, title: song.title || '', date: song.date || getToday(), source: song.source || '중앙성가 42권', image: song.image || '', links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '', chorus: song.links?.chorus || '' } });
+                setShowAdd(true); 
+            });
+            const handleDelete = (id) => requestAuth(() => {
+                askConfirm("성가 삭제", "이 데이터를 삭제하시겠습니까?", async () => {
+                    const { db, doc, deleteDoc } = window.MyFirebase;
+                    await deleteDoc(doc(db, 'music', id)); showToast("삭제되었습니다.");
+                });
+            });
+
+            return (
+                <div className="fade-in space-y-6 text-left pb-10">
+                    <div className="flex justify-between items-end text-left mb-2">
+                        <div className="text-left">
+                            <h2 className="text-[28px] font-black text-white tracking-tight leading-none">성가음원</h2>
+                            <p className="text-sm text-neutral-400 font-medium mt-1">주은혜 오리지널</p>
+                        </div>
+                        <button onClick={() => { if(showAdd) resetForm(); else requestAuth(() => setShowAdd(true)); }} className="w-10 h-10 bg-[#E50914] text-white rounded-full flex items-center justify-center transition-transform active:scale-95 shadow-[0_0_15px_rgba(229,9,20,0.4)]"><LucideIcon name={showAdd ? "x" : "plus"} className="w-5 h-5"/></button>
+                    </div>
+
+                    <div className="relative w-full text-left">
+                        <input type="text" placeholder="성가 검색" className="w-full bg-white/10 border border-white/5 py-3.5 pl-11 pr-4 rounded-xl font-medium outline-none focus:bg-white/20 transition-colors text-white placeholder-neutral-500" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"><LucideIcon name="search" className="w-5 h-5" /></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full text-left">
+                        {filteredSongs.map(song => (
+                            <div key={song.id} className="relative w-full h-72 md:h-80 rounded-xl overflow-hidden group border border-white/10 cursor-default bg-neutral-900">
+                                {song.image ? (
+                                    <img src={song.image} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+                                ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center text-neutral-700"><LucideIcon name="music" className="w-16 h-16" /></div>
+                                )}
+                                {/* Cinematic Gradient Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+                                
+                                {/* Admin actions top right */}
+                                <div className={`absolute top-3 right-3 flex gap-2 transition-opacity duration-300 z-10 ${isAdmin ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(song); }} className="bg-black/50 backdrop-blur-md p-2 rounded-full text-white border border-white/20 hover:bg-white/20"><LucideIcon name="edit-2" className="w-4 h-4" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="bg-black/50 backdrop-blur-md p-2 rounded-full text-red-500 border border-white/20 hover:bg-red-500/20"><LucideIcon name="trash-2" className="w-4 h-4" /></button>
+                                </div>
+
+                                <div className="absolute bottom-0 left-0 right-0 p-5 pt-10">
+                                    <p className="text-[#E50914] text-[10px] font-black tracking-widest mb-1.5 drop-shadow-md">{song.source || '주은혜 찬양'}</p>
+                                    <h3 className="text-2xl font-black text-white mb-1 drop-shadow-lg leading-tight line-clamp-2">{song.title}</h3>
+                                    <p className="text-sm font-medium text-neutral-300 mb-4 drop-shadow-md">{song.date}</p>
+                                    
+                                    <div className="flex gap-2">
+                                        {['s', 'a', 't', 'b'].map(p => {
+                                            const link = song.links?.[p];
+                                            const pData = PARTS.find(part => part.id.startsWith(p));
+                                            if (!link) return <button key={p} disabled className="flex-1 py-2 bg-white/5 rounded-md text-neutral-600 font-bold text-sm border border-white/5 cursor-not-allowed uppercase">{p}</button>;
+                                            return (
+                                                <button key={p} onClick={() => window.open(link, '_blank')} className="flex-1 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-md font-bold text-sm border border-white/20 transition-colors uppercase" style={{color: pData.color}}>
+                                                    {p}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {song.links?.chorus && (
+                                        <button onClick={() => window.open(song.links.chorus, '_blank')} className="w-full mt-2 py-2 bg-white text-black hover:bg-gray-200 rounded-md font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                                            <LucideIcon name="play" className="w-4 h-4" /> 합창 영상 재생
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const VideoView = ({ videos, requestAuth, askConfirm, showToast, isAdmin }) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const filteredVideos = useMemo(() => videos.filter(v => (v.title || "").toLowerCase().includes(searchTerm.toLowerCase())), [videos, searchTerm]);
+
+            return (
+                <div className="fade-in space-y-6 text-left pb-10">
+                    <div className="flex justify-between items-end text-left mb-2">
+                        <div className="text-left">
+                            <h2 className="text-[28px] font-black text-white tracking-tight leading-none">찬양영상</h2>
+                            <p className="text-sm text-neutral-400 font-medium mt-1">주일 예배 실황</p>
+                        </div>
+                        <button onClick={() => requestAuth(() => {})} className="w-10 h-10 bg-[#E50914] text-white rounded-full flex items-center justify-center transition-transform active:scale-95 shadow-[0_0_15px_rgba(229,9,20,0.4)]"><LucideIcon name="plus" className="w-5 h-5"/></button>
+                    </div>
+                    
+                    <div className="relative w-full text-left">
+                        <input type="text" placeholder="영상 검색" className="w-full bg-white/10 border border-white/5 py-3.5 pl-11 pr-4 rounded-xl font-medium outline-none focus:bg-white/20 transition-colors text-white placeholder-neutral-500" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"><LucideIcon name="search" className="w-5 h-5" /></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        {filteredVideos.map(vid => {
+                            const yid = getYoutubeId(vid.url);
+                            return (
+                                <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="netflix-card flex h-28 group cursor-pointer relative hover:border-white/30 transition-colors">
+                                    <div className="w-[140px] h-full bg-neutral-800 shrink-0 relative">
+                                        {yid ? <img src={`https://img.youtube.com/vi/${yid}/mqdefault.jpg`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" /> : <div className="w-full h-full flex items-center justify-center text-neutral-600"><LucideIcon name="play" className="w-8 h-8" /></div>}
+                                        <div className="absolute inset-0 flex items-center justify-center"><div className="w-10 h-10 bg-black/50 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white"><LucideIcon name="play" className="w-4 h-4 ml-0.5" /></div></div>
+                                    </div>
+                                    <div className="flex-1 p-4 flex flex-col justify-center min-w-0 pr-8 bg-gradient-to-r from-neutral-900 to-neutral-800">
+                                        <h4 className="text-[15px] font-bold text-white line-clamp-2 leading-snug">{vid.title}</h4>
+                                        <div className="text-[12px] font-medium text-neutral-400 mt-1">{vid.date}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const StatsView = ({ history, members, onAddAttendance, onOpenInterest, onOpenBdCalendar, onOpenAttendStats, onOpenPersonal, onDetail, requestAuth, askConfirm, showToast }) => {
+            const [subTab, setSubTab] = useState('part');
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            
+            const safeMembers = members || [];
+            const activeMembers = safeMembers.filter(m => m && m.status === 'active');
+
+            const memberPartMap = useMemo(() => {
+                return safeMembers.reduce((acc, m) => { if (m && m.name) acc[m.name] = m.part; return acc; }, {});
+            }, [safeMembers]);
+
+            const stats = useMemo(() => {
+                const safeHistory = history || [];
+                if (safeHistory.length === 0) return { avg: 0, max: 0, attention: 0 };
+                const avg = (safeHistory.reduce((a,b) => a + (b.count || 0), 0) / safeHistory.length).toFixed(1);
+                const max = Math.max(...safeHistory.map(h => h.count || 0));
+                const last3 = safeHistory.slice(0, 3).flatMap(h => h.members || []);
+                const attention = activeMembers.filter(m => m && m.name && !last3.includes(m.name)).length;
+                return { avg, max, attention };
+            }, [history, activeMembers]);
+
+            useEffect(() => {
+                const safeHistory = history || [];
+                if (safeHistory.length > 0 && chartRef.current && (subTab === 'total' || subTab === 'part')) {
+                    if (chartInstance.current) chartInstance.current.destroy();
+                    const sorted = [...safeHistory].reverse().slice(-10);
+                    const labels = sorted.map(h => {
+                        const parts = (h.date || "").split('. ');
+                        if (parts.length >= 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+                        return h.date || "";
+                    });
+
+                    let datasets = [];
+                    if (subTab === 'total') {
+                        datasets = [{ label: '총 인원', data: sorted.map(h => h.count || 0), borderColor: '#E50914', backgroundColor: 'rgba(229, 9, 20, 0.2)', fill: true, tension: 0.4, pointBackgroundColor: '#E50914' }];
+                    } else if (subTab === 'part') {
+                        datasets = PARTS.map(p => ({
+                            label: p.name,
+                            data: sorted.map(h => (h.members || []).filter(name => memberPartMap[name] === p.id).length),
+                            borderColor: p.color,
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointBackgroundColor: p.color
+                        }));
+                    }
+
+                    chartInstance.current = new Chart(chartRef.current, {
+                        type: 'line',
+                        data: { labels, datasets },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            color: '#b3b3b3',
+                            plugins: {
+                                legend: { display: subTab === 'part', position: 'top', labels: { color: '#fff', boxWidth: 8, font: { size: 10, family: '-apple-system' } } },
+                            }, 
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { stepSize: 1, color: '#666', font: { size: 10 } },
+                                    grid: { color: 'rgba(255,255,255,0.05)' },
+                                    border: { display: false }
+                                },
+                                x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } }, border: { color: 'rgba(255,255,255,0.1)' } }
+                            }
+                        }
+                    });
+                }
+            }, [history, subTab, memberPartMap]);
+
+            return (
+                <div className="fade-in space-y-6 text-left pb-10">
+                    <div className="flex justify-between items-end text-left mb-2">
+                        <div className="text-left">
+                            <h2 className="text-[28px] font-black text-white tracking-tight leading-none">출석현황</h2>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 text-left">
+                        <div onClick={() => onOpenPersonal()} className="netflix-card p-4 flex flex-col cursor-pointer transition-colors hover:bg-neutral-800 group">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+                                    <LucideIcon name="user" className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-bold text-neutral-400 mb-0.5">2026 찬양</p>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className="text-2xl font-black text-white leading-none">{(history||[]).filter(h=>{const p=(h.date||'').split('. ');return p.length>=2&&(parseInt(p[0])>2026||(parseInt(p[0])===2026&&parseInt(p[1])>=1));}).length}</span>
+                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">회</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div onClick={() => onOpenAttendStats()} className="netflix-card p-4 flex flex-col cursor-pointer transition-colors hover:bg-neutral-800 group">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-green-400 shrink-0">
+                                    <LucideIcon name="bar-chart-2" className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-bold text-neutral-400 mb-0.5">최다 출석</p>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className="text-2xl font-black text-white leading-none">{stats.max}</span>
+                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">명</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div onClick={onOpenInterest} className="netflix-card p-4 flex flex-col cursor-pointer transition-colors hover:bg-neutral-800 group">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#E50914] shrink-0">
+                                    <LucideIcon name="heart" className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-bold text-neutral-400 mb-0.5">관심 팀원</p>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className={`text-2xl font-black leading-none ${stats.attention > 0 ? 'text-[#E50914]' : 'text-white'}`}>{stats.attention}</span>
+                                    <span className="text-xs font-medium text-neutral-500 ml-0.5">명</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="netflix-card p-5 relative flex flex-col min-h-[260px]">
+                        <div className="flex justify-center mb-4">
+                            <div className="flex items-center p-1 bg-black rounded-lg border border-white/10">
+                                <button onClick={() => setSubTab('total')} className={`px-5 py-1.5 rounded-md text-[12px] font-bold transition-all ${subTab === 'total' ? 'bg-white/20 text-white' : 'text-neutral-500 hover:text-white'}`}>전체</button>
+                                <button onClick={() => setSubTab('part')} className={`px-5 py-1.5 rounded-md text-[12px] font-bold transition-all ${subTab === 'part' ? 'bg-white/20 text-white' : 'text-neutral-500 hover:text-white'}`}>파트별</button>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-[180px] text-left relative">
+                            <canvas ref={chartRef}></canvas>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 mt-8">
+                        <div className="flex items-center justify-between px-1 border-b border-white/10 pb-2">
+                            <h3 className="font-bold text-white text-lg tracking-tight">출석 기록</h3>
+                            <button onClick={onAddAttendance} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md text-xs font-bold border border-white/10 flex items-center gap-1.5 transition-colors">
+                                <LucideIcon name="plus" className="w-3.5 h-3.5" /> 추가
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                            {(!history || history.length === 0) ? <div className="text-center py-20 text-neutral-600 font-medium col-span-full">기록이 없습니다.</div> : 
+                            history.map(h => {
+                                const countsByPart = (h.members || []).reduce((acc, name) => {
+                                    const part = memberPartMap[name];
+                                    if (part && acc[part] !== undefined) acc[part]++;
+                                    return acc;
+                                }, { soprano: 0, alto: 0, tenor: 0, bass: 0 });
+
+                                return (
+                                    <div key={h.id} onClick={() => onDetail(h)} className="netflix-card p-4 flex flex-col gap-4 group cursor-pointer hover:border-white/30 transition-colors w-full text-left overflow-hidden">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold text-white text-lg tracking-tight">{h.date}</span>
+                                            <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+                                                <span className="text-sm font-black text-white">{h.count}</span>
+                                                <span className="text-[10px] font-bold text-neutral-400">출석</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-stretch gap-4">
+                                            <div className="w-24 sm:w-28 flex-shrink-0 bg-black rounded-lg overflow-hidden border border-white/5">
+                                                {h.image ? (
+                                                    <img src={h.image} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                                                ) : (
+                                                    <div className="w-full h-full min-h-[72px] flex items-center justify-center text-neutral-700">
+                                                        <LucideIcon name="image" className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 grid grid-cols-2 gap-2">
+                                                {PARTS.map(p => (
+                                                    <div key={p.id} className="flex items-center px-2 py-1.5 rounded-md gap-2 bg-white/5 border border-white/5">
+                                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-sm font-bold shrink-0 text-[10px]" style={{backgroundColor: p.light, color: p.color}}>
+                                                            {p.id==='soprano'?'S':p.id==='alto'?'A':p.id==='tenor'?'T':'B'}
+                                                        </span>
+                                                        <div className="flex-1 flex items-baseline justify-end gap-0.5">
+                                                            <span className="font-bold text-sm text-white">{countsByPart[p.id]}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ManageView = ({ members, requestAuth, showToast }) => {
+            return (
+                <div className="space-y-4 fade-in text-left">
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-[28px] font-black text-white tracking-tight">명단관리</h2>
+                    </div>
+                    <p className="text-neutral-400 text-sm">기본 뼈대 적용 상태입니다. 1단계 확인 후 세부 편집 기능을 연결합니다.</p>
+                </div>
+            );
+        };
+
+        const AttendanceView = ({ members, onCancel, requestAuth, showToast }) => {
+            return (
+                <div className="fade-in pb-32 text-left">
+                     <h2 className="text-[28px] font-black text-white tracking-tight mb-4">출석체크</h2>
+                     <button onClick={onCancel} className="px-4 py-2 bg-white/10 text-white rounded-md border border-white/20">돌아가기</button>
+                </div>
+            );
+        };
+
+        const CACHE_PREFIX = 'grace_cache_v2_';
+        const cacheGet = (key) => { try { const raw = localStorage.getItem(CACHE_PREFIX + key); return raw ? JSON.parse(raw) : null; } catch { return null; } };
+        const cacheSet = (key, data) => { try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data)); } catch (e) { } };
+        const stripHeavyFields = (list) => list.map(({ photo, ...rest }) => rest);
+
+        const App = () => {
+            const [ready, setReady] = useState(false);
+            const [activeTab, setActiveTab] = useState('music'); 
+            const [members, setMembers] = useState(() => cacheGet('members') || []);
+            const [history, setHistory] = useState(() => cacheGet('history') || []);
+            const [songs, setSongs] = useState(() => cacheGet('songs') || []);
+            const [worshipSongs, setWorshipSongs] = useState(() => cacheGet('worshipSongs') || []);
+            const [videos, setVideos] = useState(() => cacheGet('videos') || []);
+            
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [isNavVisible, setIsNavVisible] = useState(true);
+            const lastScrollY = useRef(0);
+
+            const [toast, setToast] = useState({ show: false, msg: '' });
+            const [authModal, setAuthModal] = useState({ isOpen: false, onConfirm: null });
+
+            useEffect(() => {
+                if (cacheGet('songs') || cacheGet('members')) setReady(true);
+                const waitFirebase = setInterval(() => { 
+                    if (window.FB_READY && window.MyFirebase) { clearInterval(waitFirebase); initApp(); } 
+                }, 50);
+                setTimeout(() => { clearInterval(waitFirebase); setReady(true); }, 5000);
+            }, []);
+
+            const initApp = async () => {
+                const { auth, db, collection, onSnapshot, signInAnonymously } = window.MyFirebase;
+                try {
+                    await signInAnonymously(auth);
+                    onSnapshot(collection(db, 'roster', 'current'), (s) => { if(s.exists()) setMembers(s.data().list); setReady(true); });
+                    onSnapshot(collection(db, 'music'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                        setSongs(list);
+                    });
+                    onSnapshot(collection(db, 'videos'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        setVideos(list);
+                    });
+                    onSnapshot(collection(db, 'history'), (s) => {
+                        const list = []; s.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => new Date(b.date.replace(/\. /g, '-').replace(/\.$/, '')) - new Date(a.date.replace(/\. /g, '-').replace(/\.$/, '')));
+                        setHistory(list);
+                    });
+                } catch (e) { setReady(true); }
+            };
+
+            const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 3000); };
+            const requestAuth = (callback) => { if (isAdmin) { callback(); } else { setAuthModal({ isOpen: true, onConfirm: callback }); } };
+            const askConfirm = (title, msg, onConfirm) => {}; 
+
+            const handleScroll = (e) => {
+                const currentScrollY = e.target.scrollTop;
+                if (currentScrollY <= 0) { setIsNavVisible(true); lastScrollY.current = currentScrollY; return; }
+                if (currentScrollY > lastScrollY.current + 10) { setIsNavVisible(false); } 
+                else if (currentScrollY < lastScrollY.current - 10) { setIsNavVisible(true); }
+                lastScrollY.current = currentScrollY;
+            };
+
+            if (!ready) return <div className="h-screen flex items-center justify-center bg-black"><div className="w-8 h-8 border-3 border-[#E50914]/20 border-t-[#E50914] rounded-full animate-spin"></div></div>;
+
+            return (
+                <div className="flex h-screen bg-black overflow-hidden text-left w-full relative">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+                        {/* Netflix Style Dark Header */}
+                        <header className={`absolute top-0 left-0 right-0 glass-header px-5 h-[calc(70px+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-between shrink-0 z-30 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                            <div onClick={() => setActiveTab('music')} className="flex items-center gap-2 cursor-pointer text-left">
+                                <span className="font-black text-2xl text-[#E50914] tracking-tighter uppercase">Grace</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setActiveTab('manage')} className={`p-1.5 rounded-full transition-colors ${activeTab === 'manage' ? 'text-white' : 'text-neutral-500 hover:text-white'}`}><LucideIcon name="user" className="w-5 h-5" /></button>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 scroll-container p-0 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
+                            <div className="max-w-4xl mx-auto w-full pt-[calc(80px+env(safe-area-inset-top))] px-4 md:px-10 pb-20">
+                                {activeTab === 'stats' && <StatsView history={history} members={members} onAddAttendance={() => setActiveTab('attendance')} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} />}
+                                {activeTab === 'music' && <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={""} lastMusicSource={"중앙성가"} />}
+                                {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
+                                {activeTab === 'manage' && <ManageView members={members} requestAuth={requestAuth} showToast={showToast} />}
+                                {activeTab === 'attendance' && <AttendanceView members={members} onCancel={() => setActiveTab('stats')} />}
+                            </div>
+                        </div>
+
+                        {/* Netflix Style Dark Bottom Tab Bar */}
+                        <nav className={`fixed bottom-0 left-0 right-0 h-[calc(60px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] glass-nav flex items-center justify-around px-2 z-50 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
+                            <NavIconBtn id="music" icon="music" label="음원" active={activeTab === 'music'} onClick={setActiveTab} />
+                            <NavIconBtn id="videos" icon="play-square" label="영상" active={activeTab === 'videos'} onClick={setActiveTab} />
+                            <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
+                        </nav>
+                    </main>
+
+                    {authModal.isOpen && <AuthModal correctPassword={"onnurigrace"} onClose={() => setAuthModal({ ...authModal, isOpen: false })} onConfirm={() => { setIsAdmin(true); setAuthModal({ ...authModal, isOpen: false }); authModal.onConfirm(); }} />}
+                    {toast.show && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full text-sm font-bold z-[600] shadow-xl text-center">{toast.msg}</div>}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
