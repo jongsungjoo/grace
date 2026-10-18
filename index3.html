@@ -1717,7 +1717,7 @@
         };
 
         const ManageView = ({ members, currentPassword, currentDeletePassword, requestAuth, showToast, geminiApiKey, onSaveGeminiKey, isAdmin, onBecomeAdmin, onOpenBdCalendar, onOpenEditModal }) => {
-            const [partFilter, setPartFilter] = useState('all');
+    const [partFilter, setPartFilter] = useState('all');
             const [statusFilter, setStatusFilter] = useState('active');
             const [searchQuery, setSearchQuery] = useState('');
             const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -1794,25 +1794,29 @@
             return (
                 <div className="space-y-4 fade-in text-left">
                     <div className="flex items-end justify-between">
-                        <div>
-                            <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">찬양팀명단</h2>
-                            <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">총 {members.length}명</p>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            {isAdmin && (
-                                <>
-                                    <button onClick={() => setShowSettingsModal(true)} className="p-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors active:scale-95">
-                                        <LucideIcon name="settings" className="w-5 h-5" />
-                                    </button>
-                                    <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-blue-600 dark:bg-netflix text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">
-                                        <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                <div>
+                    <h2 className="text-[28px] font-black text-gray-900 dark:text-white tracking-tight">찬양팀명단</h2>
+                    <p className="text-sm text-gray-500 dark:text-neutral-400 font-bold mt-1">총 {members.length}명</p>
+                </div>
+                <div className="flex gap-2 items-center">
+                    {isAdmin ? (
+                        <>
+                            <button onClick={() => setShowSettingsModal(true)} className="p-3 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors active:scale-95">
+                                <LucideIcon name="settings" className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => onOpenEditModal(null)} className="flex items-center gap-2 bg-blue-600 dark:bg-netflix text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform">
+                                <LucideIcon name="user-plus" className="w-4 h-4" /> 팀원 추가
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={() => requestAuth(() => {})} className="flex items-center gap-2 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-neutral-300 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-transform hover:bg-gray-200 dark:hover:bg-white/10">
+                            <LucideIcon name="shield" className="w-4 h-4" /> 관리자 진입
+                        </button>
+                    )}
+                </div>
+            </div>
 
-                    <div className="relative w-full">
+            <div className="relative w-full">
                         <input type="text" placeholder="이름 검색" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 p-4 pl-12 rounded-xl font-bold text-gray-900 dark:text-white shadow-sm dark:shadow-none outline-none focus:border-blue-500 dark:focus:border-netflix transition-colors" />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-400"><LucideIcon name="search" className="w-6 h-6" /></div>
                         {isSearching && <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-500 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"><LucideIcon name="x" className="w-4 h-4" /></button>}
@@ -2017,14 +2021,16 @@
                 <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden text-left w-full transition-colors duration-300">
                     {/* Sidebar for Desktop */}
                     <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#141414] border-r border-gray-200 dark:border-white/10 p-6 z-10 shrink-0 text-left transition-colors duration-300">
-                        <div className="mb-10 flex items-center gap-3 text-left">
-                            <AppLogo className="w-10 h-10" />
-                            <div className="text-left min-w-0">
-                                <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-gray-900 dark:text-white tracking-tight cursor-pointer">주은혜 찬양사역팀</h1>
-                                <div className="text-[10px] mt-0.5 text-gray-500 dark:text-neutral-500 font-bold uppercase tracking-widest flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> {isAdmin ? '관리자 모드' : '온라인'}</div>
-                            </div>
+                <div className="mb-10 flex items-center gap-3 text-left">
+                    <AppLogo className="w-10 h-10" />
+                    <div className="text-left min-w-0">
+                        <h1 onClick={() => setActiveTab('music')} className="text-lg font-black text-gray-900 dark:text-white tracking-tight cursor-pointer">주은혜 찬양사역팀</h1>
+                        <div onClick={() => !isAdmin && requestAuth(() => {})} className={`text-[10px] mt-0.5 font-bold uppercase tracking-widest flex items-center gap-1 transition-opacity ${!isAdmin ? 'cursor-pointer hover:opacity-80 text-gray-500 dark:text-neutral-500' : 'text-blue-500'}`}>
+                            <span className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></span> {isAdmin ? '관리자 모드' : '관리자 진입'}
                         </div>
-                        <nav className="flex-1 space-y-2 text-left">
+                    </div>
+                </div>
+                <nav className="flex-1 space-y-2 text-left">
                             <NavBtn id="music" label="성가음원" icon="music-2" active={activeTab === 'music'} onClick={setActiveTab} />
                             <NavBtn id="videos" label="찬양영상" icon="play-circle" active={activeTab === 'videos'} onClick={setActiveTab} />
                             <NavBtn id="stats" label="출석현황" icon="bar-chart-2" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
@@ -2054,28 +2060,29 @@
                         </header>
 
                         <div className="flex-1 scroll-container p-4 pt-[calc(84px+env(safe-area-inset-top))] md:p-10 pb-32 md:pb-10 hide-scrollbar min-h-0 w-full overflow-x-hidden text-left" onScroll={handleScroll}>
-                            <div className="max-w-4xl mx-auto w-full text-left">
-                                {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} theme={theme} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} />}
-                                {activeTab === 'music' && (
-                                    <>
-                                        <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />
-                                    </>
-                                )}
-                                {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
-                                {activeTab === 'manage' && <ManageView members={sortedMembers} isAdmin={isAdmin} requestAuth={requestAuth} geminiApiKey={geminiApiKey} onSaveGeminiKey={(k) => window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'settings', 'admin'), { geminiKey: k }, { merge: true })} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(m) => requestAuth(() => setEditMemberConfig({ member: m }))} />}
-                                {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
-                            </div>
+                        <div className="max-w-4xl mx-auto w-full text-left">
+                            {activeTab === 'stats' && <StatsView history={history} members={sortedMembers} theme={theme} onAddAttendance={() => requestAuth(() => setActiveTab('attendance'))} onOpenInterest={() => setShowInterestModal(true)} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenAttendStats={() => setShowAttendStats(true)} onOpenPersonal={() => setShowPersonalModal(true)} onDetail={(h) => setEditingHistory(h)} />}
+                            {activeTab === 'music' && (
+                                <>
+                                    <MusicView songs={songs} worshipSongs={worshipSongs} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} geminiApiKey={geminiApiKey} lastMusicSource={lastMusicSource} />
+                                </>
+                            )}
+                            {activeTab === 'videos' && <VideoView videos={videos} requestAuth={requestAuth} askConfirm={askConfirm} showToast={showToast} isAdmin={isAdmin} />}
+                            {activeTab === 'manage' && <ManageView members={sortedMembers} isAdmin={isAdmin} requestAuth={requestAuth} geminiApiKey={geminiApiKey} showToast={showToast} onSaveGeminiKey={(k) => window.MyFirebase.setDoc(window.MyFirebase.doc(window.MyFirebase.db, 'settings', 'admin'), { geminiKey: k }, { merge: true })} onOpenBdCalendar={() => setShowBdCalendar(true)} onOpenEditModal={(m) => requestAuth(() => setEditMemberConfig({ member: m }))} />}
+                            {activeTab === 'attendance' && <AttendanceView members={sortedMembers} onCancel={() => setActiveTab('stats')} requestAuth={requestAuth} showToast={showToast} geminiApiKey={geminiApiKey} />}
                         </div>
+                    </div>
 
-                        {/* Floating Mobile Bottom Navigation */}
-                        <nav className={`md:hidden fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] h-16 bg-white/90 dark:bg-[#141414]/90 backdrop-blur-2xl border border-gray-200/50 dark:border-white/10 rounded-full flex items-center justify-around px-2 z-50 transition-transform duration-300 shadow-xl dark:shadow-2xl ${isNavVisible ? 'translate-y-0' : 'translate-y-[150%]'}`}>
-                            <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={setActiveTab} />
-                            <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={setActiveTab} />
-                            <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
-                        </nav>
-                    </main>
+                    <!-- Floating Mobile Bottom Navigation -->
+                    <nav className={`md:hidden fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-[92%] max-w-[380px] h-16 bg-white/90 dark:bg-[#141414]/90 backdrop-blur-2xl border border-gray-200/50 dark:border-white/10 rounded-full flex items-center justify-around px-2 z-50 transition-transform duration-300 shadow-xl dark:shadow-2xl ${isNavVisible ? 'translate-y-0' : 'translate-y-[150%]'}`}>
+                        <NavIconBtn id="music" icon="music-2" label="음원" active={activeTab === 'music'} onClick={setActiveTab} />
+                        <NavIconBtn id="videos" icon="play-circle" label="영상" active={activeTab === 'videos'} onClick={setActiveTab} />
+                        <NavIconBtn id="stats" icon="bar-chart-2" label="출석" active={activeTab === 'stats' || activeTab === 'attendance'} onClick={setActiveTab} />
+                        <NavIconBtn id="manage" icon="user-round" label="명단" active={activeTab === 'manage'} onClick={setActiveTab} />
+                    </nav>
+                </main>
 
-                    {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
+                {showInterestModal && <InterestModal members={sortedMembers} history={history} onClose={() => setShowInterestModal(false)} />}
                     {showBdCalendar && <BirthdayCalendarModal members={sortedMembers} onClose={() => setShowBdCalendar(false)} />}
                     {showAttendStats && <AttendStatsModal history={history} members={sortedMembers} memberPartMap={sortedMembers.reduce((a,m)=>{if(m.name)a[m.name]=m.part;return a;},{})} onClose={() => setShowAttendStats(false)} onSelectMember={(name) => { setPersonalInitialMember(name); setShowPersonalModal(true); }} />}
                     {showPersonalModal && <PersonalAttendModal history={history} members={sortedMembers} initialMember={personalInitialMember} onClose={() => { setShowPersonalModal(false); setPersonalInitialMember(null); }} />}
