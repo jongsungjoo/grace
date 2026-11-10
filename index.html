@@ -1456,10 +1456,15 @@
             const [showAdd, setShowAdd] = useState(false);
             const [searchTerm, setSearchTerm] = useState('');
             const [isGenerating, setIsGenerating] = useState(false);
-            const [form, setForm] = useState({ title: '', date: getToday(), source: lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
+            const [form, setForm] = useState({ title: '', date: getToday(), source: lastMusicSource || '피스악보', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } });
             const [showWorship, setShowWorship] = useState(false);
             const [editingWorship, setEditingWorship] = useState(null);
             const [worshipForm, setWorshipForm] = useState(null);
+
+            // lastMusicSource가 외부(Firebase)에서 업데이트 되면 form에도 반영되도록 useEffect 추가
+            useEffect(() => {
+                setForm(prev => ({ ...prev, source: lastMusicSource || '피스악보' }));
+            }, [lastMusicSource]);
 
             const handleSave = () => requestAuth(async () => {
                 const { db, collection, addDoc, doc, setDoc } = window.MyFirebase;
@@ -1485,10 +1490,10 @@
                 resetForm(savedSource);
             });
 
-            const resetForm = (overrideSource) => { setForm({ title: '', date: getToday(), source: overrideSource || lastMusicSource || '중앙성가 42권', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
+            const resetForm = (overrideSource) => { setForm({ title: '', date: getToday(), source: overrideSource || lastMusicSource || '피스악보', image: '', links: { s: '', a: '', t: '', b: '', sheet: '', chorus: '' } }); setShowAdd(false); };
             const handleEdit = (song) => requestAuth(() => { 
                 setForm({
-                    id: song.id, title: song.title || '', date: song.date || getToday(), source: song.source || '중앙성가 42권', image: song.image || '',
+                    id: song.id, title: song.title || '', date: song.date || getToday(), source: song.source || '피스악보', image: song.image || '',
                     links: { s: song.links?.s || '', a: song.links?.a || '', t: song.links?.t || '', b: song.links?.b || '', sheet: song.links?.sheet || '', chorus: song.links?.chorus || '' }
                 });
                 setShowAdd(true); 
@@ -1509,7 +1514,7 @@
                     dateStr = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
                 }
 
-                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(${form.source || '중앙성가 42권'})\n\n[파트링크]\n`;
+                let text = `★ 주일 성가영상 & 음원 업로드 공지 ★\n[주은혜찬양팀 매니저]에 찬양팀 주일 성가 영상과 파트별 유튜브 링크가 업데이트되었습니다. 감사합니다. \nteamgrace.netlify.app\n\n▶ ${dateStr} 주일 찬양\n제목 : ${form.title}\n(${form.source || '피스악보'})\n\n[파트링크]\n`;
                 if (form.links?.s) text += `- 소프라노\n${form.links.s}\n`;
                 if (form.links?.a) text += `- 알토\n${form.links.a}\n`;
                 if (form.links?.t) text += `- 테너\n${form.links.t}\n`;
@@ -1643,7 +1648,7 @@
                         
                         ctx.font = '700 80px Pretendard, sans-serif';
                         const subtitleY = titleTopY + titleBlockHeight + 80;
-                        ctx.fillText(source || "중앙성가 42권", canvas.width / 2, subtitleY);
+                        ctx.fillText(source || "피스악보", canvas.width / 2, subtitleY);
                         
                         ctx.shadowColor = 'transparent';
                         ctx.shadowBlur = 0;
@@ -1803,7 +1808,7 @@
                                 </div>
                                 <div className="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-4">
                                     <input type="text" placeholder="성가 곡명" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold outline-none text-left" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                                    <input type="text" placeholder="출처 (예: 중앙성가 42권, 피스악보)" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-sm outline-none text-left" value={form.source || ''} onChange={e=>setForm({...form, source:e.target.value})} />
+                                    <input type="text" placeholder="출처 (예: 피스악보, 중앙성가 42권)" className="w-full bg-gray-50 border-0 p-4 rounded-2xl font-bold text-sm outline-none text-left" value={form.source || ''} onChange={e=>setForm({...form, source:e.target.value})} />
                                     
                                     <div className="flex flex-col gap-2">
                                         <div className="flex flex-col sm:flex-row gap-2">
@@ -1844,7 +1849,7 @@
                                 </div>
                                 <div className="flex gap-2 p-6 pt-4 border-t border-gray-100 shrink-0">
                                     <button onClick={resetForm} className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black transition-transform active:scale-95 text-center">취소</button>
-                                    <button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black transition-transform active:scale-95 shadow-lg text-center">저장 완료</button>
+                                    <button onClick={handleSave} className="flex-[2] bg-[#193278] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-center">저장 완료</button>
                                 </div>
                             </div>
                         </div>
@@ -3177,7 +3182,7 @@
             const [masterPassword, setMasterPassword] = useState("onnurigrace");
             const [deletePassword, setDeletePassword] = useState("5879");
             const [geminiApiKey, setGeminiApiKey] = useState('');
-            const [lastMusicSource, setLastMusicSource] = useState('중앙성가 42권');
+            const [lastMusicSource, setLastMusicSource] = useState('피스악보');
             const [isNavVisible, setIsNavVisible] = useState(true);
             const lastScrollY = useRef(0);
 
@@ -3451,4 +3456,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+    </html>
